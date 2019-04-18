@@ -5,8 +5,8 @@ set (CMAKE_CXX_STANDARD 11)
 
 # FindDriveworks.cmake, ArchConfiguration.cmake, and LibFindMacros.cmake were needed for my setup they are taken from driveworks/samples/cmake/
 # ArchConfiguration.cmake was the only file that needed small changes, remove the fatal error on line 17 and add the following lines in its place
-set(VIBRANTE_V5Q TRUE)
-add_definitions(-DVIBRANTE_V5Q)
+set(VIBRANTE TRUE)
+add_definitions(-DVIBRANTE)
 # this is the path I placed the driveworks cmake files in
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(glfw_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/linux-aarch64/glfw-3.1.1/include)
@@ -51,14 +51,19 @@ include_directories(
         ${GLEW_INCLUDE_DIR}
         ${glfw_INCLUDE_DIR}
         ${drive_t186ref_linux_INCLUDE_DIR}
+        include
+        include/framework
 )
 
 # ros node name template
 set(NODE_NAME ${PROJECT_NAME}_node)
 
-add_executable(${NODE_NAME} src/main.cpp
+add_executable(${NODE_NAME}
         src/main.cpp
-        src/gmsl.cpp )
+        src/SekonixCamera.cpp
+        src/DriveWorksApi.cpp
+        src/DeviceArguments.cpp
+        src/cv_connection.cpp)
 
 target_link_libraries(${NODE_NAME}
         ${catkin_LIBRARIES}
