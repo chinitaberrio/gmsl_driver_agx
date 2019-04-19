@@ -53,7 +53,7 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   CameraArguments.set("slave", slave_value);
 
   // create gmsl camera instance with the arguments
-  gmsl_cam_ = new DriveWorksApi(CameraArguments, imageConfig);
+  gmsl_cam_ = new DriveWorksApi(CameraArguments, imageConfig, nh_in);
   // start camera frame grabber threads
   this->Startup();
 
