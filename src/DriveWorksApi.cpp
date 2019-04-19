@@ -182,7 +182,7 @@ namespace DriveWorks {
 
     // allocate frameRGBA pointer
     for (size_t csiPort = 0; csiPort < cameras.size(); csiPort++) {
-      std::vector<dwImageHandle_t *> pool;
+      std::vector<dwImageNvMedia *> pool;
       std::vector<uint8_t *> pool_jpeg;
       std::vector<uint32_t> poolsize;
       for (size_t cameraIdx = 0;
@@ -220,7 +220,7 @@ namespace DriveWorks {
     uint32_t numFramesRGBA = pool_size * camera->numSiblings;
 
     // temp variable for easy access and de-reference back to camera->frameRGBA in releasing nvidia image frame read
-    std::vector<dwImageHandle_t> &g_frameRGBA = camera->frameRGBA;
+    std::vector<dwImageNvMedia> &g_frameRGBA = camera->frameRGBA;
 
     g_frameRGBA.reserve(numFramesRGBA);
     {
@@ -229,15 +229,15 @@ namespace DriveWorks {
                                         DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
                                         camera->sensor);
       dwImageProperties displayImageProperties = cameraImageProperties;
-      displayImageProperties.format = DW_IMAGE_FORMAT_RGB_UINT8;
+      displayImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
       displayImageProperties.type = DW_IMAGE_NVMEDIA;
 
       // allocate image pool
       for (uint32_t cameraIdx = 0;
            cameraIdx < camera->numSiblings; cameraIdx++) {
         for (int32_t k = 0; k < pool_size; k++) {
-          dwImageHandle_t rgba{};
-          result = dwImage_create(&rgba, displayImageProperties, sdk);
+          dwImageNvMedia rgba{};
+          result = dwImageNvMedia_create(&rgba, &displayImageProperties, sdk);
           if (result != DW_SUCCESS) {
             std::cerr << "Cannot create nvmedia image for pool:"
                       << dwGetStatusName(result) << std::endl;
@@ -385,13 +385,10 @@ namespace DriveWorks {
           for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->numSiblings &&
                                        !cameraSensor->rgbaPool.empty(); cameraIdx++) {
             //copy to memory replacing by //takeScreenshot(g_frameRGBAPtr[port][cameraIdx], port, cameraIdx);
-            dwImageHandle_t *frameNVMrgba = g_frameRGBAPtr[port][cameraIdx];
-            dwImageNvMedia *frame_nvmedia_img;
-            dwStatus result = dwImage_getNvMedia(&frame_nvmedia_img, *frameNVMrgba);
-
+            dwImageNvMedia *frameNVMrgba = g_frameRGBAPtr[port][cameraIdx];
             NvMediaImageSurfaceMap surfaceMap;
 
-            if (NvMediaImageLock(frame_nvmedia_img->img, NVMEDIA_IMAGE_ACCESS_READ,
+            if (NvMediaImageLock(frameNVMrgba->img, NVMEDIA_IMAGE_ACCESS_READ,
                                  &surfaceMap) == NVMEDIA_STATUS_OK) {
               // publish an image
               if (gImageCompressed) {
@@ -403,12 +400,12 @@ namespace DriveWorks {
                 //raw (resize if set)
                 cv_connectors[cameraIdx]->WriteToOpenCV(
                   (unsigned char *) surfaceMap.surface[0].mapping,
-                  frame_nvmedia_img->prop.width, frame_nvmedia_img->prop.height,
+                  frameNVMrgba->prop.width, frameNVMrgba->prop.height,
                   g_imageWidth,
                   g_imageHeight);
               }
 
-              NvMediaImageUnlock(frame_nvmedia_img->img);
+              NvMediaImageUnlock(frameNVMrgba->img);
             } else {
               std::cout << "CANNOT LOCK NVMEDIA IMAGE - NO SCREENSHOT\n";
             }
@@ -426,7 +423,7 @@ namespace DriveWorks {
 /*
  * Function to capture an image frame and convert to RGBA
  */
-  dwStatus DriveWorksApi::captureCamera(dwImageHandle_t *frameNVMrgba,
+  dwStatus DriveWorksApi::captureCamera(dwImageNvMedia *frameNVMrgba,
                                         dwSensorHandle_t cameraSensor,
                                         uint32_t port,
                                         uint32_t sibling,
@@ -434,56 +431,56 @@ namespace DriveWorks {
                                         NvMediaIJPE *jpegEncoder) {
     dwCameraFrameHandle_t frameHandle;
     dwImageHandle_t frameNVMyuv;
+
     dwStatus result = DW_FAILURE;
-    result = dwSensorCamera_readFrame(&frameHandle, sibling, 300000,
-                                      cameraSensor);
-    if (result != DW_SUCCESS) {
+    result = dwSensorCamera_readFrame(&frameHandle, sibling, 300000, cameraSensor);
+    if (result != DW_SUCCESS)
+    {
       std::cerr << "readFrameNvMedia: " << dwGetStatusName(result) << std::endl;
       return result;
     }
 
-    result = dwSensorCamera_getImage(&frameNVMyuv,
-                                     DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
-                                     frameHandle);
-    if (result != DW_SUCCESS) {
+    result = dwSensorCamera_getImage(&frameNVMyuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, frameHandle);
+    if( result != DW_SUCCESS )
+    {
       std::cerr << "readImageNvMedia: " << dwGetStatusName(result) << std::endl;
     }
 
-//  result = dwImageFormatConverter_copyConvertNvMedia(frameNVMrgba, frameNVMyuv, yuv2rgba);
-//  result = dwImageFormatConverter_copyConvertNvMedia(frameNVMrgba,frameNVMyuv,sdk);
-    result = dwImage_copyConvert(*frameNVMrgba, frameNVMyuv, sdk);
-    if (result != DW_SUCCESS) {
-      std::cerr << "copyConvertNvMedia: " << dwGetStatusName(result)
-                << std::endl;
+    dwImageHandle_t frameNVrgba;
+    dwImageProperties rgbaImageProperties{};
+    dwSensorCamera_getImageProperties(&rgbaImageProperties, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, cameraSensor);
+    rgbaImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
+    dwImage_create(&frameNVrgba, rgbaImageProperties, sdk);
+
+    result = dwImage_copyConvert(frameNVrgba,frameNVMyuv,sdk);
+
+    if( result != DW_SUCCESS )
+    {
+      std::cerr << "copyConvertNvMedia: " << dwGetStatusName(result) << std::endl;
     }
 
-    dwImageNvMedia *frame_nvmedia_img;
-    dwStatus dwMediaStat = dwImage_getNvMedia(&frame_nvmedia_img,frameNVMyuv);
+    result = dwImage_getNvMedia(&frameNVMrgba,frameNVrgba);
 
-    if (gImageCompressed) {
-      NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(jpegEncoder,
-                                                    frame_nvmedia_img->img,
-                                                    JPEG_quality);
-      if (nvStatus != NVMEDIA_STATUS_OK) {
-        std::cerr << "NvMediaIJPEFeedFrameQuality failed: %x\n" << nvStatus
-                  << std::endl;
+    dwImageNvMedia *frameyuv_nvm;
+    result = dwImage_getNvMedia(&frameyuv_nvm,frameNVMyuv);
+    if(gImageCompressed)
+    {
+      NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(jpegEncoder,frameyuv_nvm->img,JPEG_quality);
+      if(nvStatus != NVMEDIA_STATUS_OK)
+      {
+        std::cerr <<"NvMediaIJPEFeedFrameQuality failed: %x\n" << nvStatus <<  std::endl;
       }
-      nvStatus = NvMediaIJPEBitsAvailable(jpegEncoder,
-                                          &g_compressedSize[port][sibling],
-                                          NVMEDIA_ENCODE_BLOCKING_TYPE_IF_PENDING,
-                                          10000);
-      nvStatus = NvMediaIJPEGetBits(jpegEncoder,
-                                    &g_compressedSize[port][sibling],
-                                    jpeg_image, 0);
-      if (nvStatus != NVMEDIA_STATUS_OK &&
-          nvStatus != NVMEDIA_STATUS_NONE_PENDING) {
-        std::cerr << "main: Error getting encoded bits\n" << std::endl;
+      nvStatus = NvMediaIJPEBitsAvailable(jpegEncoder, &g_compressedSize[port][sibling],NVMEDIA_ENCODE_BLOCKING_TYPE_IF_PENDING , 10000);
+      nvStatus = NvMediaIJPEGetBits(jpegEncoder, &g_compressedSize[port][sibling], jpeg_image, 0);
+      if(nvStatus != NVMEDIA_STATUS_OK && nvStatus != NVMEDIA_STATUS_NONE_PENDING)
+      {
+        std::cerr <<"main: Error getting encoded bits\n"<<  std::endl;
       }
     }
     result = dwSensorCamera_returnFrame(&frameHandle);
-    if (result != DW_SUCCESS) {
-      std::cout << "returnFrameNvMedia: " << dwGetStatusName(result)
-                << std::endl;
+    if( result != DW_SUCCESS )
+    {
+      std::cout << "returnFrameNvMedia: " << dwGetStatusName(result) << std::endl;
     }
 
     return DW_SUCCESS;
@@ -507,8 +504,8 @@ namespace DriveWorks {
     }
 
     // cleanup nvmedia preallocate image frames
-    for (dwImageHandle_t &frame : cameraSensor->frameRGBA) {
-      dwStatus result = dwImage_destroy(frame);
+    for (dwImageNvMedia &frame : cameraSensor->frameRGBA) {
+      dwStatus result = dwImageNvMedia_destroy(&frame);
       if (result != DW_SUCCESS) {
         std::cerr << "Cannot destroy nvmedia: " << dwGetStatusName(result)
                   << std::endl;

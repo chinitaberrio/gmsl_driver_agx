@@ -1,17 +1,17 @@
 <launch>
   <!-- gmsl multiple cameras run -->
-  <arg name="cam_calib_folder" default="$(find autoware_driveworks_gmsl_interface)/calib/" />
-  <node pkg="sekonix_camera" type="gmsl_node" name="gmsl_node" output="screen">
+  <arg name="cam_calib_folder" default="$(find sekonix_camera)/calib/" />
+  <node pkg="sekonix_camera" type="sekonix_camera_node" name="sekonix_camera_node" output="screen">
     <param name="image_width" value="1920" />     <!-- image raw resize only -->
     <param name="image_height" value="1208" />    <!-- image raw resize only -->
     <param name="image_buffer" value="10" />
     <param name="image_compressed" value="true" type="bool" />  <!-- publish compressed original size -->
     <param name="calib_folder" value="$(arg cam_calib_folder)/" />
-    <param name="type_a" value="ar0231-rccb-ss3322" type="str" />
-    <param name="type_b" value="ar0231-rccb-ss3322" type="str" />
-    <param name="type_c" value="ar0231-rccb-ss3322" type="str" />
-    <param name="type_d" value="ar0231-rccb-ss3322" type="str" />
-    <param name="selector_mask" value="111100110011" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
+    <param name="type_a" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="type_b" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="type_c" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="type_d" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="selector_mask" value="0001000000000000" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
     <param name="cross_csi_sync" value="1" type="str" />
     <param name="fifo_size" value="3" type="str" />
     <param name="slave" value="0" type="str" />

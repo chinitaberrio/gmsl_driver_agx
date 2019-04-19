@@ -74,6 +74,7 @@
 #include <dw/image/FormatConverter.h>
 #include <dw/image/ImageStreamer.h>
 #include <dw/image/deprecated/ImageDeprecated.h>
+
 //#include "nvmedia_image.h"
 //#include "nvmedia_ijpe.h"
 #include <drive-t186ref-linux/include/nvmedia_image.h>
@@ -96,8 +97,8 @@ struct Camera {
   dwImageStreamerHandle_t streamer;// different streamers to support different resolutions
 //  dwImageHandle_t image_handle;
 //  dwImageFormatConverterHandle_t yuv2rgba;
-  std::queue<dwImageHandle_t *> rgbaPool;
-  std::vector<dwImageHandle_t> frameRGBA;
+  std::queue<dwImageNvMedia *> rgbaPool;
+  std::vector<dwImageNvMedia> frameRGBA;
   std::queue<uint8_t*> jpegPool;
 	std::vector<NvMediaIJPE *> jpegEncoders;
 };
@@ -140,7 +141,7 @@ private:
   void startCameraPipline();
   void threadCameraPipeline(Camera* cameraSensor, uint32_t port, dwContextHandle_t sdk);
 
-  dwStatus captureCamera(dwImageHandle_t *frameNVMrgba,
+  dwStatus captureCamera(dwImageNvMedia *frameNVMrgba,
                          dwSensorHandle_t cameraSensor, uint32_t port,
                          uint32_t sibling,
                          uint8_t* jpeg_image, NvMediaIJPE *jpegEncoder);
@@ -174,7 +175,7 @@ private:
   bool eof;
   dwContextHandle_t sdk = DW_NULL_HANDLE;
   dwSALHandle_t sal     = DW_NULL_HANDLE;
-  std::vector<std::vector<dwImageHandle_t*>> g_frameRGBAPtr;
+  std::vector<std::vector<dwImageNvMedia*>> g_frameRGBAPtr;
   std::vector<std::vector<uint8_t*>>	g_frameJPGPtr;
 	std::vector<std::vector<uint32_t>>  g_compressedSize;
 
