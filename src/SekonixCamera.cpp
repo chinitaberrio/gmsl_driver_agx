@@ -8,6 +8,13 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   nh_in.param("image_compressed", img_compressed_, true);
   nh_in.param("image_compressed_quality", jpeg_quality_, int(70));
 
+  std::string ros_param = "image_width :" + image_width_;
+  ros_param += "image_height :" + image_height_;
+  ros_param += "image_buffer :" + pub_buffer_;
+  ros_param += "image_compressed :" + img_compressed_;
+  ros_param += "image_compressed_quality :" + jpeg_quality_;
+
+  ROS_INFO_STREAM(ros_param);
   // read ros param for camera info publish
   std::string calib_folder = "";
   nh_in.param<std::string>("calib_folder", calib_folder,"");
