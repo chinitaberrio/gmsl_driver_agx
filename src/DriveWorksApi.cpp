@@ -182,7 +182,7 @@ namespace DriveWorks {
 
     // allocate frameRGBA pointer
     for (size_t csiPort = 0; csiPort < cameras.size(); csiPort++) {
-      std::vector<dwImageNvMedia *> pool;
+      std::vector<dwImageHandle_t *> pool;
       std::vector<uint8_t *> pool_jpeg;
       std::vector<uint32_t> poolsize;
       for (size_t cameraIdx = 0;
