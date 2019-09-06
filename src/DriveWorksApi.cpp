@@ -39,7 +39,7 @@ namespace DriveWorks {
  *  This will initialise csi camera configuration and setting up sdk and sensors
  */
   DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
-                               ImageConfig imageConfig) :
+                               ImageConfig imageConfig,ros::NodeHandle &nh_in) : nh_(nh_in),
     g_arguments(arguments), g_imageConfig(imageConfig) {
     // init image publishing configuration
     g_imageWidth = imageConfig.pub_width;
@@ -335,7 +335,7 @@ namespace DriveWorks {
         std::to_string(port) + std::to_string(cameraIdx) +
         std::string("_calibration.yml");
       std::unique_ptr<OpenCVConnector> cvPtr(
-        new OpenCVConnector(topic, camera_frame_id, cam_info_file, 10));
+        new OpenCVConnector(topic, camera_frame_id, cam_info_file, 10,nh_));
       cv_connectors.push_back(std::move(cvPtr));
     }
 

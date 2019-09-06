@@ -118,7 +118,7 @@ struct ImageConfig {
 class DriveWorksApi
 {
 public:
-  DriveWorksApi(DeviceArguments arguments, ImageConfig g_imageConfig);
+  DriveWorksApi(DeviceArguments arguments, ImageConfig g_imageConfig, ros::NodeHandle &nh_in);
   ~DriveWorksApi();
 
   void stopCameras();
@@ -152,6 +152,7 @@ private:
 
 private:
   //Variables
+  ros::NodeHandle &nh_;
   bool gTakeScreenshot = true;
   bool gImageCompressed = true;
   int gScreenshotCount = 0;
