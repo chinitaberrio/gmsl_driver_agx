@@ -45,14 +45,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-OpenCVConnector::OpenCVConnector(std::string topic_name, std::string camera_frame_id, std::string cam_info_file, int buffer,ros::NodeHandle &nh_in):
-nh_(nh_in), counter(0), camera_id(camera_frame_id),camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id)
+OpenCVConnector::OpenCVConnector(std::string topic_name, std::string camera_frame_id, std::string cam_info_file, int buffer): it_(nh_), counter(0), camera_id(camera_frame_id),camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id)
 {
   //init image pub topic
   std::string topic_raw = topic_name + std::string("/image_raw");
   std::string topic_jpg = topic_name + std::string("/image_raw/compressed");
-  it_ = std::make_shared<image_transport::ImageTransport>();
-  pub = it_->advertise(topic_raw, buffer);
+  pub = it_.advertise(topic_raw, buffer);
   pub_jpg = nh_.advertise<sensor_msgs::CompressedImage>(topic_jpg, buffer);
   //init pub camera info topic
   pub_caminfo = nh_.advertise<sensor_msgs::CameraInfo>(camera_frame_id + std::string("/camera_info"), 1);
