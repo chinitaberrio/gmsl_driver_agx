@@ -328,7 +328,7 @@ namespace DriveWorks {
         std::string("port_") + std::to_string(port) + std::string("/camera_") +
         std::to_string(cameraIdx);
       const std::string camera_frame_id =
-        std::string("gmsl_camera_") + std::to_string(port) + std::string("_") +
+        std::string("port_") + std::to_string(port) + std::string("/camera_") +
         std::to_string(cameraIdx);
       const std::string cam_info_file =
         std::string("file://") + std::string(g_calibFolder) +
