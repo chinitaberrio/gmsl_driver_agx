@@ -1,7 +1,45 @@
 <launch>
   <!-- gmsl multiple cameras run -->
 
-  <remap from="port_0/camera_0" to="cam_on_orta"/>
+  <remap from="/port_0/camera_0/camera_info" to="/cam_on_orta/camera_info"/>
+  <remap from="/port_0/camera_0/image_raw" to="/cam_on_orta/image_raw"/>
+  <remap from="/port_0/camera_0/image_raw/compressed" to="/cam_on_orta/image_raw/compressed"/>
+
+  <remap from="/port_0/camera_1/camera_info" to="/cam_on_sag/camera_info"/>
+  <remap from="/port_0/camera_1/image_raw" to="/cam_on_sag/image_raw"/>
+  <remap from="/port_0/camera_1/image_raw/compressed" to="/cam_on_sag/image_raw/compressed"/>
+
+  <remap from="/port_0/camera_2/camera_info" to="/cam_on_sol/camera_info"/>
+  <remap from="/port_0/camera_2/image_raw" to="/cam_on_sol/image_raw"/>
+  <remap from="/port_0/camera_2/image_raw/compressed" to="/cam_on_sol/image_raw/compressed"/>
+
+  <remap from="/port_2/camera_1/camera_info" to="/cam_orta_sag/camera_info"/>
+  <remap from="/port_2/camera_1/image_raw" to="/cam_orta_sag/image_raw"/>
+  <remap from="/port_2/camera_1/image_raw/compressed" to="/cam_orta_sag/image_raw/compressed"/>
+
+  <remap from="/port_2/camera_0/camera_info" to="/cam_orta_sol/camera_info"/>
+  <remap from="/port_2/camera_0/image_raw" to="/cam_orta_sol/image_raw"/>
+  <remap from="/port_2/camera_0/image_raw/compressed" to="/cam_orta_sol/image_raw/compressed"/>
+
+  <remap from="/port_1/camera_2/camera_info" to="/cam_arka_sag/camera_info"/>
+  <remap from="/port_1/camera_2/image_raw" to="/cam_arka_sag/image_raw"/>
+  <remap from="/port_1/camera_2/image_raw/compressed" to="/cam_arka_sag/image_raw/compressed"/>
+
+  <remap from="/port_1/camera_1/camera_info" to="/cam_arka_orta/camera_info"/>
+  <remap from="/port_1/camera_1/image_raw" to="/cam_arka_orta/image_raw"/>
+  <remap from="/port_1/camera_1/image_raw/compressed" to="/cam_arka_orta/image_raw/compressed"/>
+
+  <remap from="/port_1/camera_3/camera_info" to="/cam_arka_sol/camera_info"/>
+  <remap from="/port_1/camera_3/image_raw" to="/cam_arka_sol/image_raw"/>
+  <remap from="/port_1/camera_3/image_raw/compressed" to="/cam_arka_sol/image_raw/compressed"/>
+
+  <remap from="/port_0/camera_3/camera_info" to="/cam_ayna_sag/camera_info"/>
+  <remap from="/port_0/camera_3/image_raw" to="/cam_ayna_sag/image_raw"/>
+  <remap from="/port_0/camera_3/image_raw/compressed" to="/cam_ayna_sag/image_raw/compressed"/>
+
+  <remap from="/port_1/camera_0/camera_info" to="/cam_ayna_sol/camera_info"/>
+  <remap from="/port_1/camera_0/image_raw" to="/cam_ayna_sol/image_raw"/>
+  <remap from="/port_1/camera_0/image_raw/compressed" to="/cam_ayna_sol/image_raw/compressed"/>
 
 
   <arg name="cam_calib_folder" default="$(find sekonix_camera)/calib/" />
