@@ -21,6 +21,7 @@ find_package(Threads REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Driveworks REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(FOLLY REQUIRED)
 
 # SET THESE VARIABLES TO YOUR DRIVEWORKS LOCATIONS
 set(Driveworks_INCLUDE_DIR /usr/local/driveworks/include/)
@@ -53,6 +54,7 @@ include_directories(
         ${drive_t186ref_linux_INCLUDE_DIR}
         include
         include/framework
+        ${FOLLY_INCLUDE_DIR}
 )
 
 # ros node name template
@@ -75,4 +77,5 @@ target_link_libraries(${NODE_NAME}
         drm
         ${CUDA_LIBRARIES}
         ${OpenCV_LIBS}
+        ${FOLLY_INCLUDE_DIR}
         )

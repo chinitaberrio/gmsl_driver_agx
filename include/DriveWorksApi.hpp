@@ -84,6 +84,8 @@
 
 #include "DeviceArguments.hpp"
 
+#include <folly/ProducerConsumerQueue.h>
+
 
 namespace DriveWorks {
 
