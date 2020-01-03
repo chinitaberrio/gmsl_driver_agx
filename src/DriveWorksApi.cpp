@@ -315,9 +315,9 @@ namespace DriveWorks {
   }
 
 
-  void DriveWorksApi::threadCameraPipeline(Camera *cameraSensor, uint32_t port,
-                                           dwContextHandle_t sdk) {
-    std::cout << "Start camera thread for port:  " << port << std::endl;
+  void DriveWorksApi::WorkerPortPipeline(Camera *cameraSensor, uint32_t port,
+                                         dwContextHandle_t sdk) {
+    std::cout << "Start worker for port: " << port << std::endl;
     // cv publishers
     std::vector <std::unique_ptr<OpenCVConnector>> cv_connectors;
     // init multiple cv cameras connection and topic name
