@@ -52,20 +52,22 @@
 #include <camera_info_manager/camera_info_manager.h>
 
 
-
 class OpenCVConnector {
 
 public:
-	/* Constructor */
+  /* Constructor */
   OpenCVConnector(std::string topic_name, std::string camera_frame_id, std::string cam_info_file, int buffer);
+
   /* Destructor */
   ~OpenCVConnector();
+
   /* Copy data to Opencv format and Publish ROS image message type */
-  void WriteToOpenCV(unsigned char* data, int width_in, int height_in, int width_pub, int height_pub);
-  void WriteToJpeg(uint8_t* data, uint32_t compressed_size);
+  void WriteToOpenCV(unsigned char *data, int width_in, int height_in, int width_pub, int height_pub);
+
+  void WriteToJpeg(uint8_t *data, uint32_t compressed_size);
 
   /* Ros node and image transport variables */
-	ros::NodeHandle nh_;
+  ros::NodeHandle nh_;
 //  image_transport::ImageTransport it;
   image_transport::ImageTransport it_;
   image_transport::Publisher pub;
@@ -76,11 +78,10 @@ public:
   /* Ros camera info manager */
   sensor_msgs::CameraInfo camera_info;
   camera_info_manager::CameraInfoManager camera_info_manager;
-	ros::Publisher pub_caminfo;
-	std::string calib_folder;
+  ros::Publisher pub_caminfo;
+  std::string calib_folder;
 
 };
-
 
 
 #endif

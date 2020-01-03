@@ -37,7 +37,7 @@ private:
   ros::NodeHandle &nh_;
 
 //  Struct Program Arguments
-  struct ProgramArguments{
+  struct ProgramArguments {
     std::string camera_type_a;
     std::string camera_type_b;
     std::string camera_type_c;
@@ -47,11 +47,11 @@ private:
     std::string cross_csi_sync;
   };
 //Class parameters
-  const char* groupIDNames_[MAX_PORTS_COUNT] = {"a", "b", "c", "d"};
+  const char *groupIDNames_[MAX_PORTS_COUNT] = {"a", "b", "c", "d"};
   uint32_t m_activeCamerasPerPort_[4] = {0};
   struct ProgramArguments args_;
   // ROS Parameters: configuration
-  int image_height_,image_width_;
+  int image_height_, image_width_;
   bool img_compressed_ = false;
   int jpeg_quality_;
   int pub_buffer_;                                                 // Image buffer for publishing

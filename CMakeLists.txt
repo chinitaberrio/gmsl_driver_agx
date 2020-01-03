@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(sekonix_camera)
 
-set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 
 # FindDriveworks.cmake, ArchConfiguration.cmake, and LibFindMacros.cmake were needed for my setup they are taken from driveworks/samples/cmake/
 # ArchConfiguration.cmake was the only file that needed small changes, remove the fatal error on line 17 and add the following lines in its place
@@ -20,7 +20,7 @@ find_package(CUDA REQUIRED)
 find_package(Threads REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Driveworks REQUIRED)
-find_package(OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
 
 # SET THESE VARIABLES TO YOUR DRIVEWORKS LOCATIONS
 set(Driveworks_INCLUDE_DIR /usr/local/driveworks/include/)

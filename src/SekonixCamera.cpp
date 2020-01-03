@@ -11,15 +11,15 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
 
   // read ros param for camera info publish
   std::string calib_folder = "";
-  nh_in.param<std::string>("calib_folder", calib_folder,"");
+  nh_in.param<std::string>("calib_folder", calib_folder, "");
 
   // from DriveWorksApi.hpp
   ImageConfig imageConfig = {
-    (uint32_t)image_width_,         				//publish image width
-    (uint32_t)image_height_,        				//publish image height
-    (uint32_t)pub_buffer_,        				//publish buffer
-    img_compressed_,        		//publish raw or compressed image
-    (uint32_t)jpeg_quality_,   //image compressed quality
+    (uint32_t) image_width_,                //publish image width
+    (uint32_t) image_height_,                //publish image height
+    (uint32_t) pub_buffer_,                //publish buffer
+    img_compressed_,            //publish raw or compressed image
+    (uint32_t) jpeg_quality_,   //image compressed quality
     calib_folder,             //camera calibration folder
   };
 
@@ -33,14 +33,14 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   std::string fifo_size_value = "";
   std::string slave_value = "";
   // reading new configuration
-  nh_in.param<std::string>("/sekonix_camera_node/type_a", type_a_value,"ar0231-rccb-bae-sf3324");
-  nh_in.param<std::string>("/sekonix_camera_node/type_b", type_b_value,"ar0231-rccb-bae-sf3324");
-  nh_in.param<std::string>("/sekonix_camera_node/type_c", type_c_value,"ar0231-rccb-bae-sf3324");
-  nh_in.param<std::string>("/sekonix_camera_node/type_d", type_d_value,"ar0231-rccb-bae-sf3324");
-  nh_in.param<std::string>("/sekonix_camera_node/selector_mask", selector_mask_value,"0001");
-  nh_in.param<std::string>("/sekonix_camera_node/cross_csi_sync", cross_csi_sync_value,"0");
-  nh_in.param<std::string>("/sekonix_camera_node/fifo_size", fifo_size_value,"3");
-  nh_in.param<std::string>("/sekonix_camera_node/slave", slave_value,"0");
+  nh_in.param<std::string>("/sekonix_camera_node/type_a", type_a_value, "ar0231-rccb-bae-sf3324");
+  nh_in.param<std::string>("/sekonix_camera_node/type_b", type_b_value, "ar0231-rccb-bae-sf3324");
+  nh_in.param<std::string>("/sekonix_camera_node/type_c", type_c_value, "ar0231-rccb-bae-sf3324");
+  nh_in.param<std::string>("/sekonix_camera_node/type_d", type_d_value, "ar0231-rccb-bae-sf3324");
+  nh_in.param<std::string>("/sekonix_camera_node/selector_mask", selector_mask_value, "0001");
+  nh_in.param<std::string>("/sekonix_camera_node/cross_csi_sync", cross_csi_sync_value, "0");
+  nh_in.param<std::string>("/sekonix_camera_node/fifo_size", fifo_size_value, "3");
+  nh_in.param<std::string>("/sekonix_camera_node/slave", slave_value, "0");
 
 
   // setting new configurations
@@ -63,18 +63,16 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
 /*
  * Destructor
  */
-SekonixCamera::~SekonixCamera()
-{
-  if(gmsl_cam_) delete gmsl_cam_;
+SekonixCamera::~SekonixCamera() {
+  if (gmsl_cam_) delete gmsl_cam_;
 }
+
 /*
  * Start the polling threads to grab an image from the camera and publish it
  */
-void SekonixCamera::Startup()
-{
+void SekonixCamera::Startup() {
   // After gmsl cameras init - start image publishing thread(s)
-  while(!(gmsl_cam_->isCamReady()))
-  {
+  while (!(gmsl_cam_->isCamReady())) {
     sleep(1);
   }
   // Ready
@@ -87,8 +85,7 @@ void SekonixCamera::Startup()
  * Send a request to cleanup the camera connections all at once
  */
 
-void SekonixCamera::Shutdown()
-{
+void SekonixCamera::Shutdown() {
   // Clean up camera frames & sdk all at once
   gmsl_cam_->stopCameras();
 }
