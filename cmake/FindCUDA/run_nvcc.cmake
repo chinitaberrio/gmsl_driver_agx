@@ -86,7 +86,7 @@ endif()
 
 set(CUDA_USE_PYNVCCCACHE "@CUDA_USE_PYNVCCCACHE@")
 set(CUDA_PYNVCCCACHE_SCRIPT "@CUDA_PYNVCCCACHE_SCRIPT@")
-set(PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+set(Python3_EXECUTABLE "@Python3_EXECUTABLE@")
 
 # Take the compiler flags and package them up to be sent to the compiler via -Xcompiler
 set(nvcc_host_compiler_flags "")
@@ -166,7 +166,7 @@ set(CUDA_VERSION @CUDA_VERSION@)
 
 # Generate the code
 if(CUDA_USE_PYNVCCCACHE)
-    set(compile_command ${PYTHON_EXECUTABLE})
+    set(compile_command ${Python3_EXECUTABLE})
     set(compile_cache_args "${CUDA_PYNVCCCACHE_SCRIPT};--nvcccache-compiler=${CUDA_NVCC_EXECUTABLE}")
 else()
     set(compile_command ${CUDA_NVCC_EXECUTABLE})
@@ -186,6 +186,25 @@ cuda_execute_process(
   -DNVCC
   ${CUDA_NVCC_INCLUDE_ARGS}
   )
+
+# CLANG-TIDY on CUDA
+set(CUDA_CLANG_TIDY "@CUDA_CLANG_TIDY@")
+set(CUDA_CLANG_TIDY_OPTION_FLAGS "@CUDA_CLANG_TIDY_OPTION_FLAGS@")
+set(CUDA_CLANG_TIDY_COMPILE_FLAGS ${CUDA_NVCC_FLAGS} ${nvcc_flags} ${nvcc_host_compiler_flags})
+# Remove NVCC compiler specific flags
+list(FILTER CUDA_CLANG_TIDY_COMPILE_FLAGS EXCLUDE REGEX "--")
+set(CUDA_CLANG_TIDY_COMPILE_FLAGS "@CUDA_CLANG_TIDY_COMPILE_FLAGS@" ${CUDA_CLANG_TIDY_COMPILE_FLAGS})
+
+if(CUDA_CLANG_TIDY)
+    cuda_execute_process(
+      "Running clang-tidy on ${source_file}"
+      COMMAND ${CUDA_CLANG_TIDY}
+      ${CUDA_CLANG_TIDY_OPTION_FLAGS}
+      "${source_file};--"
+      ${CUDA_NVCC_INCLUDE_ARGS}
+      ${CUDA_CLANG_TIDY_COMPILE_FLAGS}
+      )
+endif()
 
 if(CUDA_result)
   # Since nvcc can sometimes leave half done files make sure that we delete the output file.

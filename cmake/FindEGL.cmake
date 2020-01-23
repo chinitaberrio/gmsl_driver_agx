@@ -3,7 +3,7 @@
 # - Try to find EGL
 # Once done this will define
 #  EGL_FOUND - System has EGL
-#  EGL_INCLUDE_DIRS - The EGL include directories
+#  EGL_INCLUDE_DIR - The EGL include directories
 #  EGL_LIBRARIES - The libraries needed to use EGL
 if (EGL_FOUND)
   return()
@@ -20,15 +20,9 @@ find_library(EGL_LIBRARY EGL
              HINTS "/usr/lib/nvidia-${nvidia-driver-version}" ${PC_EGL_LIBDIR} ${PC_EGL_LIBRARY_DIRS} ${VIBRANTE_PDK}/lib-target)
 
 set(EGL_LIBRARIES ${EGL_LIBRARY})
-set(EGL_INCLUDE_DIRS ${EGL_INCLUDE_DIR})
 
 option(DW_EXPERIMENTAL_FORCE_EGL "Force enable EGL support if EGL support is found" OFF)
 mark_as_advanced(DW_EXPERIMENTAL_FORCE_EGL)
-
-# Avoid using poised system directories on vibrante.
-if (LINUX)
-    list(APPEND EGL_INCLUDE_DIRS ${PC_EGL_INCLUDE_DIRS})
-endif()
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set EGL_FOUND to TRUE
@@ -41,7 +35,7 @@ mark_as_advanced(EGL_INCLUDE_DIR EGL_LIBRARY)
 # Do it in this file so that SDKConfiguration and Samples can re-use this logic
 if (EGL_FOUND)
     message(STATUS "Found ${EGL_LIBRARY}:")
-    message(STATUS " - Includes: [${EGL_INCLUDE_DIRS}]")
+    message(STATUS " - Includes: [${EGL_INCLUDE_DIR}]")
     message(STATUS " - Libraries: [${EGL_LIBRARIES}]")
     if (VIBRANTE OR DW_EXPERIMENTAL_FORCE_EGL)
         find_package(GLES REQUIRED)
@@ -55,9 +49,16 @@ if (EGL_FOUND)
         add_library(egl SHARED IMPORTED)
         set_target_properties(egl PROPERTIES
                               IMPORTED_LOCATION ${EGL_LIBRARY}
-                              INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${EGL_INCLUDE_DIR}
                               INTERFACE_LINK_LIBRARIES ${EGL_LIBRARIES}
-                              IMPORTED_LINK_INTERFACE_LIBRARIES "drm;gles")
+                              IMPORTED_LINK_INTERFACE_LIBRARIES "drm")
+
+        # Workaround for nvcc + recent gcc libc's, having issues with `/usr/include`
+        # being defined as system includes (it's not necessary to provide this path in this case)
+        if (NOT ${EGL_INCLUDE_DIR} STREQUAL "/usr/include")
+          set_target_properties(egl PROPERTIES
+                                INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${EGL_INCLUDE_DIR})
+        endif()
+
         set_property(TARGET egl APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
         set_target_properties(egl PROPERTIES
                               IMPORTED_LOCATION_RELEASE ${EGL_LIBRARY})

@@ -56,40 +56,6 @@ set(VIBRANTE TRUE)
 set(VIBRANTE_V5Q TRUE)
 add_definitions(-DVIBRANTE -DVIBRANTE_V5Q)
 
-set(CMAKE_CXX_COMPILER "${QNX_TOOLCHAIN_PREFIX}g++")
-set(CMAKE_C_COMPILER "${QNX_TOOLCHAIN_PREFIX}gcc")
-set(GCC_COMPILER_VERSION ${QNX_TOOLCHAIN_TRIPLE} CACHE STRING "GCC Compiler version")
-
-# setup compiler for cross-compilation
-set(CMAKE_CXX_FLAGS           "-fPIC"               CACHE STRING "c++ flags")
-set(CMAKE_C_FLAGS             "-fPIC"               CACHE STRING "c flags")
-set(CMAKE_SHARED_LINKER_FLAGS ""                    CACHE STRING "shared linker flags")
-set(CMAKE_MODULE_LINKER_FLAGS ""                    CACHE STRING "module linker flags")
-set(CMAKE_EXE_LINKER_FLAGS    ""                    CACHE STRING "executable linker flags")
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${QNX_TOOLCHAIN_CFLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${QNX_TOOLCHAIN_CFLAGS_CPP_ONLY} ${QNX_TOOLCHAIN_CFLAGS}")
-
-set(LD_PATH ${VIBRANTE_PDK}/lib-target)
-
-# Please, be careful looks like "-Wl,-unresolved-symbols=ignore-in-shared-libs" can lead to silent "ld" problems
-set(CMAKE_SHARED_LINKER_FLAGS   "-L${LD_PATH} -Wl,-rpath-link,${LD_PATH} ${CMAKE_SHARED_LINKER_FLAGS}")
-set(CMAKE_MODULE_LINKER_FLAGS   "-L${LD_PATH} -Wl,-rpath-link,${LD_PATH} ${CMAKE_MODULE_LINKER_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS      "-L${LD_PATH} -Wl,-rpath-link,${LD_PATH} ${CMAKE_EXE_LINKER_FLAGS}")
-
-# Set cmake root path. If there is no "/usr/local" in CMAKE_FIND_ROOT_PATH then FindCUDA.cmake doesn't work
-SET(CMAKE_FIND_ROOT_PATH ${VIBRANTE_PDK} /usr/local/)
-
-# search for programs in the build host directories
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-
-# for libraries and headers in the target directories
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-
-# set system default include dir
-include_directories(BEFORE SYSTEM ${VIBRANTE_PDK}/include)
-
 # determine target device and pdk branch
 if(NOT DEFINED VIBRANTE_PDK_DEVICE AND VIBRANTE_PDK)
     if(${VIBRANTE_PDK} MATCHES "(vibrante|drive)-(t.+)-qnx$")
@@ -164,3 +130,37 @@ if(DEFINED VIBRANTE_PDK_BRANCH)
 
   message(STATUS "Vibrante version ${VIBRANTE_PDK_VERSION}")
 endif()
+
+set(CMAKE_CXX_COMPILER "${QNX_TOOLCHAIN_PREFIX}g++")
+set(CMAKE_C_COMPILER "${QNX_TOOLCHAIN_PREFIX}gcc")
+set(GCC_COMPILER_VERSION ${QNX_TOOLCHAIN_TRIPLE} CACHE STRING "GCC Compiler version")
+
+# setup compiler for cross-compilation
+set(CMAKE_CXX_FLAGS           "-fPIC"               CACHE STRING "c++ flags")
+set(CMAKE_C_FLAGS             "-fPIC"               CACHE STRING "c flags")
+set(CMAKE_SHARED_LINKER_FLAGS ""                    CACHE STRING "shared linker flags")
+set(CMAKE_MODULE_LINKER_FLAGS ""                    CACHE STRING "module linker flags")
+set(CMAKE_EXE_LINKER_FLAGS    ""                    CACHE STRING "executable linker flags")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${QNX_TOOLCHAIN_CFLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${QNX_TOOLCHAIN_CFLAGS_CPP_ONLY} ${QNX_TOOLCHAIN_CFLAGS}")
+
+set(LD_PATH ${VIBRANTE_PDK}/lib-target)
+
+# Please, be careful looks like "-Wl,-unresolved-symbols=ignore-in-shared-libs" can lead to silent "ld" problems
+set(CMAKE_SHARED_LINKER_FLAGS   "-L${LD_PATH} -Wl,-rpath-link,${LD_PATH} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_MODULE_LINKER_FLAGS   "-L${LD_PATH} -Wl,-rpath-link,${LD_PATH} ${CMAKE_MODULE_LINKER_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS      "-L${LD_PATH} -Wl,-rpath-link,${LD_PATH} ${CMAKE_EXE_LINKER_FLAGS}")
+
+# Set cmake root path. If there is no "/usr/local" in CMAKE_FIND_ROOT_PATH then FindCUDA.cmake doesn't work
+SET(CMAKE_FIND_ROOT_PATH ${VIBRANTE_PDK} /usr/local/)
+
+# search for programs in the build host directories
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+
+# for libraries and headers in the target directories
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+# set system default include dir
+include_directories(BEFORE SYSTEM ${VIBRANTE_PDK}/include)

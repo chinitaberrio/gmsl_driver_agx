@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2019, NVIDIA CORPORATION.  All rights reserved.
 # FindCUDA
 # --------
 #
@@ -88,7 +88,7 @@
 #   -- Use pynvccache as cuda compilation cache if available and dependencies
 #      are fulfilled. Otherwise fall-back to regular non-cached cuda compilation.
 #
-#   CUDA_DETERMINE_HOST_GPU_CODE_FLAGS (Default ON)
+#   CUDA_DETERMINE_HOST_GPU_CODE_FLAGS (Default OFF)
 #   -- Determine GPU architecture of CUDAS GPUs in host system. Saved to
 #      variable CUDA_HOST_GPU_CODE_FLAGS (e.g., '--gpu-code=sm_30,sm_61') to be
 #      used in NVCC command line arguments.
@@ -331,9 +331,9 @@
 #                            Windows only.
 #   CUDA_nvcuvid_LIBRARY  -- CUDA Video Decoder library.
 #                            Only available for CUDA version 3.2+.
-#                            Windows only.
 #   CUDA_culibos_LIBRARY  -- CUDA Thread Abstraction Layer library
 #                            Needed for static linking
+#   CUDA_nvidia-ml_LIBRARY -- NVIDIA Management Library
 #
 #   James Bigler, NVIDIA Corp (nvidia.com - jbigler)
 #   Abe Stephens, SCI Institute -- http://www.sci.utah.edu/~abe/FindCuda.html
@@ -530,7 +530,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/pynvcccache)
 endif()
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/FindCUDA/get_cuda_sm.sh)
-  option(CUDA_DETERMINE_HOST_GPU_CODE_FLAGS "Determine current real host GPU code nvcc flags" ON)
+  option(CUDA_DETERMINE_HOST_GPU_CODE_FLAGS "Determine current real host GPU code nvcc flags" OFF)
 endif()
 
 # Prevent some flags from being propagated
@@ -599,6 +599,7 @@ macro(cuda_unset_include_and_libraries)
   unset(CUDA_nvcuvenc_LIBRARY CACHE)
   unset(CUDA_nvcuvid_LIBRARY CACHE)
   unset(CUDA_culibos_LIBRARY CACHE)
+  unset(CUDA_nvidia-ml_LIBRARY CACHE)
 endmacro()
 
 # Check to see if the CUDA_TOOLKIT_ROOT_DIR and CUDA_SDK_ROOT_DIR have changed,
@@ -633,6 +634,7 @@ if(NOT CUDA_TOOLKIT_ROOT_DIR)
       ENV CUDA_PATH
     PATH_SUFFIXES bin bin64
     DOC "Toolkit location."
+    NO_CMAKE_FIND_ROOT_PATH
     NO_DEFAULT_PATH
     )
   # Now search default paths
@@ -686,23 +688,23 @@ endif()
 if(CUDA_USE_PYNVCCCACHE)
   set(CUDA_PYNVCCCACHE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/pynvcccache/nvcccache.py)
 
-  find_package(PythonInterp 3)
+  find_package(Python3)
 
-  if(NOT PYTHONINTERP_FOUND)
-    message(WARNING "Unable to find python interpreter."
+  if(NOT Python3_FOUND)
+    message(WARNING "Unable to find python3 interpreter."
                     "Deactivating pynvcccache-based caching")
     set(CUDA_USE_PYNVCCCACHE OFF)
   else()
     # Check if nvcccache dependencies are installed
     execute_process(COMMAND
-                    ${PYTHON_EXECUTABLE} ${CUDA_PYNVCCCACHE_SCRIPT} --help
+                    ${Python3_EXECUTABLE} ${CUDA_PYNVCCCACHE_SCRIPT} --help
                     RESULT_VARIABLE NVCCCACHE_RES
                     OUTPUT_VARIABLE NVCCCACHE_OUT
                     ERROR_VARIABLE  NVCCCACHE_ERR
                     )
 
     if(${NVCCCACHE_RES})
-      message(WARNING "Unable to run pynvcccache with ${PYTHON_EXECUTABLE}:\n${NVCCCACHE_OUT}${NVCCCACHE_ERR}"
+      message(WARNING "Unable to run pynvcccache with ${Python3_EXECUTABLE}:\n${NVCCCACHE_OUT}${NVCCCACHE_ERR}"
               "Hint: check correct python version, try installing missing dependencies with\npip3 install --user <module-name>\n"
               "Deactivating pynvcccache-based caching")
       set(CUDA_USE_PYNVCCCACHE OFF)
@@ -719,13 +721,29 @@ if(CUDA_VERSION VERSION_GREATER "5.0" AND CMAKE_CROSSCOMPILING)
     set(CUDA_TOOLKIT_TARGET_DIR "${CUDA_TOOLKIT_ROOT_DIR}/targets/armv7-linux-gnueabihf" CACHE PATH "Toolkit target location.")
   elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND VIBRANTE_V5Q AND EXISTS "${CUDA_TOOLKIT_ROOT_DIR}/targets/aarch64-qnx")
     set(CUDA_TOOLKIT_TARGET_DIR "${CUDA_TOOLKIT_ROOT_DIR}/targets/aarch64-qnx" CACHE PATH "Toolkit target location.")
+    set(DEFAULT_SYSTEM_LIB_DIR "/usr/lib/aarch64-qnx-gnu")
+    set(DEFAULT_SYSTEM_INCLUDE_DIR "/usr/include/aarch64-qnx-gnu")
   elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND VIBRANTE_V5L AND EXISTS "${CUDA_TOOLKIT_ROOT_DIR}/targets/aarch64-linux")
     set(CUDA_TOOLKIT_TARGET_DIR "${CUDA_TOOLKIT_ROOT_DIR}/targets/aarch64-linux" CACHE PATH "Toolkit target location.")
+    set(DEFAULT_SYSTEM_LIB_DIR "/usr/lib/aarch64-linux-gnu")
+    set(DEFAULT_SYSTEM_INCLUDE_DIR "/usr/include/aarch64-linux-gnu")
   endif()
 else()
   set(CUDA_TOOLKIT_TARGET_DIR "${CUDA_TOOLKIT_ROOT_DIR}" CACHE PATH "Toolkit target location.")
+  set(DEFAULT_SYSTEM_LIB_DIR "/usr/lib/x86_64-linux-gnu")
 endif()
 mark_as_advanced(CUDA_TOOLKIT_TARGET_DIR)
+
+# CUBLAS include directory
+find_path(CUDA_CUBLAS_INCLUDE_DIR
+  NAMES cublas_v2.h cublas_api.h
+  HINTS "${DEFAULT_SYSTEM_LIB_DIR}"
+        "${DEFAULT_SYSTEM_INCLUDE_DIR}"
+        "${CUDA_TOOLKIT_TARGET_DIR}/include/"
+  CMAKE_FIND_ROOT_PATH_BOTH
+  NO_CMAKE_FIND_ROOT_PATH
+)
+mark_as_advanced(CUDA_CUBLAS_INCLUDE_DIR)
 
 # Target CPU architecture
 if(CUDA_VERSION VERSION_GREATER "5.0" AND CMAKE_CROSSCOMPILING)
@@ -747,8 +765,10 @@ find_path(CUDA_TOOLKIT_INCLUDE
   ENV CUDA_PATH
   ENV CUDA_INC_PATH
   PATH_SUFFIXES include
+  NO_CMAKE_FIND_ROOT_PATH
   NO_DEFAULT_PATH
   )
+
 # Search default search paths, after we search our own set of paths.
 find_path(CUDA_TOOLKIT_INCLUDE device_functions.h)
 mark_as_advanced(CUDA_TOOLKIT_INCLUDE)
@@ -765,7 +785,7 @@ macro(cuda_find_library_local_first_with_path_ext _var _names _doc _path_ext )
     set(_cuda_lib_dir "${_path_ext}lib/x64" "${_path_ext}lib64" "${_path_ext}libx64" )
   endif()
   if(CMAKE_CROSSCOMPILING AND (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm"))
-    set(_cuda_lib_dir "${_path_ext}lib/stubs")
+    set(_cuda_lib_dir "${_path_ext}lib/stubs" "stubs")
   endif()
   # CUDA 3.2+ on Windows moved the library directories, so we need to new
   # (lib/Win32) and the old path (lib).
@@ -776,7 +796,8 @@ macro(cuda_find_library_local_first_with_path_ext _var _names _doc _path_ext )
     ENV CUDA_LIB_PATH
     PATH_SUFFIXES ${_cuda_lib_dir} "${_path_ext}lib/Win32" "${_path_ext}lib" "${_path_ext}libWin32"
     DOC ${_doc}
-    NO_DEFAULT_PATH
+    HINTS "${DEFAULT_SYSTEM_LIB_DIR}"
+    CMAKE_FIND_ROOT_PATH_BOTH
     )
   # Search default search paths, after we search our own set of paths.
   find_library(${_var}
@@ -801,7 +822,15 @@ macro(cuda_find_library_local_first_with_path_ext _var _names _doc _path_ext )
           "/usr/lib/nvidia-310"
           "/usr/lib/nvidia-304"
           "/usr/lib/nvidia-173"
+    	  "${DEFAULT_SYSTEM_LIB_DIR}"
     )
+  # One final attempt looking for the ".so.1" extension because newer drivers (e.g. 415.27 in ubuntu 18.10)
+  # don't create the symlink to .so
+  find_library(${_var}
+    NAMES "lib${_names}.so.1"
+    PATHS "/usr/lib/x86_64-linux-gnu/"
+    DOC ${_doc}
+  )
 endmacro()
 
 macro(cuda_find_library_local_first _var _names _doc)
@@ -884,6 +913,10 @@ if(CUDA_VERSION VERSION_GREATER "5.0")
   set(CUDA_npp_LIBRARY "${CUDA_nppc_LIBRARY};${CUDA_nppi_LIBRARY};${CUDA_npps_LIBRARY}")
 elseif(NOT CUDA_VERSION VERSION_LESS "4.0")
   find_cuda_helper_libs(npp)
+endif()
+if(NOT CUDA_VERSION VERSION_LESS "4.1")
+  # nvidia-ml showed up in version 4.1
+  find_cuda_helper_libs(nvidia-ml)
 endif()
 if(NOT CUDA_VERSION VERSION_LESS "6.5")
   # culibos showed up in version 6.5

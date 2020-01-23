@@ -1,4 +1,4 @@
-# Copyright(c)2016, NVIDIA CORPORATION.All rights reserved.
+# Copyright(c)2016-2018, NVIDIA CORPORATION.All rights reserved.
 
 # - Try to find Driveworks
 # Once done, this will define
@@ -54,6 +54,16 @@ find_library(Driveworks_LIBRARY
         ${DRIVEWORKS_DIR}/lib
 )
 
+# Visualization library
+find_library(DriveworksVisualization_LIBRARY
+  NAMES driveworks_visualization
+  HINTS ${DRIVEWORKS_DIR}/targets/${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}/lib
+        ${Driveworks_PKGCONF_LIBRARY_DIRS}/../targets/${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}/lib
+  PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../targets/${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}/lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/../lib
+        ${DRIVEWORKS_DIR}/lib
+)
+
 if (NOT DRIVEWORKS AND Driveworks_INCLUDE_DIR AND DRIVEWORKS_DIR STREQUAL "")
     get_filename_component(DRIVEWORKS_FROM_INCLUDE ${Driveworks_INCLUDE_DIR} DIRECTORY)
     message(STATUS "Driveworks found at: ${DRIVEWORKS_FROM_INCLUDE}")
@@ -63,5 +73,5 @@ endif()
 # Set the include dir variables and the libraries and let libfind_process do the rest.
 # NOTE: Singular variables for this library, plural for libraries this this lib depends on.
 set(Driveworks_PROCESS_INCLUDES Driveworks_INCLUDE_DIR)
-set(Driveworks_PROCESS_LIBS Driveworks_LIBRARY)
+set(Driveworks_PROCESS_LIBS Driveworks_LIBRARY DriveworksVisualization_LIBRARY)
 libfind_process(Driveworks)

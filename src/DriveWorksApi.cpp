@@ -291,7 +291,7 @@ namespace DriveWorks {
     std::vector <std::thread> camThreads;
     for (uint32_t i = 0; i < cameras.size(); ++i) {
       camThreads.push_back(
-        std::thread(&DriveWorksApi::threadCameraPipeline, this, &cameras[i], i,
+        std::thread(&DriveWorksApi::WorkerPortPipeline, this, &cameras[i], i,
                     sdk));
     }
 

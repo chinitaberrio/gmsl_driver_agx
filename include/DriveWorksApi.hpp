@@ -71,9 +71,11 @@
 #include <dw/sensors/SensorSerializer.h>
 
 // IMAGE
-#include <dw/image/FormatConverter.h>
-#include <dw/image/ImageStreamer.h>
-#include <dw/image/deprecated/ImageDeprecated.h>
+//#include <dw/image/FormatConverter.h>
+//#include <dw/image/ImageStreamer.h>
+#include <dw/image/Image.h>
+#include <dw/interop/streamer/ImageStreamer.h>
+//#include <dw/image/deprecated/ImageDeprecated.h>
 
 //#include "nvmedia_image.h"
 //#include "nvmedia_ijpe.h"
@@ -151,7 +153,7 @@ namespace DriveWorks {
 
     void startCameraPipline();
 
-    void threadCameraPipeline(Camera *cameraSensor, uint32_t port, dwContextHandle_t sdk);
+    void WorkerPortPipeline(Camera *cameraSensor, uint32_t port, dwContextHandle_t sdk);
 
     dwStatus captureCamera(dwImageHandle_t *frameNVMrgba,
                            dwSensorHandle_t cameraSensor, uint32_t port,

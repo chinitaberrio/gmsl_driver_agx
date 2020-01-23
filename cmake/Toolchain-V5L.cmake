@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2019, NVIDIA CORPORATION.  All rights reserved.
 
 set(CMAKE_SYSTEM_NAME "Linux")
 set(CMAKE_SYSTEM_VERSION 1)
@@ -30,40 +30,6 @@ set(ARCH "aarch64")
 set(VIBRANTE TRUE)
 set(VIBRANTE_V5L TRUE)
 add_definitions(-DVIBRANTE -DVIBRANTE_V5L)
-
-set(TOOLCHAIN "${VIBRANTE_PDK}/../toolchains/tegra-4.9-nv")
-
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/usr/bin/aarch64-gnu-linux/aarch64-gnu-linux-g++")
-set(CMAKE_C_COMPILER "${TOOLCHAIN}/usr/bin/aarch64-gnu-linux/aarch64-gnu-linux-gcc")
-set(GCC_COMPILER_VERSION "4.9" CACHE STRING "GCC Compiler version")
-
-# setup compiler for cross-compilation
-set(CMAKE_CXX_FLAGS           "-fPIC"               CACHE STRING "c++ flags")
-set(CMAKE_C_FLAGS             "-fPIC"               CACHE STRING "c flags")
-set(CMAKE_SHARED_LINKER_FLAGS ""                    CACHE STRING "shared linker flags")
-set(CMAKE_MODULE_LINKER_FLAGS ""                    CACHE STRING "module linker flags")
-set(CMAKE_EXE_LINKER_FLAGS    ""                    CACHE STRING "executable linker flags")
-
-set(LD_PATH ${VIBRANTE_PDK}/lib-target)
-set(LD_PATH_EXTRA ${VIBRANTE_PDK}/targetfs/lib/aarch64-linux-gnu)
-
-# Please, be careful looks like "-Wl,-unresolved-symbols=ignore-in-shared-libs" can lead to silent "ld" problems
-set(CMAKE_SHARED_LINKER_FLAGS   "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,--stats -Wl,-rpath,${LD_PATH} ${CMAKE_SHARED_LINKER_FLAGS}")
-set(CMAKE_MODULE_LINKER_FLAGS   "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,-rpath,${LD_PATH} ${CMAKE_MODULE_LINKER_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS      "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,-rpath,${LD_PATH} ${CMAKE_EXE_LINKER_FLAGS}")
-
-# Set cmake root path. If there is no "/usr/local" in CMAKE_FIND_ROOT_PATH then FinCUDA.cmake doesn't work
-set(CMAKE_FIND_ROOT_PATH ${VIBRANTE_PDK} ${VIBRANTE_PDK}/targetfs/usr/local/ ${VIBRANTE_PDK}/targetfs/ /usr/local)
-
-# search for programs in the build host directories
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-
-# for libraries and headers in the target directories
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-
-# set system default include dir
-include_directories(BEFORE SYSTEM ${VIBRANTE_PDK}/include)
 
 # determine target device and pdk branch
 if(NOT DEFINED VIBRANTE_PDK_DEVICE AND VIBRANTE_PDK)
@@ -124,14 +90,14 @@ if(DEFINED VIBRANTE_PDK_BRANCH)
 
   set(VIBRANTE_PDK_VERSION ${VIBRANTE_PDK_MAJOR}.${VIBRANTE_PDK_MINOR}.${VIBRANTE_PDK_PATCH}.${VIBRANTE_PDK_BUILD})
 
-  add_definitions(-DVIBRANTE_PDK_VERSION=\"${VIBRANTE_PDK_VERSION}\") # requires escaping so it is treated as a string 
+  add_definitions(-DVIBRANTE_PDK_VERSION=\"${VIBRANTE_PDK_VERSION}\") # requires escaping so it is treated as a string
                                                                       # and not an invalid floating point with too many decimal points
   add_definitions(-DVIBRANTE_PDK_MAJOR=${VIBRANTE_PDK_MAJOR})
   add_definitions(-DVIBRANTE_PDK_MINOR=${VIBRANTE_PDK_MINOR})
   add_definitions(-DVIBRANTE_PDK_PATCH=${VIBRANTE_PDK_PATCH})
   add_definitions(-DVIBRANTE_PDK_BUILD=${VIBRANTE_PDK_BUILD})
 
-  MATH(EXPR VIBRANTE_PDK_DECIMAL "${VIBRANTE_PDK_MAJOR} * 1000000 + \
+  math(EXPR VIBRANTE_PDK_DECIMAL "${VIBRANTE_PDK_MAJOR} * 1000000 + \
                                   ${VIBRANTE_PDK_MINOR} * 10000 + \
                                   ${VIBRANTE_PDK_PATCH} * 100 + \
                                   ${VIBRANTE_PDK_BUILD}")
@@ -139,3 +105,76 @@ if(DEFINED VIBRANTE_PDK_BRANCH)
 
   message(STATUS "Vibrante version ${VIBRANTE_PDK_VERSION}")
 endif()
+
+# If VIBRANTE_C_COMPILER and VIBRANTE_CXX_COMPILER are defined, they will be used.
+# if not the PDK-internal compiler will be used (default behavior)
+if(DEFINED VIBRANTE_C_COMPILER AND DEFINED VIBRANTE_CXX_COMPILER)
+  # Determine C and CXX compiler versions
+  exec_program(${VIBRANTE_C_COMPILER} ARGS -dumpversion OUTPUT_VARIABLE C_COMPILER_VERSION RETURN_VALUE C_COMPILER_VERSION_ERROR)
+  exec_program(${VIBRANTE_CXX_COMPILER} ARGS -dumpversion OUTPUT_VARIABLE CXX_COMPILER_VERSION RETURN_VALUE CXX_COMPILER_VERSION_ERROR)
+
+  # Make sure C and CXX compiler versions match
+  if(${C_COMPILER_VERSION_ERROR})
+    message(FATAL_ERROR "Received error ${C_COMPILER_VERSION_ERROR} when determining compiler version for ${VIBRANTE_C_COMPILER}")
+  elseif(${CXX_COMPILER_VERSION_ERROR})
+    message(FATAL_ERROR
+    "Received error ${CXX_COMPILER_VERSION_ERROR} when determining compiler version for ${VIBRANTE_CXX_COMPILER}")
+  elseif(NOT ${C_COMPILER_VERSION} VERSION_EQUAL ${CXX_COMPILER_VERSION})
+    message(FATAL_ERROR
+    "C and CXX compiler versions must match.\n"
+    "Found C Compiler Version = ${C_COMPILER_VERSION}\n"
+    "Found CXX Compiler Version = ${CXX_COMPILER_VERSION}\n")
+  endif()
+  set(CMAKE_C_COMPILER ${VIBRANTE_C_COMPILER})
+  set(CMAKE_CXX_COMPILER ${VIBRANTE_CXX_COMPILER})
+  set(GCC_COMPILER_VERSION "${C_COMPILER_VERSION}" CACHE STRING "GCC Compiler version")
+else()
+  if(VIBRANTE_PDK_DECIMAL LESS 5010300)
+    set(TOOLCHAIN "${VIBRANTE_PDK}/../toolchains/tegra-4.9-nv")
+    set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/usr/bin/aarch64-gnu-linux/aarch64-gnu-linux-g++")
+    set(CMAKE_C_COMPILER "${TOOLCHAIN}/usr/bin/aarch64-gnu-linux/aarch64-gnu-linux-gcc")
+    set(GCC_COMPILER_VERSION "4.9" CACHE STRING "GCC Compiler version")
+  else()
+    set(TOOLCHAIN "${VIBRANTE_PDK}/../toolchains/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu")
+    set(CMAKE_CXX_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-gnu-g++")
+    set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-gnu-gcc")
+    set(GCC_COMPILER_VERSION "7.3.1" CACHE STRING "GCC Compiler version")
+  endif()
+endif()
+
+# setup compiler for cross-compilation
+set(CMAKE_CXX_FLAGS           "-fPIC"               CACHE STRING "c++ flags")
+set(CMAKE_C_FLAGS             "-fPIC"               CACHE STRING "c flags")
+set(CMAKE_SHARED_LINKER_FLAGS ""                    CACHE STRING "shared linker flags")
+set(CMAKE_MODULE_LINKER_FLAGS ""                    CACHE STRING "module linker flags")
+set(CMAKE_EXE_LINKER_FLAGS    ""                    CACHE STRING "executable linker flags")
+
+set(LD_PATH ${VIBRANTE_PDK}/lib-target)
+set(LD_PATH_EXTRA ${VIBRANTE_PDK}/targetfs/lib/aarch64-linux-gnu)
+
+# Please, be careful looks like "-Wl,-unresolved-symbols=ignore-in-shared-libs" can lead to silent "ld" problems
+set(CMAKE_SHARED_LINKER_FLAGS   "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,--stats -Wl,-rpath,${LD_PATH} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_MODULE_LINKER_FLAGS   "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,-rpath,${LD_PATH} ${CMAKE_MODULE_LINKER_FLAGS}")
+
+# Set default library search path
+set(CMAKE_LIBRARY_PATH ${LD_PATH})
+
+# Set cmake root path. If there is no "/usr/local" in CMAKE_FIND_ROOT_PATH then FinCUDA.cmake doesn't work
+set(CMAKE_FIND_ROOT_PATH ${VIBRANTE_PDK} ${VIBRANTE_PDK}/targetfs/usr/local/ ${VIBRANTE_PDK}/targetfs/ /usr/local)
+
+# search for programs in the build host directories
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+
+# for libraries and headers in the target directories
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+# TRT-5.0.3.2 has a bug for the linux toolchain. This will be fixed by adding stub libraries. Bug - 2468847
+if(VIBRANTE_PDK_BRANCH STREQUAL 5.1.0.2)
+  set(CMAKE_EXE_LINKER_FLAGS      "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,--unresolved-symbols=ignore-in-shared-libs -Wl,-rpath,${LD_PATH} ${CMAKE_EXE_LINKER_FLAGS}")
+else()
+  set(CMAKE_EXE_LINKER_FLAGS      "-L${LD_PATH} -L${LD_PATH_EXTRA} -Wl,-rpath,${LD_PATH} ${CMAKE_EXE_LINKER_FLAGS}")
+endif()
+
+# set system default include dir
+include_directories(BEFORE SYSTEM ${VIBRANTE_PDK}/include)

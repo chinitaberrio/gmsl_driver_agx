@@ -1,15 +1,16 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2019 NVIDIA CORPORATION.  All rights reserved.
 
 #-------------------------------------------------------------------------------
 # Debug symbols
 #-------------------------------------------------------------------------------
-# Enable minimal (level 1) debug info on experimental builds for
+# Enable dynamic symbols (.dynsym) info on experimental-release builds for
 # informative stack trace including function names
-if(SDK_BUILD_EXPERIMENTAL AND NOT CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g1")
+if(SDK_BUILD_EXPERIMENTAL AND CMAKE_BUILD_TYPE MATCHES Release)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
 endif()
 
-# WAR for 32 bit linker - needed for DRIVE platform only    
+# WAR for 32 bit linker - needed for DRIVE platform only
 # Store debug symbols in a separate file
 # This is currently not supported by QCC
 if(NOT VIBRANTE_V5Q)
@@ -18,10 +19,13 @@ if(NOT VIBRANTE_V5Q)
 endif()
 
 #-------------------------------------------------------------------------------
-# Enable C++11
+# Enable C++14 and C11
 #-------------------------------------------------------------------------------
 if(CMAKE_VERSION VERSION_GREATER 3.1)
     set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+    set(CMAKE_C_STANDARD_REQUIRED TRUE)
 else()
     if(LINUX OR VIBRANTE)
         include(CheckCXXCompilerFlag)
@@ -33,6 +37,14 @@ else()
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
         else()
             message(ERROR "Compiler ${CMAKE_CXX_COMPILER} has no C++14 support")
+        endif()
+
+        include(CheckCCompilerFlag)
+        CHECK_C_COMPILER_FLAG(-std=c11 COMPILER_SUPPORTS_C11)
+        if(COMPILER_SUPPORTS_C11)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+        else()
+            message(ERROR "Compiler ${CMAKE_C_COMPILER} has no C11 support")
         endif()
     endif()
 endif()
@@ -56,12 +68,14 @@ endif()
 # Determine currently installed linux driver major version hint
 set(nvidia-driver-version_FOUND FALSE)
 set(nvidia-driver-version "current")
-if(NOT WIN32)
-  if (EXISTS /proc/driver/nvidia/version)
-    file(READ /proc/driver/nvidia/version nvidia-driver-version-file)
-    if(${nvidia-driver-version-file} MATCHES "NVIDIA UNIX.*Kernel Module  ([0123456789]+)\\.[0123456789]+")
-      set(nvidia-driver-version_FOUND TRUE)
-      set(nvidia-driver-version ${CMAKE_MATCH_1})
-    endif()
+if (EXISTS /proc/driver/nvidia/version)
+  file(READ /proc/driver/nvidia/version nvidia-driver-version-file)
+  if(${nvidia-driver-version-file} MATCHES "NVIDIA UNIX.*Kernel Module  ([0123456789]+)\\.[0123456789]+")
+    set(nvidia-driver-version_FOUND TRUE)
+    set(nvidia-driver-version ${CMAKE_MATCH_1})
   endif()
 endif()
+if(NOT nvidia-driver-version_FOUND)
+    message(WARNING "Couldn't determine the nvidia driver version: /proc/driver/nvidia/version was not found. libnvcuvid and nivida-ml might be missing.")
+endif()
+

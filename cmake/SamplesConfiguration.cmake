@@ -1,23 +1,17 @@
-# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2019, NVIDIA CORPORATION.  All rights reserved.
 
 #-------------------------------------------------------------------------------
 # CUDA dependency (needs to be after defining all configurations)
 #-------------------------------------------------------------------------------
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_TOOLKIT_INCLUDE})
+include_directories(${CUDA_CUBLAS_INCLUDE_DIR})
 
 #-------------------------------------------------------------------------------
 # Build flags
 #-------------------------------------------------------------------------------
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wunused -Wunused-value -Wunused-parameter")
-    if((LINUX OR VIBRANTE_V5L) AND
-       (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0" OR CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "5.0") AND
-       (NOT ${CMAKE_PROJECT_NAME} STREQUAL DriveworksSDK-Samples))
-        message(WARNING "Compiling with gcc >= 5.0 is experimental. Warnings will not be reported as errors.")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=deprecated-declarations")
-    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wunused -Wunused-value -Wunused-parameter")
 
     if(NOT VIBRANTE)
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined -Wl,--as-needed")
