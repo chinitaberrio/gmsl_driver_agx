@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2014-2018, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -8,8 +8,8 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
-#ifndef __TEGRA_IVC_H
-#define __TEGRA_IVC_H
+#ifndef IVCLIB_TEGRA_IVC_H
+#define IVCLIB_TEGRA_IVC_H
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -70,7 +70,7 @@ int tegra_hv_ivc_unreserve(struct tegra_hv_ivc_cookie *ivck);
  */
 int tegra_hv_ivc_write(struct tegra_hv_ivc_cookie *ivck, const void *buf,
 		int size);
-int tegra_ivc_write(struct ivc *ivc, const void *buf, size_t size);
+int32_t tegra_ivc_write(struct ivc *ivc, const void *buf, size_t size);
 
 /**
  * ivc_hv_ivc_read - Reads a frame from the IVC queue
@@ -83,7 +83,7 @@ int tegra_ivc_write(struct ivc *ivc, const void *buf, size_t size);
  * Returns size on success and an error code otherwise
  */
 int tegra_hv_ivc_read(struct tegra_hv_ivc_cookie *ivck, void *buf, int size);
-int tegra_ivc_read(struct ivc *ivc, void *buf, size_t size);
+int32_t tegra_ivc_read(struct ivc *ivc, void *buf, size_t size);
 
 /**
  * ivc_hv_ivc_can_read - Test whether data are available
@@ -150,7 +150,7 @@ int tegra_hv_ivc_dump(struct tegra_hv_ivc_cookie *ivck);
  */
 int tegra_hv_ivc_read_peek(struct tegra_hv_ivc_cookie *ivck,
 		void *buf, int off, int count);
-int tegra_ivc_read_peek(struct ivc *ivc, void *buf, size_t off, size_t count);
+int32_t tegra_ivc_read_peek(struct ivc *ivc, void *buf, size_t off, size_t count);
 
 /**
  * ivc_hv_ivc_read_get_next_frame - Peek at the next frame to receive
@@ -173,7 +173,7 @@ void *tegra_ivc_read_get_next_frame(struct ivc *ivc);
  * Returns 0, or a negative error value if failed.
  */
 int tegra_hv_ivc_read_advance(struct tegra_hv_ivc_cookie *ivck);
-int tegra_ivc_read_advance(struct ivc *ivc);
+int32_t tegra_ivc_read_advance(struct ivc *ivc);
 
 /**
  * ivc_hv_ivc_write_poke - Poke data to a frame to be transmitted
@@ -189,7 +189,7 @@ int tegra_ivc_read_advance(struct ivc *ivc);
  */
 int tegra_hv_ivc_write_poke(struct tegra_hv_ivc_cookie *ivck,
 		const void *buf, int off, int count);
-int tegra_ivc_write_poke(struct ivc *ivc, const void *buf, size_t off,
+int32_t tegra_ivc_write_poke(struct ivc *ivc, const void *buf, size_t off,
 		size_t count);
 
 /**
@@ -212,7 +212,7 @@ void *tegra_ivc_write_get_next_frame(struct ivc *ivc);
  * Returns 0, or a negative error value if failed.
  */
 int tegra_hv_ivc_write_advance(struct tegra_hv_ivc_cookie *ivck);
-int tegra_ivc_write_advance(struct ivc *ivc);
+int32_t tegra_ivc_write_advance(struct ivc *ivc);
 
 struct tegra_hv_ivm_cookie {
 	uint64_t ipa;
@@ -258,7 +258,7 @@ void tegra_hv_mempool_unmap(struct tegra_hv_ivm_cookie *ck, void *buf);
  * reset is in progress.
  */
 int tegra_hv_ivc_channel_notified(struct tegra_hv_ivc_cookie *ivck);
-int tegra_ivc_channel_notified(struct ivc *ivc);
+int32_t tegra_ivc_channel_notified(struct ivc *ivc);
 
 /**
  * ivc_channel_reset - initiates a reset of the shared memory state
@@ -273,4 +273,4 @@ void tegra_ivc_channel_reset(struct ivc *ivc);
 
 struct ivc *tegra_hv_ivc_convert_cookie(struct tegra_hv_ivc_cookie *ivck);
 
-#endif
+#endif /* IVCLIB_TEGRA_IVC_H */

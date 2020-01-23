@@ -50,6 +50,13 @@
 #ifndef CUDAGL_H
 #define CUDAGL_H
 
+#include <cuda.h>
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+
 /**
  * CUDA API versioning support
  */
@@ -70,7 +77,7 @@
         #error "Unsupported value of CUDA_FORCE_API_VERSION"
     #endif
 #else
-    #define __CUDA_API_VERSION 10000
+    #define __CUDA_API_VERSION 10020
 #endif /* CUDA_FORCE_API_VERSION */
 
 #if defined(__CUDA_API_VERSION_INTERNAL) || defined(CUDA_API_PER_THREAD_DEFAULT_STREAM)

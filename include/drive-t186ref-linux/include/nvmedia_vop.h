@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017 - 2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -36,7 +36,7 @@ extern "C" {
  */
 
 /** \brief Major Version number */
-#define NVMEDIA_VOP_VERSION_MAJOR   2
+#define NVMEDIA_VOP_VERSION_MAJOR   3
 /** \brief Minor Version number */
 #define NVMEDIA_VOP_VERSION_MINOR   0
 
@@ -195,12 +195,9 @@ NvMediaVideoOutputDestroy(
  *       flipping operation.
  * \param[in] attributeMask Determines which attributes are set. The value
  *       can be any combination of the binary OR of the following attributes:
- * - \ref NVMEDIA_DISP_ATTR_LIMITED_RGB
- * - \ref NVMEDIA_DISP_ATTR_BRIGHTNESS
- * - \ref NVMEDIA_DISP_ATTR_CONTRAST
- * - \ref NVMEDIA_DISP_ATTR_SATURATION
- * - \ref NVMEDIA_DISP_ATTR_HUE
- * - \ref NVMEDIA_DISP_ATTR_COLOR_STANDARD
+ * - \ref NVMEDIA_DISP_ATTR_COMPOSITION
+ * - \ref NVMEDIA_DISP_ATTR_SET_DEPTH
+ * - \ref NVMEDIA_DISP_ATTR_SET_POSITION
  * \param[in] attributes A pointer to a structure that holds all the
  *        attributes, but only those which are indicated in the
  *        \a attributeMask are used.
@@ -267,6 +264,12 @@ NvMediaVideoOutputFlip(
  * - Changed parameters of NvMediaVideoOutputCreate function
  * - Added NvMediaVideoOutputGetVersion function
  * - All NvMedia data types are moved to standard data types
+ *
+ *  <b> Version 3.0 </b> February 6, 2019
+ * - Deprecated brightness, hue, saturation, contrast, limitedRGB and
+ *   colorStandard support from \ref NvMediaVideoOutputSetAttributes.
+ * - Updated description of \ref NvMediaVideoOutputSetAttributes API to
+ *   add composition, depth and position attributes
  */
 
 #ifdef __cplusplus

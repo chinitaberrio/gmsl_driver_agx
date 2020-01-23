@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2017-2019 NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -14,8 +14,8 @@
  * decode and encode operations.
  */
 
-#ifndef _NVMEDIA_COMMON_H
-#define _NVMEDIA_COMMON_H
+#ifndef NVMEDIA_COMMON_H
+#define NVMEDIA_COMMON_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,18 +51,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_COMMON_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_COMMON_VERSION_MINOR   20
-
-/**
- * \hideinitializer
- * \brief Specifies the minimum number of capture buffers.
- */
-#define NVMEDIA_MIN_CAPTURE_FRAME_BUFFERS   2
-/**
- * \hideinitializer
- * \brief Maximum number of capture buffers
- */
-#define NVMEDIA_MAX_CAPTURE_FRAME_BUFFERS   32
+#define NVMEDIA_COMMON_VERSION_MINOR   28
 
 /**
  * \brief Specifies the decoder instance ID
@@ -223,7 +212,7 @@ typedef struct {
 } NvMediaReferenceFrameH264;
 
 /**  \brief Maximum user defined sei payload size */
-#define MAX_USER_SEI_PAYLOAD    128
+#define MAX_USER_SEI_PAYLOAD    128U
 
 /**
  * \brief H.264 SEI payload information
@@ -426,6 +415,21 @@ typedef struct
     /** Nominal minimum display luminance in units of 0.0001 candelas per square metre */
     uint32_t min_display_parameter_luminance;
 } NvMediaMasteringDisplayData;
+
+/**
+ * \brief Content Light Level info for an H.265 picture.
+ *  Used by the parser only.
+ *
+ * Optional parameter
+ */
+typedef struct
+{
+    /** Maximum content light level in units of candelas per square metre */
+    uint16_t max_content_light_level;
+    /** Maximum frame average light level in units of candelas per square metre */
+    uint16_t max_pic_average_light_level;
+} NvMediaContentLightLevelInfo;
+
 
 
 /** \brief slice level data used with slice level decoding
@@ -742,6 +746,10 @@ typedef struct {
         /** Holds a copy of the H.265-MV bitstream field. */
         int32_t  RefPicSetInterLayer1[32];
     } mvext;
+    /** Parser Only: Flag to indicated content light level data is present */
+    NvMediaBool content_light_level_info_present;
+    /** Parser Only: Content light level info data if present */
+    NvMediaContentLightLevelInfo ContentLightLevelInfo;
 } NvMediaPictureInfoH265;
 /** @} <!-- Ends h265decoder_api Basic Types sub-group --> */
 
@@ -1837,7 +1845,7 @@ typedef enum {
  * \hideinitializer
  * \brief Maximum encoded header info size
  */
-#define MAX_NON_SLICE_DATA_SIZE 2048
+#define MAX_NON_SLICE_DATA_SIZE 2048U
 
 /**
  * This is used to get header info (SPS/PPS/VPS) using GetAttribute call.
@@ -1976,80 +1984,94 @@ typedef enum {
     /** Enable support to use client provided QP max for all frame types */
     NVMEDIA_ENCODE_CONFIG_H264_QP_MAX                          = (1 << 12),
     /** Enable support to use 4 byte start code in all the slices in a picture */
-    NVMEDIA_ENCODE_CONFIG_H264_ENABLE_FOUR_BYTE_START_CODE     = (1 << 13)
+    NVMEDIA_ENCODE_CONFIG_H264_ENABLE_FOUR_BYTE_START_CODE     = (1 << 13),
+    /** Enable ultra fast encoding. It overrides some of the quality settings
+        to acheive ultra fast encoding. This is specific to H264 encode. */
+    NVMEDIA_ENCODE_CONFIG_H264_ENABLE_ULTRA_FAST_ENCODE        = (1 << 14)
 } NvMediaEncodeH264Features;
 
 /**
  * Holds an H264 encoder configuration.
  */
 typedef struct {
-    /** Holds bit-wise OR`ed configuration feature flags. See NvMediaEncodeH264Features enum */
+    /** Holds bit-wise OR`ed configuration feature flags.
+       See enum \ref NvMediaEncodeH264Features. */
     uint32_t features;
-    /** Holds the number of pictures in one GOP. Low latency application client can
-       set goplength to NVMEDIA_ENCODE_INFINITE_GOPLENGTH so that keyframes are not
-       inserted automatically. */
+    /** Holds the number of pictures in one GOP. A low-latency application
+       client can set @a goplength to \ref NVMEDIA_ENCODE_INFINITE_GOPLENGTH
+       so that keyframes are not inserted automatically. */
     uint32_t gopLength;
     /** Holds the rate control parameters for the current encoding session. */
     NvMediaEncodeRCParams rcParams;
-    /** Holds the frequency of the writing of Sequence and Picture parameters */
+    /** Holds the frequency of the writing of Sequence and Picture
+       parameters. */
     NvMediaEncodeH264SPSPPSRepeatMode repeatSPSPPS;
-    /** Holds the IDR interval. If not set, this is made equal to gopLength in
-       NvMediaEncodeConfigH264. Low latency application client can set IDR interval to
-       NVMEDIA_ENCODE_INFINITE_GOPLENGTH so that IDR frames are not inserted automatically. */
+    /** Holds the IDR interval. If not set, the interval is made equal to
+       @a gopLength. A low-latency application client can set the IDR interval
+       to NVMEDIA_ENCODE_INFINITE_GOPLENGTH so that IDR frames are not inserted automatically. */
     uint32_t idrPeriod;
-    /** Holds a number that is 1 less than the number of slices desired per frame. */
+    /** Holds a number that is 1 less than the desire number of slices
+       per frame. */
     uint16_t numSliceCountMinus1;
-    /** Holds the deblocking filter mode. Permissible value range: [0,2]. */
+    /** Holds the deblocking filter mode. Permissible value range is [0,2]. */
     uint8_t disableDeblockingFilterIDC;
-    /** Holds the AdaptiveTransform Mode. */
+    /** Holds the Adaptive Transform Mode. */
     NvMediaEncodeH264AdaptiveTransformMode adaptiveTransformMode;
     /** Holds the BDirect mode. */
     NvMediaEncodeH264BDirectMode bdirectMode;
     /** Holds the entropy coding mode. */
     NvMediaEncodeH264EntropyCodingMode entropyCodingMode;
-    /** Holds the interval between frames that trigger a new intra refresh cycle
-       and this cycle lasts for intraRefreshCnt frames.
-       This value is used only if the NVMEDIA_ENCODE_CONFIG_H264_ENABLE_INTRA_REFRESH is
-       set in features.
-       NVMEDIA_ENCODE_PIC_TYPE_P_INTRA_REFRESH picture type also triggers a new intra
+    /** Holds the interval between frames that triggers a new
+       intra refresh cycle. This cycle lasts for @a intraRefreshCnt frames.
+       This value is used only if
+       \ref NVMEDIA_ENCODE_CONFIG_H264_ENABLE_INTRA_REFRESH is
+       set in @a features.
+       \ref NVMEDIA_ENCODE_PIC_TYPE_P_INTRA_REFRESH picture type also triggers
+       a new intra
        refresh cycle and resets the current intra refresh period.
-       Setting it to zero results in that no automatic refresh cycles are triggered.
-       In this case only NVMEDIA_ENCODE_PIC_TYPE_P_INTRA_REFRESH picture type can trigger
-       a new refresh cycle. */
+       Set to zero to suppress triggering of automatic refresh cycles.
+       In this case only NVMEDIA_ENCODE_PIC_TYPE_P_INTRA_REFRESH picture type
+       can trigger a new refresh cycle. */
     uint32_t intraRefreshPeriod;
-    /** Holds the number of frames over which intra refresh will happen.
-       This value must be less than or equal to intraRefreshPeriod. Setting it to zero
-       turns off the intra refresh functionality. Setting it to one essentially means
-       that after every intraRefreshPeriod frames the encoded P frame contains only
+    /** Holds the number of frames over which intra refresh happens.
+       This value must be less than or equal to @a intraRefreshPeriod.
+       Set to zero to disable intra refresh functionality.
+       If it is set to one, then
+       after every intraRefreshPeriod frames the encoded P frame contains only
        intra predicted macroblocks.
-       This value is used only if the NVMEDIA_ENCODE_CONFIG_H264_ENABLE_INTRA_REFRESH
-       is set in features. */
+       This value is used only if
+       NVMEDIA_ENCODE_CONFIG_H264_ENABLE_INTRA_REFRESH is set in @a features. */
     uint32_t intraRefreshCnt;
-    /** Holds the max slice size in bytes for dynamic slice mode.
-       Client must set NVMEDIA_ENCODE_CONFIG_H264_ENABLE_DYNAMIC_SLICE_MODE in features to use
-       max slice size in bytes. */
+    /** Holds the maximum slice size in bytes for dynamic slice mode.
+       The client must set
+       \ref NVMEDIA_ENCODE_CONFIG_H264_ENABLE_DYNAMIC_SLICE_MODE in @a features
+       to use the maximum slice size in bytes. */
     uint32_t maxSliceSizeInBytes;
-    /** Number of macroblocks per slice. Set to 0 if fix number of macroblocks not required or
-        maxSliceSizeInBytes or numSliceCountMinus1 is set to non-zero value. */
+    /** Holds the number of macroblocks per slice. Set to 0 if a fixed number
+        of macroblocks not required or if @a maxSliceSizeInBytes or
+        @a numSliceCountMinus1 is set to a non-zero value. */
     uint32_t numMacroblocksPerSlice;
-    /** Holds the H264 video usability info pamameters. Set to NULL if VUI is not needed */
+    /** Holds the H.264 video usability information pamameters.
+        Set to NULL if VUI is not needed. */
     NvMediaEncodeConfigH264VUIParams *h264VUIParameters;
-    /** Holds bit-wise OR`ed exclusion flags. See NvMediaEncodeH264MotionPredictionExclusionFlags enum. */
+    /** Holds bitwise OR`ed exclusion flags. See enum
+        \ref NvMediaEncodeH264MotionPredictionExclusionFlags. */
     uint32_t motionPredictionExclusionFlags;
-    /** Holds encode quality pre-set. See NvMediaEncodeQuality enum.
-        Recommended pre-setting is NVMEDIA_ENCODE_QUALITY_L1. */
+    /** Holds the encode quality pre-set. See enum NvMediaEncodeQuality.
+        Recommended pre-setting is \ref NVMEDIA_ENCODE_QUALITY_L1. */
     NvMediaEncodeQuality quality;
-    /** Holds pic_ordec_cnt_type */
+    /** Holds pic_ordec_cnt_type. */
     NvMediaEncodeH264POCType pocType;
-    /** Holds Initial QP parameters. Client must set NVMEDIA_ENCODE_CONFIG_H264_INIT_QP in features to
-        use this. QP values should be within the range of 1 to 51 */
+    /** Holds the initial QP parameters. The client must set
+        \ref NVMEDIA_ENCODE_CONFIG_H264_INIT_QP in @a features to
+        use this. QP values must be in the range [1,51]. */
     NvMediaEncodeQP initQP;
-    /** Holds maximum QP parameters. Client must set
-     *  NVMEDIA_ENCODE_CONFIG_H264_QP_MAX in features to use this. The maximum QP values
-     *  must be within the range of 1 to 51 and must be greater than
-     * \ref NvMediaEncodeRCParams::minQP. */
+    /** Holds the maximum QP parameters. The client must set
+        \ref NVMEDIA_ENCODE_CONFIG_H264_QP_MAX in @a features to use this.
+        The maximum QP values must be in the range [1,51], and must be
+        greater than \ref NvMediaEncodeRCParams::minQP. */
     NvMediaEncodeQP maxQP;
-    /** Holds enable weighted predition */
+    /** Holds enable weighted prediction. */
     uint8_t enableWeightedPrediction;
 } NvMediaEncodeConfigH264;
 
@@ -2124,7 +2146,13 @@ typedef struct {
     /** Enable 2 pass RC with quarter resolution first pass. */
     NvMediaBool enableSourceHalfScaled;
     /** Number of views used for MVC */
-    uint32_t mvcNumViews;
+    uint32_t mvcNumViews             : 4;
+    /** enable external picture rate control */
+    uint32_t enableExternalPictureRC : 1;
+    /** Encode all frames as I frames */
+    uint32_t enableAllIFrames : 1;
+    /** Add padding */
+    uint32_t reserved                : 26;
 } NvMediaEncodeInitializeParamsH264;
 
 /**
@@ -2133,7 +2161,8 @@ typedef struct {
 typedef struct {
     /** Holds input picture type. */
     NvMediaEncodePicType pictureType;
-    /** Holds bit-wise OR`ed encode pic flags. See NvMediaEncodePicFlags enum. */
+    /** Holds bit-wise OR`ed encode pic flags.
+        See enum \ref NvMediaEncodePicFlags. */
     uint32_t encodePicFlags;
     /** Secifies the number of B-frames that follow the current frame.
         This number can be set only for reference frames and the frames
@@ -2419,7 +2448,13 @@ typedef struct {
     /** Enable 2 pass RC with quarter resolution first pass. */
     NvMediaBool enableSourceHalfScaled;
     /** Number of views used for MV-Hevc */
-    uint32_t mvNumViews;
+    uint32_t mvNumViews              : 4;
+    /** enable external picture rate control */
+    uint32_t enableExternalPictureRC : 1;
+    /** Encode all frames as I frames */
+    uint32_t enableAllIFrames : 1;
+    /** Add padding */
+    uint32_t reserved                : 26;
 } NvMediaEncodeInitializeParamsH265;
 
 /**
@@ -2442,7 +2477,8 @@ typedef struct {
 typedef struct {
     /** Holds input picture type. */
     NvMediaEncodePicType pictureType;
-    /** Holds bit-wise OR`ed encode pic flags. See NvMediaEncodePicFlags enum. */
+    /** Holds bit-wise OR`ed encode pic flags.
+        See enum \ref NvMediaEncodePicFlags. */
     uint32_t encodePicFlags;
     /** Secifies the number of B-frames that follow the current frame.
         This number can be set only for reference frames and the frames
@@ -2647,7 +2683,8 @@ typedef struct {
 typedef struct {
     /** Holds input picture type. */
     NvMediaEncodePicType pictureType;
-    /** Holds bit-wise OR`ed encode pic flags. See NvMediaEncodePicFlags enum. */
+    /** Holds bit-wise OR`ed encode pic flags.
+        See enum \ref NvMediaEncodePicFlags. */
     uint32_t encodePicFlags;
     /** Holds the number of B-frames that follow the current frame.
         This number can be set only for reference frames and the frames
@@ -2820,7 +2857,8 @@ typedef struct {
 typedef struct {
     /** Holds input picture type. */
     NvMediaEncodePicType pictureType;
-    /** Holds bit-wise OR`ed encode pic flags. See NvMediaEncodePicFlags enum. */
+    /** Holds bit-wise OR`ed encode pic flags.
+        See enum \ref NvMediaEncodePicFlags. */
     uint32_t encodePicFlags;
     /** Holds the rate control parameters from the current frame onward
         if the NVMEDIA_ENCODE_PIC_FLAG_RATECONTROL_CHANGE is set in the encodePicFlags.
@@ -2854,36 +2892,6 @@ typedef enum {
  * @{
  */
 
-/**
- * \hideinitializer
- * \brief Brightness
- */
-#define NVMEDIA_DISP_ATTR_BRIGHTNESS      (1<<0)
-/**
- * \hideinitializer
- * \brief Contrast
- */
-#define NVMEDIA_DISP_ATTR_CONTRAST        (1<<1)
-/**
- * \hideinitializer
- * \brief Sturation
- */
-#define NVMEDIA_DISP_ATTR_SATURATION      (1<<2)
-/**
- * \hideinitializer
- * \brief Hue
- */
-#define NVMEDIA_DISP_ATTR_HUE             (1<<3)
-/**
- * \hideinitializer
- * \brief Color Standard for display
- */
-#define NVMEDIA_DISP_ATTR_COLOR_STANDARD  (1<<4)
-/**
- * \hideinitializer
- * \brief Limited RGB range input
- */
-#define NVMEDIA_DISP_ATTR_LIMITED_RGB     (1<<5)
 /**
  * \hideinitializer
  * \brief Sets the layer composition mode.
@@ -2920,38 +2928,6 @@ typedef enum {
  * \brief Holds NvMedia display attributes.
  */
 typedef struct {
-    /** \brief A value clamped to between -0.5 and 0.5, initialized to
-     * 0.0 at NvMediaVideoOutput creation. The corresponding
-     * attribute mask is \ref NVMEDIA_DISP_ATTR_BRIGHTNESS.
-     */
-    float_t brightness;
-    /** \brief A value clamped to between 0.1 and 2.0, initialized to
-     * 1.0 at NvMediaVideoMixer creation. The corresponding
-     * attribute mask is \ref NVMEDIA_DISP_ATTR_CONTRAST.
-     */
-    float_t contrast;
-    /** \brief A value clamped to between 0.1 and 2.0, initialized to
-     * 1.0 at NvMediaVideoMixer creation. The corresponding
-     * attribute mask is \ref NVMEDIA_DISP_ATTR_SATURATION.
-     */
-    float_t saturation;
-    /** \brief A value clamped to between -PI and PI, initialized to
-     * 0.0 at NvMediaVideoMixer creation. The corresponding
-     * attribute mask is \ref NVMEDIA_DISP_ATTR_HUE.
-     */
-    float_t hue;
-    /** \brief Color standard for video display. One of the following:
-     * \n \ref NVMEDIA_COLOR_STANDARD_ITUR_BT_601 (default)
-     * \n \ref NVMEDIA_COLOR_STANDARD_ITUR_BT_709
-     * \n \ref NVMEDIA_COLOR_STANDARD_SMPTE_240M
-     * \n The corresponding attribute mask is
-     * \ref NVMEDIA_DISP_ATTR_COLOR_STANDARD.
-     */
-    NvMediaColorStandard colorStandard;
-    /** \brief Limited RGB
-     * \ref NVMEDIA_DISP_ATTR_LIMITED_RGB.
-     */
-    NvMediaBool limitedRGB;
     /** \brief Defines the composition mode for the layer.
      * \n \ref NVMEDIA_DISP_COMP_MODE_OPAQUE
      * \n \ref NVMEDIA_DISP_COMP_MODE_SRC_ALPHA
@@ -2969,101 +2945,6 @@ typedef struct {
      */
     NvMediaRect position;
 } NvMediaDispAttributes;
-
-/** \defgroup transform Transformations
- *
- * Transformations are used to rotate and mirror the source surface of
- * a blit operation.  The destination rectangle is not affected by any
- * transformation settings.
- *
- * @ref NvMediaTransform identifies the transformations that can be applied
- * as a combination of rotation and mirroring
- *
- * Specifically, given a hypothetical 2x2 image, applying these operations
- * would yield the following results
- * @code
- *
- *       INPUT                      OUTPUT
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |     IDENTITY     | 0 | 1 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 2 | 3 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |    ROTATE_90     | 1 | 3 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 0 | 2 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |    ROTATE_180    | 3 | 2 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 1 | 0 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |    ROTATE_270    | 2 | 0 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 3 | 1 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |  FLIP_HORIZONTAL | 1 | 0 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 3 | 2 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |  INVTRANSPOSE    | 3 | 1 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 2 | 0 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |  FLIP_VERTICAL   | 2 | 3 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 0 | 1 |
- *      +---+---+                  +---+---+
- *
- *      +---+---+                  +---+---+
- *      | 0 | 1 |    TRANSPOSE     | 0 | 2 |
- *      +---+---+ ---------------> +---+---+
- *      | 2 | 3 |                  | 1 | 3 |
- *      +---+---+                  +---+---+
- * @endcode
- */
-
-/**
- * \brief Transformations
- * \ingroup transform
- **/
-typedef enum
-{
-    /** No transformation */
-    NVMEDIA_TRANSFORM_NONE = 0x0,
-    /** Rotation by 90 degrees */
-    NVMEDIA_TRANSFORM_ROTATE_90,
-    /** Rotation by 180 degrees */
-    NVMEDIA_TRANSFORM_ROTATE_180,
-    /** Rotation by 270 degrees */
-    NVMEDIA_TRANSFORM_ROTATE_270,
-    /** Mirroring in the horizontal */
-    NVMEDIA_TRANSFORM_FLIP_HORIZONTAL,
-    /**
-     * Mirroring along a diagonal axis from the top right to the bottom
-     * left of the rectangular region
-     */
-    NVMEDIA_TRANSFORM_INV_TRANSPOSE,
-    /** Mirroring in the vertical direction */
-    NVMEDIA_TRANSFORM_FLIP_VERTICAL,
-    /**
-     * Mirroring along a diagonal axis from the top left to the bottom
-     * right of the rectangular region
-     */
-    NVMEDIA_TRANSFORM_TRANSPOSE
-} NvMediaTransform;
 
 /** \brief Noise Reduction Algorithm
  */
@@ -3188,6 +3069,38 @@ typedef enum {
  *
  * <b> Version 1.20 </b> March 16, 2018
  * - Added \ref NvMediaNoiseReductionAlgorithm structure
+ *
+ * <b> Version 1.21 </b> October 4, 2018
+ * - Added Ultrafast encoding support for H.264 for platforms >=T194 in
+ *   \ref NvMediaEncodeH264Features
+ *
+ * <b> Version 1.22 </b> October 29, 2018
+ * - Added enableExternalPictureRC in \ref NvMediaEncodeInitializeParamsH264
+ *  and \ref NvMediaEncodeInitializeParamsH265
+ *
+ * <b> Version 1.23 </b> Dec 14, 2018
+ * - Defined Macro constants as unsigned to fix MISRA issues
+ * - Fix MISRA violations 21.1 and 21.2
+ *
+ * <b> Version 1.24 </b> Jan 02, 2019
+ * - Added enableAllIFrames in \ref NvMediaEncodeInitializeParamsH264
+ *  and \ref NvMediaEncodeInitializeParamsH265
+ *
+ * <b> Version 1.25 </b> Jan 21, 2019
+ * - Moved \ref NvMediaTransform to nvmedia_2d.h
+ *
+ * <b> Version 1.26 </b> Feb 6, 2019
+ * - Deprecated the following display attributes \ref NVMEDIA_DISP_ATTR_BRIGHTNESS,
+ *   \ref NVMEDIA_DISP_ATTR_COLOR_STANDARD, \ref NVMEDIA_DISP_ATTR_SATURATION,
+ *   \ref NVMEDIA_DISP_ATTR_HUE, \ref NVMEDIA_DISP_ATTR_CONTRAST, \ref NVMEDIA_DISP_ATTR_LIMITED_RGB
+ * - Deprecated parameters brightness, hue, saturation, contrast, limitedRGB and
+ *   colorStandard from \ref NvMediaDispAttributes
+ *
+ * <b> Version 1.27 </b> March 26, 2019
+ * - Added \ref NvMediaContentLightLevelInfo structure
+ *
+ * <b> Version 1.28 </b> April 4, 2019
+ * - Deprecate NVMEDIA_MIN_CAPTURE_FRAME_BUFFERS, NVMEDIA_MAX_CAPTURE_FRAME_BUFFERS
  */
 
 
@@ -3195,4 +3108,4 @@ typedef enum {
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_COMMON_H */
+#endif /* NVMEDIA_COMMON_H */

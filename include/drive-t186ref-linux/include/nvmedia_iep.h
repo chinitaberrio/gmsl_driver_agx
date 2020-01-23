@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -12,15 +12,17 @@
  * This file contains the \ref image_encode_api "Image Encode Processing API".
  */
 
-#ifndef _NVMEDIA_IEP_H
-#define _NVMEDIA_IEP_H
+#ifndef NVMEDIA_IEP_H
+#define NVMEDIA_IEP_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
 #include "nvmedia_image.h"
+#include "nvmedia_surface.h"
 
 /**
  * \defgroup image_encode_api Image Encoder
@@ -35,7 +37,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_IEP_VERSION_MAJOR   2
 /** \brief Minor Version number */
-#define NVMEDIA_IEP_VERSION_MINOR   2
+#define NVMEDIA_IEP_VERSION_MINOR   6
 
 /**
  * \brief Image encode type
@@ -48,7 +50,6 @@ typedef enum {
     NVMEDIA_IMAGE_ENCODE_VP8
 } NvMediaIEPType;
 
-
 /**
  * \brief Holds the image encoder object created by \ref NvMediaIEPCreate.
  */
@@ -59,6 +60,8 @@ typedef struct {
     NvMediaSurfaceType inputFormat;
     /** Instance ID */
     NvMediaEncoderInstanceId instanceId;
+    /** An Opaque pointer for internal use */
+    struct NvMediaIEPPriv_ *encPriv;
 } NvMediaIEP;
 
 /**
@@ -123,7 +126,7 @@ NvMediaIEPGetVersion(
  */
 NvMediaIEP *
 NvMediaIEPCreate(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaIEPType encodeType,
     void *initParams,
     NvMediaSurfaceType inputFormat,
@@ -136,7 +139,7 @@ NvMediaIEPCreate(
  * \brief Destroys an NvMedia image encoder.
  * \param[in] encoder The encoder to destroy.
  */
-void NvMediaIEPDestroy(NvMediaIEP *encoder);
+void NvMediaIEPDestroy(const NvMediaIEP *encoder);
 
 /**
  * \brief Encodes the specified frame.  This function
@@ -174,9 +177,9 @@ void NvMediaIEPDestroy(NvMediaIEP *encoder);
  */
 NvMediaStatus
 NvMediaIEPFeedFrame(
-    NvMediaIEP *encoder,
+    const NvMediaIEP *encoder,
     NvMediaImage *frame,
-    NvMediaRect *sourceRect,
+    const NvMediaRect *sourceRect,
     void *picParams,
     NvMediaEncoderInstanceId instanceId
 );
@@ -197,7 +200,7 @@ NvMediaIEPFeedFrame(
  */
 NvMediaStatus
 NvMediaIEPSetConfiguration(
-    NvMediaIEP *encoder,
+    const NvMediaIEP *encoder,
     void *configuration
 );
 
@@ -229,7 +232,7 @@ NvMediaIEPSetConfiguration(
  */
 NvMediaStatus
 NvMediaIEPGetBitsEx(
-    NvMediaIEP *encoder,
+    const NvMediaIEP *encoder,
     uint32_t *numBytes,
     uint32_t numBitstreamBuffers,
     NvMediaBitstreamBuffer *bitstreams,
@@ -277,7 +280,7 @@ NvMediaIEPGetBitsEx(
  */
 NvMediaStatus
 NvMediaIEPBitsAvailable(
-    NvMediaIEP *encoder,
+    const NvMediaIEP *encoder,
     uint32_t *numBytesAvailable,
     NvMediaBlockingType blockingType,
     uint32_t millisecondTimeout
@@ -304,7 +307,7 @@ NvMediaIEPBitsAvailable(
  */
 NvMediaStatus
 NvMediaIEPGetAttribute(
-    NvMediaIEP *encoder,
+    const NvMediaIEP *encoder,
     NvMediaEncAttrType attrType,
     uint32_t attrSize,
     void *AttributeData
@@ -338,6 +341,21 @@ NvMediaIEPGetAttribute(
  *
  * <b> Version 2.2 </b> Sept 1, 2017
  * - Added NVMEDIA_IMAGE_ENCODE_VP8 in \ref NvMediaIEPType enum
+ *
+ * <b> Version 2.3 </b> Dec 14, 2018
+ * - Fix MISRA violations 21.1 and 21.2
+ *
+ * <b> Version 2.4 </b> January 15, 2019
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 2.5 </b> Feb 7, 2019
+ * - Added opaque handle for encoder
+ *   internal usage into Image encoder object
+ * - Fix MISRA violations 11.3
+ * - Fix MISRA violations 8.13
+ *
+ *  <b> Version 2.6 </b> Feb 28, 2019
+ * - Added required header includes nvmedia_core.h and nvmedia_surface.h
  */
 
 /** @} */
@@ -346,4 +364,4 @@ NvMediaIEPGetAttribute(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IEP_H */
+#endif /* NVMEDIA_IEP_H */

@@ -80,7 +80,7 @@ typedef uint64_t cuuint64_t;
         #error "Unsupported value of CUDA_FORCE_API_VERSION"
     #endif
 #else
-    #define __CUDA_API_VERSION 10000
+    #define __CUDA_API_VERSION 10020
 #endif /* CUDA_FORCE_API_VERSION */
 
 #if defined(__CUDA_API_VERSION_INTERNAL) || defined(CUDA_API_PER_THREAD_DEFAULT_STREAM)
@@ -152,6 +152,11 @@ typedef uint64_t cuuint64_t;
     #define cuMemHostRegister                   cuMemHostRegister_v2
     #define cuGraphicsResourceSetMapFlags       cuGraphicsResourceSetMapFlags_v2
 #endif /* __CUDA_API_VERSION_INTERNAL || __CUDA_API_VERSION >= 6050 */
+#if defined(__CUDA_API_VERSION_INTERNAL) || __CUDA_API_VERSION >= 10010
+    #define cuStreamBeginCapture                __CUDA_API_PTSZ(cuStreamBeginCapture_v2)
+#elif defined(__CUDA_API_PER_THREAD_DEFAULT_STREAM)
+    #define cuStreamBeginCapture                __CUDA_API_PTSZ(cuStreamBeginCapture)
+#endif /* __CUDA_API_VERSION_INTERNAL || __CUDA_API_VERSION >= 10010 */
 
 #if !defined(__CUDA_API_VERSION_INTERNAL)
 #if defined(__CUDA_API_VERSION) && __CUDA_API_VERSION >= 3020 && __CUDA_API_VERSION < 4010
@@ -179,9 +184,9 @@ typedef uint64_t cuuint64_t;
     #define cuStreamGetFlags                    __CUDA_API_PTSZ(cuStreamGetFlags)
     #define cuStreamGetCtx                      __CUDA_API_PTSZ(cuStreamGetCtx)
     #define cuStreamWaitEvent                   __CUDA_API_PTSZ(cuStreamWaitEvent)
-    #define cuStreamBeginCapture                __CUDA_API_PTSZ(cuStreamBeginCapture)
     #define cuStreamEndCapture                  __CUDA_API_PTSZ(cuStreamEndCapture)
     #define cuStreamIsCapturing                 __CUDA_API_PTSZ(cuStreamIsCapturing)
+    #define cuStreamGetCaptureInfo              __CUDA_API_PTSZ(cuStreamGetCaptureInfo)
     #define cuStreamAddCallback                 __CUDA_API_PTSZ(cuStreamAddCallback)
     #define cuStreamAttachMemAsync              __CUDA_API_PTSZ(cuStreamAttachMemAsync)
     #define cuStreamQuery                       __CUDA_API_PTSZ(cuStreamQuery)
@@ -227,7 +232,7 @@ typedef uint64_t cuuint64_t;
 /**
  * CUDA API version number
  */
-#define CUDA_VERSION 10000
+#define CUDA_VERSION 10020
 
 #ifdef __cplusplus
 extern "C" {
@@ -970,7 +975,10 @@ typedef enum CUjit_target_enum
     CU_TARGET_COMPUTE_61 = 61,       /**< Compute device class 6.1.*/
     CU_TARGET_COMPUTE_62 = 62,       /**< Compute device class 6.2.*/
     CU_TARGET_COMPUTE_70 = 70,       /**< Compute device class 7.0.*/
-    CU_TARGET_COMPUTE_75 = 75        /**< Compute device class 7.5.*/
+    CU_TARGET_COMPUTE_72 = 72,       /**< Compute device class 7.2.*/
+    CU_TARGET_COMPUTE_73 = 73,       /**< Compute device class 7.3.*/
+    CU_TARGET_COMPUTE_75 = 75,       /**< Compute device class 7.5.*/
+    CU_TARGET_COMPUTE_82 = 82        /**< Compute device class 8.2.*/
 } CUjit_target;
 
 /**
@@ -1165,6 +1173,20 @@ typedef enum CUstreamCaptureStatus_enum {
 } CUstreamCaptureStatus;
 
 #endif /* __CUDA_API_VERSION >= 10000 */
+
+#if __CUDA_API_VERSION >= 10010
+
+/**
+ * Possible modes for stream capture thread interactions. For more details see
+ * ::cuStreamBeginCapture and ::cuThreadExchangeStreamCaptureMode
+ */
+typedef enum CUstreamCaptureMode_enum {
+    CU_STREAM_CAPTURE_MODE_GLOBAL       = 0,
+    CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1,
+    CU_STREAM_CAPTURE_MODE_RELAXED      = 2
+} CUstreamCaptureMode;
+
+#endif /* __CUDA_API_VERSION >= 10010 */
 
 /**
  * Error codes
@@ -1553,7 +1575,8 @@ typedef enum cudaError_enum {
     /**
      * An exception occurred on the device while executing a kernel. Common
      * causes include dereferencing an invalid device pointer and accessing
-     * out of bounds shared memory.
+     * out of bounds shared memory. Less common cases can be system specific - more
+     * information about these cases can be found in the system specific user guide.
      * This leaves the process in an inconsistent state and any further CUDA work
      * will return the same error. To continue using CUDA, the process must be terminated
      * and relaunched.
@@ -1584,8 +1607,26 @@ typedef enum cudaError_enum {
      * This error indicates that the system is not yet ready to start any CUDA
      * work.  To continue using CUDA, verify the system configuration is in a
      * valid state and all required driver daemons are actively running.
+     * More information about this error can be found in the system specific
+     * user guide.
      */
     CUDA_ERROR_SYSTEM_NOT_READY               = 802,
+
+    /**
+     * This error indicates that there is a mismatch between the versions of
+     * the display driver and the CUDA driver. Refer to the compatibility documentation
+     * for supported versions.
+     */
+    CUDA_ERROR_SYSTEM_DRIVER_MISMATCH         = 803,
+
+    /**
+     * This error indicates that the system was upgraded to run with forward compatibility
+     * but the visible hardware detected by CUDA does not support this configuration.
+     * Refer to the compatibility documentation for the supported hardware matrix or ensure
+     * that only supported hardware is visible during initialization via the CUDA_VISIBLE_DEVICES
+     * environment variable.
+     */
+    CUDA_ERROR_COMPAT_NOT_SUPPORTED_ON_DEVICE = 804,
 
     /**
      * This error indicates that the operation is not permitted when
@@ -1634,6 +1675,13 @@ typedef enum cudaError_enum {
      * was last recorded in a capturing stream.
      */
     CUDA_ERROR_CAPTURED_EVENT                 = 907,
+
+    /**
+     * A stream capture sequence not initiated with the ::CU_STREAM_CAPTURE_MODE_RELAXED
+     * argument to ::cuStreamBeginCapture was passed to ::cuStreamEndCapture in a
+     * different thread.
+     */
+    CUDA_ERROR_STREAM_CAPTURE_WRONG_THREAD    = 908,
 
     /**
      * This indicates that an unknown internal error has occurred.
@@ -2004,14 +2052,49 @@ typedef enum CUexternalMemoryHandleType_enum {
     /**
      * Handle is a D3D12 committed resource
      */
-    CU_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE   = 5
+    CU_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE     = 5,
+    /**
+     * Handle is an NvSciBuf object
+     */
+    CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF = 8
 } CUexternalMemoryHandleType;
- 
+
 /**
  * Indicates that the external memory object is a dedicated resource
  */
 #define CUDA_EXTERNAL_MEMORY_DEDICATED   0x1
- 
+
+/** When the /p flags parameter of ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS
+ * contains this flag, it indicates that signaling an external semaphore object
+ * should skip performing appropriate memory synchronization operations over all
+ * the external memory objects that are imported as ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF,
+ * which otherwise are performed by default to ensure data coherency with other
+ * importers of the same NvSciBuf memory objects.
+ */
+#define CUDA_EXTERNAL_SEMAPHORE_SIGNAL_SKIP_NVSCIBUF_MEMSYNC 0x01
+
+/** When the /p flags parameter of ::CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS
+ * contains this flag, it indicates that waiting on an external semaphore object
+ * should skip performing appropriate memory synchronization operations over all
+ * the external memory objects that are imported as ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF,
+ * which otherwise are performed by default to ensure data coherency with other
+ * importers of the same NvSciBuf memory objects.
+ */
+#define CUDA_EXTERNAL_SEMAPHORE_WAIT_SKIP_NVSCIBUF_MEMSYNC 0x02
+
+/**
+ * When /p flags of ::cuDeviceGetNvSciSyncAttributes is set to this,
+ * it indicates that application needs signaler specific NvSciSyncAttr
+ * to be filled by ::cuDeviceGetNvSciSyncAttributes.
+ */
+#define CUDA_NVSCISYNC_ATTR_SIGNAL 0x1
+
+/**
+ * When /p flags of ::cuDeviceGetNvSciSyncAttributes is set to this,
+ * it indicates that application needs waiter specific NvSciSyncAttr
+ * to be filled by ::cuDeviceGetNvSciSyncAttributes.
+ */
+#define CUDA_NVSCISYNC_ATTR_WAIT 0x2
 /**
  * External memory handle descriptor
  */
@@ -2050,6 +2133,11 @@ typedef struct CUDA_EXTERNAL_MEMORY_HANDLE_DESC_st {
              */
             const void *name;
         } win32;
+        /**
+         * A handle representing an NvSciBuf Object. Valid when type
+         * is ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF
+         */
+        const void *nvSciBufObject;
     } handle;
     /**
      * Size of the memory allocation
@@ -2059,6 +2147,7 @@ typedef struct CUDA_EXTERNAL_MEMORY_HANDLE_DESC_st {
      * Flags must either be zero or ::CUDA_EXTERNAL_MEMORY_DEDICATED
      */
     unsigned int flags;
+    unsigned int reserved[16];
 } CUDA_EXTERNAL_MEMORY_HANDLE_DESC;
 
 /**
@@ -2077,6 +2166,7 @@ typedef struct CUDA_EXTERNAL_MEMORY_BUFFER_DESC_st {
      * Flags reserved for future use. Must be zero.
      */
     unsigned int flags;
+    unsigned int reserved[16];
 } CUDA_EXTERNAL_MEMORY_BUFFER_DESC;
 
 /**
@@ -2096,6 +2186,7 @@ typedef struct CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC_st {
      * Total number of levels in the mipmap chain
      */
     unsigned int numLevels;
+    unsigned int reserved[16];
 } CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC;
 
 /**
@@ -2117,9 +2208,13 @@ typedef enum CUexternalSemaphoreHandleType_enum {
     /**
      * Handle is a shared NT handle referencing a D3D12 fence object
      */
-    CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE     = 4
+    CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE      = 4,
+    /**
+     * Opaque handle to NvSciSync Object
+     */
+    CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC        = 6
 } CUexternalSemaphoreHandleType;
- 
+
 /**
  * External semaphore handle descriptor
  */
@@ -2157,18 +2252,23 @@ typedef struct CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC_st {
              */
             const void *name;
         } win32;
+        /**
+         * Valid NvSciSyncObj. Must be non NULL
+         */
+        const void* nvSciSyncObj;
     } handle;
     /**
      * Flags reserved for the future. Must be zero.
      */
     unsigned int flags;
+    unsigned int reserved[16];
 } CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC;
 
 /**
  * External semaphore signal parameters
  */
 typedef struct CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_st {
-    union {
+    struct {
         /**
          * Parameters for fence objects
          */
@@ -2178,18 +2278,35 @@ typedef struct CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_st {
              */
             unsigned long long value;
         } fence;
+        union {
+            /**
+             * Pointer to NvSciSyncFence. Valid if ::CUexternalSemaphoreHandleType
+             * is of type ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC.
+             */
+            void *fence;
+            unsigned long long reserved;
+        } nvSciSync;
+        unsigned int reserved[14];
     } params;
     /**
-     * Flags reserved for the future. Must be zero.
+     * Only when ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS is used to
+     * signal a ::CUexternalSemaphore of type
+     * ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC, the valid flag is
+     * ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_SKIP_NVSCIBUF_MEMSYNC which indicates
+     * that while signaling the ::CUexternalSemaphore, no memory synchronization
+     * operations should be performed for any external memory object imported
+     * as ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF.
+     * For all other types of ::CUexternalSemaphore, flags must be zero.
      */
     unsigned int flags;
+    unsigned int reserved[16];
 } CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS;
 
 /**
  * External semaphore wait parameters
  */
 typedef struct CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS_st {
-    union {
+    struct {
         /**
          * Parameters for fence objects
          */
@@ -2199,11 +2316,27 @@ typedef struct CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS_st {
              */
             unsigned long long value;
         } fence;
+        /**
+         * Pointer to NvSciSyncFence. Valid if CUexternalSemaphoreHandleType
+         * is of type CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC.
+         */
+        union {
+            void *fence;
+            unsigned long long reserved;
+        } nvSciSync;
+        unsigned int reserved[14];
     } params;
     /**
-     * Flags reserved for the future. Must be zero.
+     * Only when ::CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS is used to wait on
+     * a ::CUexternalSemaphore of type ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC,
+     * the valid flag is ::CUDA_EXTERNAL_SEMAPHORE_WAIT_SKIP_NVSCIBUF_MEMSYNC
+     * which indicates that while waiting for the ::CUexternalSemaphore, no memory
+     * synchronization operations should be performed for any external memory
+     * object imported as ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF.
+     * For all other types of ::CUexternalSemaphore, flags must be zero.
      */
     unsigned int flags;
+    unsigned int reserved[16];
 } CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS;
 
 
@@ -2260,6 +2393,12 @@ typedef struct CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS_st {
  * array is a DEPTH_TEXTURE.
  */
 #define CUDA_ARRAY3D_DEPTH_TEXTURE 0x10
+
+/**
+ * This flag indicates that the CUDA array may be bound as a color target
+ * in an external graphics API
+ */
+#define CUDA_ARRAY3D_COLOR_ATTACHMENT 0x20
 
 /**
  * Override the texref format with a format inferred from the array.
@@ -2424,7 +2563,9 @@ CUresult CUDAAPI cuGetErrorName(CUresult error, const char **pStr);
  * \return
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_INVALID_VALUE,
- * ::CUDA_ERROR_INVALID_DEVICE
+ * ::CUDA_ERROR_INVALID_DEVICE,
+ * ::CUDA_ERROR_SYSTEM_DRIVER_MISMATCH,
+ * ::CUDA_ERROR_COMPAT_NOT_SUPPORTED_ON_DEVICE
  * \notefnerr
  */
 CUresult CUDAAPI cuInit(unsigned int Flags);
@@ -3112,8 +3253,9 @@ CUresult CUDAAPI cuDevicePrimaryCtxRelease(CUdevice dev);
  * \e C > \e P, then CUDA will yield to other OS threads when waiting for
  * the GPU (::CU_CTX_SCHED_YIELD), otherwise CUDA will not yield while
  * waiting for results and actively spin on the processor (::CU_CTX_SCHED_SPIN).
- * However, on low power devices like Tegra, it always defaults to
- * ::CU_CTX_SCHED_BLOCKING_SYNC.
+ * Additionally, on Tegra devices, ::CU_CTX_SCHED_AUTO uses a heuristic based on
+ * the power profile of the platform and may choose ::CU_CTX_SCHED_BLOCKING_SYNC
+ * for low-powered devices.
  *
  * - ::CU_CTX_LMEM_RESIZE_TO_MAX: Instruct CUDA to not reduce local memory
  * after resizing local memory for a kernel. This can prevent thrashing by
@@ -3218,12 +3360,17 @@ CUresult CUDAAPI cuDevicePrimaryCtxReset(CUdevice dev);
  * This section describes the context management functions of the low-level
  * CUDA driver application programming interface.
  *
+ * Please note that some functions are described in
+ * \ref CUDA_PRIMARY_CTX "Primary Context Management" section.
+ *
  * @{
  */
 
 #if __CUDA_API_VERSION >= 3020
 /**
  * \brief Create a CUDA context
+ *
+ * \note In most cases it is recommended to use ::cuDevicePrimaryCtxRetain.
  *
  * Creates a new CUDA context and associates it with the calling thread. The
  * \p flags parameter is described below. The context is created with a usage
@@ -3261,8 +3408,9 @@ CUresult CUDAAPI cuDevicePrimaryCtxReset(CUdevice dev);
  * \e C > \e P, then CUDA will yield to other OS threads when waiting for 
  * the GPU (::CU_CTX_SCHED_YIELD), otherwise CUDA will not yield while 
  * waiting for results and actively spin on the processor (::CU_CTX_SCHED_SPIN). 
- * However, on low power devices like Tegra, it always defaults to 
- * ::CU_CTX_SCHED_BLOCKING_SYNC.
+ * Additionally, on Tegra devices, ::CU_CTX_SCHED_AUTO uses a heuristic based on
+ * the power profile of the platform and may choose ::CU_CTX_SCHED_BLOCKING_SYNC
+ * for low-powered devices.
  *
  * - ::CU_CTX_MAP_HOST: Instruct CUDA to support mapped pinned allocations.
  * This flag must be set in order to allocate pinned host memory that is
@@ -3624,6 +3772,10 @@ CUresult CUDAAPI cuCtxSynchronize(void);
  *   than 3.5 will result in the error ::CUDA_ERROR_UNSUPPORTED_LIMIT being
  *   returned.
  *
+ * - ::CU_LIMIT_MAX_L2_FETCH_GRANULARITY controls the L2 cache fetch granularity.
+ *   Values can range from 0B to 128B. This is purely a performence hint and
+ *   it can be ignored or clamped depending on the platform.
+ *
  * \param limit - Limit to set
  * \param value - Size of limit
  *
@@ -3664,6 +3816,7 @@ CUresult CUDAAPI cuCtxSetLimit(CUlimit limit, size_t value);
  *   child grid launches to complete.
  * - ::CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT: maximum number of outstanding
  *   device runtime launches that can be made from this context.
+ * - ::CU_LIMIT_MAX_L2_FETCH_GRANULARITY: L2 cache fetch granularity.
  *
  * \param limit  - Limit to query
  * \param pvalue - Returned size of limit
@@ -5189,8 +5342,7 @@ CUresult CUDAAPI cuDeviceGetPCIBusId(char *pciBusId, int len, CUdevice dev);
  *
  * IPC functionality is restricted to devices with support for unified
  * addressing on Linux and Windows operating systems.
- * IPC functionality on Windows is restricted to GPUs in TCC mode.
- * IPC functionality is not supported on Tegra platforms.
+ * IPC functionality on Windows is restricted to GPUs in TCC mode
  *
  * \param pHandle - Pointer to a user allocated CUipcEventHandle
  *                    in which to return the opaque event handle
@@ -5230,8 +5382,7 @@ CUresult CUDAAPI cuIpcGetEventHandle(CUipcEventHandle *pHandle, CUevent event);
  *
  * IPC functionality is restricted to devices with support for unified
  * addressing on Linux and Windows operating systems.
- * IPC functionality on Windows is restricted to GPUs in TCC mode.
- * IPC functionality is not supported on Tegra platforms.
+ * IPC functionality on Windows is restricted to GPUs in TCC mode
  *
  * \param phEvent - Returns the imported event
  * \param handle  - Interprocess handle to open
@@ -5273,8 +5424,7 @@ CUresult CUDAAPI cuIpcOpenEventHandle(CUevent *phEvent, CUipcEventHandle handle)
  *
  * IPC functionality is restricted to devices with support for unified
  * addressing on Linux and Windows operating systems.
- * IPC functionality on Windows is restricted to GPUs in TCC mode.
- * IPC functionality is not supported on Tegra platforms.
+ * IPC functionality on Windows is restricted to GPUs in TCC mode
  *
  * \param pHandle - Pointer to user allocated ::CUipcMemHandle to return
  *                    the handle in.
@@ -5321,8 +5471,7 @@ CUresult CUDAAPI cuIpcGetMemHandle(CUipcMemHandle *pHandle, CUdeviceptr dptr);
  *
  * IPC functionality is restricted to devices with support for unified
  * addressing on Linux and Windows operating systems.
- * IPC functionality on Windows is restricted to GPUs in TCC mode.
- * IPC functionality is not supported on Tegra platforms.
+ * IPC functionality on Windows is restricted to GPUs in TCC mode
  * 
  * \param pdptr  - Returned device pointer
  * \param handle - ::CUipcMemHandle to open
@@ -5363,8 +5512,7 @@ CUresult CUDAAPI cuIpcOpenMemHandle(CUdeviceptr *pdptr, CUipcMemHandle handle, u
  *
  * IPC functionality is restricted to devices with support for unified
  * addressing on Linux and Windows operating systems.
- * IPC functionality on Windows is restricted to GPUs in TCC mode.
- * IPC functionality is not supported on Tegra platforms.
+ * IPC functionality on Windows is restricted to GPUs in TCC mode
  *
  * \param dptr - Device pointer returned by ::cuIpcOpenMemHandle
  * 
@@ -5403,9 +5551,6 @@ CUresult CUDAAPI cuIpcCloseMemHandle(CUdeviceptr dptr);
  * host and device.
  *
  * This function has limited support on Mac OS X. OS 10.7 or higher is required.
- *
- * This function is supported only on I/O coherent devices that have a non-zero value
- * for the device attribute ::CU_DEVICE_ATTRIBUTE_HOST_REGISTER_SUPPORTED.
  *
  * The \p Flags parameter enables different options to be specified that
  * affect the allocation, as follows.
@@ -9028,9 +9173,16 @@ CUresult CUDAAPI cuStreamAddCallback(CUstream hStream, CUstreamCallback callback
  * a graph, which will be returned via ::cuStreamEndCapture. Capture may not be initiated
  * if \p stream is CU_STREAM_LEGACY. Capture must be ended on the same stream in which
  * it was initiated, and it may only be initiated if the stream is not already in capture
- * mode. The capture mode may be queried via ::cuStreamIsCapturing.
+ * mode. The capture mode may be queried via ::cuStreamIsCapturing. A unique id
+ * representing the capture sequence may be queried via ::cuStreamGetCaptureInfo.
+ *
+ * If \p mode is not ::CU_STREAM_CAPTURE_MODE_RELAXED, ::cuStreamEndCapture must be
+ * called on this stream from the same thread.
  *
  * \param hStream - Stream in which to initiate capture
+ * \param mode    - Controls the interaction of this capture sequence with other API
+ *                  calls that are potentially unsafe. For more details see
+ *                  ::cuThreadExchangeStreamCaptureMode.
  *
  * \note Kernels captured using this API must not use texture and surface references.
  *       Reading or writing through any texture or surface reference is undefined
@@ -9041,15 +9193,74 @@ CUresult CUDAAPI cuStreamAddCallback(CUstream hStream, CUstreamCallback callback
  * ::CUDA_ERROR_DEINITIALIZED,
  * ::CUDA_ERROR_NOT_INITIALIZED,
  * ::CUDA_ERROR_INVALID_VALUE
- * \note_capture_thread_safety
  * \notefnerr
  *
  * \sa
  * ::cuStreamCreate,
  * ::cuStreamIsCapturing,
- * ::cuStreamEndCapture
+ * ::cuStreamEndCapture,
+ * ::cuThreadExchangeStreamCaptureMode
  */
-CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream);
+CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream, CUstreamCaptureMode mode);
+
+#endif /* __CUDA_API_VERSION >= 10000 */
+#if __CUDA_API_VERSION >= 10010
+
+/**
+ * \brief Swaps the stream capture interaction mode for a thread
+ *
+ * Sets the calling thread's stream capture interaction mode to the value contained
+ * in \p *mode, and overwrites \p *mode with the previous mode for the thread. To
+ * facilitate deterministic behavior across function or module boundaries, callers
+ * are encouraged to use this API in a push-pop fashion: \code
+     CUstreamCaptureMode mode = desiredMode;
+     cuThreadExchangeStreamCaptureMode(&mode);
+     ...
+     cuThreadExchangeStreamCaptureMode(&mode); // restore previous mode
+ * \endcode
+ *
+ * During stream capture (see ::cuStreamBeginCapture), some actions, such as a call
+ * to ::cudaMalloc, may be unsafe. In the case of ::cudaMalloc, the operation is
+ * not enqueued asynchronously to a stream, and is not observed by stream capture.
+ * Therefore, if the sequence of operations captured via ::cuStreamBeginCapture
+ * depended on the allocation being replayed whenever the graph is launched, the
+ * captured graph would be invalid.
+ *
+ * Therefore, stream capture places restrictions on API calls that can be made within
+ * or concurrently to a ::cuStreamBeginCapture-::cuStreamEndCapture sequence. This
+ * behavior can be controlled via this API and flags to ::cuStreamBeginCapture.
+ *
+ * A thread's mode is one of the following:
+ * - \p CU_STREAM_CAPTURE_MODE_GLOBAL: This is the default mode. If the local thread has
+ *   an ongoing capture sequence that was not initiated with
+ *   \p CU_STREAM_CAPTURE_MODE_RELAXED at \p cuStreamBeginCapture, or if any other thread
+ *   has a concurrent capture sequence initiated with \p CU_STREAM_CAPTURE_MODE_GLOBAL,
+ *   this thread is prohibited from potentially unsafe API calls.
+ * - \p CU_STREAM_CAPTURE_MODE_THREAD_LOCAL: If the local thread has an ongoing capture
+ *   sequence not initiated with \p CU_STREAM_CAPTURE_MODE_RELAXED, it is prohibited
+ *   from potentially unsafe API calls. Concurrent capture sequences in other threads
+ *   are ignored.
+ * - \p CU_STREAM_CAPTURE_MODE_RELAXED: The local thread is not prohibited from potentially
+ *   unsafe API calls. Note that the thread is still prohibited from API calls which
+ *   necessarily conflict with stream capture, for example, attempting ::cuEventQuery
+ *   on an event that was last recorded inside a capture sequence.
+ *
+ * \param mode - Pointer to mode value to swap with the current mode
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_VALUE
+ * \notefnerr
+ *
+ * \sa
+ * ::cuStreamBeginCapture
+ */
+CUresult CUDAAPI cuThreadExchangeStreamCaptureMode(CUstreamCaptureMode *mode);
+
+#endif /* __CUDA_API_VERSION >= 10010 */
+#if __CUDA_API_VERSION >= 10000
 
 /**
  * \brief Ends capture on a stream, returning the captured graph
@@ -9059,6 +9270,10 @@ CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream);
  * If capture was invalidated, due to a violation of the rules of stream capture, then
  * a NULL graph will be returned.
  *
+ * If the \p mode argument to ::cuStreamBeginCapture was not
+ * ::CU_STREAM_CAPTURE_MODE_RELAXED, this call must be from the same thread as
+ * ::cuStreamBeginCapture.
+ *
  * \param hStream - Stream to query
  * \param phGraph - The captured graph
  *
@@ -9066,8 +9281,8 @@ CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream);
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_DEINITIALIZED,
  * ::CUDA_ERROR_NOT_INITIALIZED,
- * ::CUDA_ERROR_INVALID_VALUE
- * \note_capture_thread_safety
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_STREAM_CAPTURE_WRONG_THREAD
  * \notefnerr
  *
  * \sa
@@ -9080,7 +9295,7 @@ CUresult CUDAAPI cuStreamEndCapture(CUstream hStream, CUgraph *phGraph);
 /**
  * \brief Returns a stream's capture status
  *
- * Return the capture status of \p hStream via \p captureStatus. After a sucessful
+ * Return the capture status of \p hStream via \p captureStatus. After a successful
  * call, \p *captureStatus will contain one of the following:
  * - ::CU_STREAM_CAPTURE_STATUS_NONE: The stream is not capturing.
  * - ::CU_STREAM_CAPTURE_STATUS_ACTIVE: The stream is capturing.
@@ -9089,6 +9304,16 @@ CUresult CUDAAPI cuStreamEndCapture(CUstream hStream, CUgraph *phGraph);
  *   with ::cuStreamEndCapture on the stream where it was initiated in order to
  *   continue using \p hStream.
  *
+ * Note that, if this is called on ::CU_STREAM_LEGACY (the "null stream") while
+ * a blocking stream in the same context is capturing, it will return
+ * ::CUDA_ERROR_STREAM_CAPTURE_IMPLICIT and \p *captureStatus is unspecified
+ * after the call. The blocking stream capture is not invalidated.
+ *
+ * When a blocking stream is capturing, the legacy stream is in an
+ * unusable state until the blocking stream capture is terminated. The legacy
+ * stream is not supported for stream capture, but attempted use would have an
+ * implicit dependency on the capturing stream(s).
+ *
  * \param hStream       - Stream to query
  * \param captureStatus - Returns the stream's capture status
  *
@@ -9096,8 +9321,8 @@ CUresult CUDAAPI cuStreamEndCapture(CUstream hStream, CUgraph *phGraph);
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_DEINITIALIZED,
  * ::CUDA_ERROR_NOT_INITIALIZED,
- * ::CUDA_ERROR_INVALID_VALUE
- * \note_capture_thread_safety
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_STREAM_CAPTURE_IMPLICIT
  * \notefnerr
  *
  * \sa
@@ -9108,6 +9333,34 @@ CUresult CUDAAPI cuStreamEndCapture(CUstream hStream, CUgraph *phGraph);
 CUresult CUDAAPI cuStreamIsCapturing(CUstream hStream, CUstreamCaptureStatus *captureStatus);
 
 #endif /* __CUDA_API_VERSION >= 10000 */
+
+#if __CUDA_API_VERSION >= 10010
+
+/**
+ * \brief Query capture status of a stream
+ *
+ * Query the capture status of a stream and and get an id for 
+ * the capture sequence, which is unique over the lifetime of the process.
+ *
+ * If called on ::CU_STREAM_LEGACY (the "null stream") while a stream not created 
+ * with ::CU_STREAM_NON_BLOCKING is capturing, returns ::CUDA_ERROR_STREAM_CAPTURE_IMPLICIT.
+ *
+ * A valid id is returned only if both of the following are true:
+ * - the call returns CUDA_SUCCESS
+ * - captureStatus is set to ::CU_STREAM_CAPTURE_STATUS_ACTIVE
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_STREAM_CAPTURE_IMPLICIT
+ * \notefnerr
+ *
+ * \sa
+ * ::cuStreamBeginCapture,
+ * ::cuStreamIsCapturing
+ */
+ CUresult CUDAAPI cuStreamGetCaptureInfo(CUstream hStream, CUstreamCaptureStatus *captureStatus, cuuint64_t *id);
+
+#endif /* __CUDA_API_VERSION >= 10010 */
 
 #if __CUDA_API_VERSION >= 6000
 
@@ -9528,12 +9781,12 @@ CUresult CUDAAPI cuEventElapsedTime(float *pMilliseconds, CUevent hStart, CUeven
 /** @} */ /* END CUDA_EVENT */
 
 /**
- * \defgroup CUDA_EXTRES_INTEROP External Resource Interopability
+ * \defgroup CUDA_EXTRES_INTEROP External Resource Interoperability
  *
- * ___MANBRIEF___ External resource interopability functions of the low-level CUDA driver API
+ * ___MANBRIEF___ External resource interoperability functions of the low-level CUDA driver API
  * (___CURRENT_FILE___) ___ENDMANBRIEF___
  *
- * This section describes the external resource interopability functions of the low-level CUDA
+ * This section describes the external resource interoperability functions of the low-level CUDA
  * driver application programming interface.
  *
  * @{
@@ -9560,7 +9813,9 @@ CUresult CUDAAPI cuEventElapsedTime(float *pMilliseconds, CUevent hStart, CUeven
                     void *handle;
                     const void *name;
                 } win32;
+                const void *nvSciBufObject;
             } handle;
+            unsigned long long size;
             unsigned int flags;
         } CUDA_EXTERNAL_MEMORY_HANDLE_DESC;
  * \endcode
@@ -9571,17 +9826,18 @@ CUresult CUDAAPI cuEventElapsedTime(float *pMilliseconds, CUevent hStart, CUeven
  *
  * \code
         typedef enum CUexternalMemoryHandleType_enum {
-            CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD        = 1,
-            CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32     = 2,
-            CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT = 3,
-            CU_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP       = 4,
-            CU_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE   = 5
+            CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD          = 1,
+            CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32       = 2,
+            CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT   = 3,
+            CU_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP         = 4,
+            CU_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE     = 5,
+            CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF           = 8
         } CUexternalMemoryHandleType;
  * \endcode
  *
  * If ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::type is
  * ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD, then
- * ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::handle::fd must be a valid     
+ * ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::handle::fd must be a valid
  * file descriptor referencing a memory object. Ownership of
  * the file descriptor is transferred to the CUDA driver when the 
  * handle is imported successfully. Performing any operations on the
@@ -9634,6 +9890,17 @@ CUresult CUDAAPI cuEventElapsedTime(float *pMilliseconds, CUevent hStart, CUeven
  * ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::handle::win32::name
  * is not NULL, then it must point to a NULL-terminated array of
  * UTF-16 characters that refers to a ID3D12Resource object.
+ *
+ * If ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::type is
+ * ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF, then
+ * ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::handle::nvSciBufObject must be non-NULL
+ * and reference a valid NvSciBuf object.
+ * If the NvSciBuf object imported into CUDA is also mapped by other drivers, then the
+ * application must use ::cuWaitExternalSemaphoresAsync or ::cuSignalExternalSemaphoresAsync
+ * as appropriate barriers to maintain coherence between CUDA and the other drivers.
+ *
+ * The size of the memory object must be specified in
+ * ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::size.
  *
  * Specifying the flag ::CUDA_EXTERNAL_MEMORY_DEDICATED in
  * ::CUDA_EXTERNAL_MEMORY_HANDLE_DESC::flags indicates that the
@@ -9696,6 +9963,8 @@ CUresult CUDAAPI cuImportExternalMemory(CUexternalMemory *extMem_out, const CUDA
  * appropriate offsets to the returned pointer to derive the
  * individual buffers.
  *
+ * The returned pointer \p devPtr must be freed using ::cuMemFree.
+ *
  * \param devPtr     - Returned device pointer to buffer
  * \param extMem     - Handle to external memory object
  * \param bufferDesc - Buffer descriptor
@@ -9736,9 +10005,17 @@ CUresult CUDAAPI cuExternalMemoryGetMappedBuffer(CUdeviceptr *devPtr, CUexternal
  * ::CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC::arrayDesc describes
  * the format, dimensions and type of the base level of the mipmap
  * chain. For further details on these parameters, please refer to the
- * documentation for ::cuMipmappedArrayCreate.
+ * documentation for ::cuMipmappedArrayCreate. Note that if the mipmapped
+ * array is bound as a color target in the graphics API, then the flag
+ * ::CUDA_ARRAY3D_COLOR_ATTACHMENT must be specified in
+ * ::CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC::arrayDesc::Flags.
  * ::CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC::numLevels specifies
  * the total number of levels in the mipmap chain.
+ *
+ * If \p extMem was imported from a handle of type ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF, then
+ * ::CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC::numLevels must be equal to 1.
+ *
+ * The returned CUDA mipmapped array must be freed using ::cuMipmappedArrayDestroy.
  *
  * \param mipmap     - Returned CUDA mipmapped array
  * \param extMem     - Handle to external memory object
@@ -9757,12 +10034,12 @@ CUresult CUDAAPI cuExternalMemoryGetMappedBuffer(CUdeviceptr *devPtr, CUexternal
 CUresult CUDAAPI cuExternalMemoryGetMappedMipmappedArray(CUmipmappedArray *mipmap, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC *mipmapDesc);
 
 /**
- * \brief Releases all resources associated with an external memory
- * object.
+ * \brief Destroys an external memory object.
  *
- * Frees all buffers and CUDA mipmapped arrays that were
- * mapped onto this external memory object and releases any reference
- * on the underlying memory itself.
+ * Destroys the specified external memory object. Any existing buffers
+ * and CUDA mipmapped arrays mapped onto this object must no longer be
+ * used and must be explicitly freed using ::cuMemFree and
+ * ::cuMipmappedArrayDestroy respectively.
  *
  * \param extMem - External memory object to be destroyed
  *
@@ -9795,8 +10072,9 @@ CUresult CUDAAPI cuDestroyExternalMemory(CUexternalMemory extMem);
                 int fd;
                 struct {
                     void *handle;
-                const void *name;
+                    const void *name;
                 } win32;
+                const void* NvSciSyncObj;
             } handle;
             unsigned int flags;
         } CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC;
@@ -9811,7 +10089,8 @@ CUresult CUDAAPI cuDestroyExternalMemory(CUexternalMemory extMem);
             CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD        = 1,
             CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32     = 2,
             CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT = 3,
-            CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE      = 4
+            CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE      = 4,
+            CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC        = 6
         } CUexternalSemaphoreHandleType;
  * \endcode
  *
@@ -9826,7 +10105,7 @@ CUresult CUDAAPI cuDestroyExternalMemory(CUexternalMemory extMem);
  * If ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::type is
  * ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32, then exactly one
  * of ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::win32::handle and
- * ::cudaExternalSemaphoreHandleDesc::handle::win32::name must not be
+ * ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::win32::name must not be
  * NULL. If
  * ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::win32::handle
  * is not NULL, then it must represent a valid shared NT handle that
@@ -9849,7 +10128,7 @@ CUresult CUDAAPI cuDestroyExternalMemory(CUexternalMemory extMem);
  * If ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::type is
  * ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE, then exactly one
  * of ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::win32::handle and
- * ::cudaExternalSemaphoreHandleDesc::handle::win32::name must not be
+ * ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::win32::name must not be
  * NULL. If
  * ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::win32::handle
  * is not NULL, then it must represent a valid shared NT handle that
@@ -9860,12 +10139,18 @@ CUresult CUDAAPI cuDestroyExternalMemory(CUexternalMemory extMem);
  * is not NULL, then it must name a valid synchronization object that
  * refers to a valid ID3D12Fence object.
  *
+ * If ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::type is
+ * ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC, then
+ * ::CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC::handle::nvSciSyncObj
+ * represents a valid NvSciSyncObj.
+ *
  * \param extSem_out    - Returned handle to an external semaphore
  * \param semHandleDesc - Semaphore import handle descriptor
  *
  * \return
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_NOT_SUPPORTED,
  * ::CUDA_ERROR_INVALID_HANDLE
  * \notefnerr
  *
@@ -9896,6 +10181,25 @@ CUresult CUDAAPI cuImportExternalSemaphore(CUexternalSemaphore *extSem_out, cons
  * semaphore will be set to the value specified in
  * ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS::params::fence::value.
  *
+ * If the semaphore object is of the type ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC
+ * this API sets ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS::params::nvSciSync::fence
+ * to a value that can be used by subsequent waiters of the same NvSciSync object
+ * to order operations with those currently submitted in \p stream. Such an update
+ * will overwrite previous contents of
+ * ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS::params::nvSciSync::fence. By default,
+ * signaling such an external semaphore object causes appropriate memory synchronization
+ * operations to be performed over all external memory objects that are imported as
+ * ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF. This ensures that any subsequent accesses
+ * made by other importers of the same set of NvSciBuf memory object(s) are coherent.
+ * These operations can be skipped by specifying the flag
+ * ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_SKIP_NVSCIBUF_MEMSYNC, which can be used as a
+ * performance optimization when data coherency is not required. But specifying this
+ * flag in scenarios where data coherency is required results in undefined behavior.
+ * Also, for semaphore object of the type ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC,
+ * if the NvSciSyncAttrList used to create the NvSciSyncObj had not set the flags in
+ * ::cuDeviceGetNvSciSyncAttributes to CUDA_NVSCISYNC_ATTR_SIGNAL, this API will return
+ * CUDA_ERROR_NOT_SUPPORTED.
+ *
  * \param extSemArray - Set of external semaphores to be signaled
  * \param paramsArray - Array of semaphore parameters
  * \param numExtSems  - Number of semaphores to signal
@@ -9904,7 +10208,8 @@ CUresult CUDAAPI cuImportExternalSemaphore(CUexternalSemaphore *extSem_out, cons
  * \return
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_NOT_INITIALIZED,
- * ::CUDA_ERROR_INVALID_HANDLE
+ * ::CUDA_ERROR_INVALID_HANDLE,
+ * ::CUDA_ERROR_NOT_SUPPORTED
  * \notefnerr
  *
  * \sa ::cuImportExternalSemaphore,
@@ -9912,7 +10217,7 @@ CUresult CUDAAPI cuImportExternalSemaphore(CUexternalSemaphore *extSem_out, cons
  * ::cuWaitExternalSemaphoresAsync
  */
 CUresult CUDAAPI cuSignalExternalSemaphoresAsync(const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream);
- 
+
 /**
  * \brief Waits on a set of external semaphore objects
  *
@@ -9938,6 +10243,23 @@ CUresult CUDAAPI cuSignalExternalSemaphoresAsync(const CUexternalSemaphore *extS
  * greater than or equal to
  * ::CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS::params::fence::value.
  *
+ * If the semaphore object is of the type ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC
+ * then, waiting on the semaphore will wait until the
+ * ::CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS::params::nvSciSync::fence is signaled by the
+ * signaler of the NvSciSyncObj that was associated with this semaphore object.
+ * By default, waiting on such an external semaphore object causes appropriate
+ * memory synchronization operations to be performed over all external memory objects
+ * that are imported as ::CU_EXTERNAL_MEMORY_HANDLE_TYPE_NVSCIBUF. This ensures that
+ * any subsequent accesses made by other importers of the same set of NvSciBuf memory
+ * object(s) are coherent. These operations can be skipped by specifying the flag
+ * ::CUDA_EXTERNAL_SEMAPHORE_WAIT_SKIP_NVSCIBUF_MEMSYNC, which can be used as a
+ * performance optimization when data coherency is not required. But specifying this
+ * flag in scenarios where data coherency is required results in undefined behavior.
+ * Also, for semaphore object of the type ::CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_NVSCISYNC,
+ * if the NvSciSyncAttrList used to create the NvSciSyncObj had not set the flags in
+ * ::cuDeviceGetNvSciSyncAttributes to CUDA_NVSCISYNC_ATTR_WAIT, this API will return
+ * CUDA_ERROR_NOT_SUPPORTED.
+ *
  * \param extSemArray - External semaphores to be waited on
  * \param paramsArray - Array of semaphore parameters
  * \param numExtSems  - Number of semaphores to wait on
@@ -9946,7 +10268,8 @@ CUresult CUDAAPI cuSignalExternalSemaphoresAsync(const CUexternalSemaphore *extS
  * \return
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_NOT_INITIALIZED,
- * ::CUDA_ERROR_INVALID_HANDLE
+ * ::CUDA_ERROR_INVALID_HANDLE,
+ * ::CUDA_ERROR_NOT_SUPPORTED
  * \notefnerr
  *
  * \sa ::cuImportExternalSemaphore,
@@ -11350,7 +11673,7 @@ CUresult CUDAAPI cuGraphCreate(CUgraph *phGraph, unsigned int flags);
  * ::cuGraphAddMemcpyNode,
  * ::cuGraphAddMemsetNode
  */
-CUresult CUDAAPI cuGraphAddKernelNode(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, const CUDA_KERNEL_NODE_PARAMS *nodeParams);
+CUresult CUDAAPI cuGraphAddKernelNode(CUgraphNode *phGraphNode, CUgraph hGraph, const CUgraphNode *dependencies, size_t numDependencies, const CUDA_KERNEL_NODE_PARAMS *nodeParams);
 
 /**
  * \brief Returns a kernel node's parameters
@@ -11453,7 +11776,7 @@ CUresult CUDAAPI cuGraphKernelNodeSetParams(CUgraphNode hNode, const CUDA_KERNEL
  * ::cuGraphAddHostNode,
  * ::cuGraphAddMemsetNode
  */
-CUresult CUDAAPI cuGraphAddMemcpyNode(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, const CUDA_MEMCPY3D *copyParams, CUcontext ctx);
+CUresult CUDAAPI cuGraphAddMemcpyNode(CUgraphNode *phGraphNode, CUgraph hGraph, const CUgraphNode *dependencies, size_t numDependencies, const CUDA_MEMCPY3D *copyParams, CUcontext ctx);
 
 /**
  * \brief Returns a memcpy node's parameters
@@ -11541,7 +11864,7 @@ CUresult CUDAAPI cuGraphMemcpyNodeSetParams(CUgraphNode hNode, const CUDA_MEMCPY
  * ::cuGraphAddHostNode,
  * ::cuGraphAddMemcpyNode
  */
-CUresult CUDAAPI cuGraphAddMemsetNode(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, const CUDA_MEMSET_NODE_PARAMS *memsetParams, CUcontext ctx);
+CUresult CUDAAPI cuGraphAddMemsetNode(CUgraphNode *phGraphNode, CUgraph hGraph, const CUgraphNode *dependencies, size_t numDependencies, const CUDA_MEMSET_NODE_PARAMS *memsetParams, CUcontext ctx);
 
 /**
  * \brief Returns a memset node's parameters
@@ -11599,6 +11922,7 @@ CUresult CUDAAPI cuGraphMemsetNodeSetParams(CUgraphNode hNode, const CUDA_MEMSET
  * A handle to the new node will be returned in \p phGraphNode.
  *
  * When the graph is launched, the node will invoke the specified CPU function.
+ * Host nodes are not supported under MPS with pre-Volta GPUs.
  *
  * \param phGraphNode     - Returns newly created node
  * \param hGraph          - Graph to which to add the node
@@ -11610,6 +11934,7 @@ CUresult CUDAAPI cuGraphMemsetNodeSetParams(CUgraphNode hNode, const CUDA_MEMSET
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_DEINITIALIZED,
  * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_NOT_SUPPORTED,
  * ::CUDA_ERROR_INVALID_VALUE
  * \note_graph_thread_safety
  * \notefnerr
@@ -11626,7 +11951,7 @@ CUresult CUDAAPI cuGraphMemsetNodeSetParams(CUgraphNode hNode, const CUDA_MEMSET
  * ::cuGraphAddMemcpyNode,
  * ::cuGraphAddMemsetNode
  */
-CUresult CUDAAPI cuGraphAddHostNode(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, const CUDA_HOST_NODE_PARAMS *nodeParams);
+CUresult CUDAAPI cuGraphAddHostNode(CUgraphNode *phGraphNode, CUgraph hGraph, const CUgraphNode *dependencies, size_t numDependencies, const CUDA_HOST_NODE_PARAMS *nodeParams);
 
 /**
  * \brief Returns a host node's parameters
@@ -11710,7 +12035,7 @@ CUresult CUDAAPI cuGraphHostNodeSetParams(CUgraphNode hNode, const CUDA_HOST_NOD
  * ::cuGraphAddMemsetNode,
  * ::cuGraphClone
  */
-CUresult CUDAAPI cuGraphAddChildGraphNode(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUgraph childGraph);
+CUresult CUDAAPI cuGraphAddChildGraphNode(CUgraphNode *phGraphNode, CUgraph hGraph, const CUgraphNode *dependencies, size_t numDependencies, CUgraph childGraph);
 
 /**
  * \brief Gets a handle to the embedded graph of a child graph node
@@ -11772,7 +12097,7 @@ CUresult CUDAAPI cuGraphChildGraphNodeGetGraph(CUgraphNode hNode, CUgraph *phGra
  * ::cuGraphAddMemcpyNode,
  * ::cuGraphAddMemsetNode
  */
-CUresult CUDAAPI cuGraphAddEmptyNode(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies);
+CUresult CUDAAPI cuGraphAddEmptyNode(CUgraphNode *phGraphNode, CUgraph hGraph, const CUgraphNode *dependencies, size_t numDependencies);
 
 /**
  * \brief Clones a graph
@@ -12042,7 +12367,7 @@ CUresult CUDAAPI cuGraphNodeGetDependentNodes(CUgraphNode hNode, CUgraphNode *de
  * ::cuGraphNodeGetDependencies,
  * ::cuGraphNodeGetDependentNodes
  */
-CUresult CUDAAPI cuGraphAddDependencies(CUgraph hGraph, CUgraphNode *from, CUgraphNode *to, size_t numDependencies);
+CUresult CUDAAPI cuGraphAddDependencies(CUgraph hGraph, const CUgraphNode *from, const CUgraphNode *to, size_t numDependencies);
 
 /**
  * \brief Removes dependency edges from a graph
@@ -12071,7 +12396,7 @@ CUresult CUDAAPI cuGraphAddDependencies(CUgraph hGraph, CUgraphNode *from, CUgra
  * ::cuGraphNodeGetDependencies,
  * ::cuGraphNodeGetDependentNodes
  */
-CUresult CUDAAPI cuGraphRemoveDependencies(CUgraph hGraph, CUgraphNode *from, CUgraphNode *to, size_t numDependencies);
+CUresult CUDAAPI cuGraphRemoveDependencies(CUgraph hGraph, const CUgraphNode *from, const CUgraphNode *to, size_t numDependencies);
 
 /**
  * \brief Remove a node from the graph
@@ -12132,6 +12457,41 @@ CUresult CUDAAPI cuGraphDestroyNode(CUgraphNode hNode);
  * ::cuGraphExecDestroy
  */
 CUresult CUDAAPI cuGraphInstantiate(CUgraphExec *phGraphExec, CUgraph hGraph, CUgraphNode *phErrorNode, char *logBuffer, size_t bufferSize);
+
+#if __CUDA_API_VERSION >= 10010
+/**
+ * \brief Sets the parameters for a kernel node in the given graphExec
+ *
+ * Sets the parameters of a kernel node in an executable graph \p hGraphExec. 
+ * The node is identified by the corresponding node \p hNode in the 
+ * non-executable graph, from which the executable graph was instantiated. 
+ *
+ * \p hNode must not have been removed from the original graph. The \p func field 
+ * of \p nodeParams cannot be modified and must match the original value.
+ * All other values can be modified. 
+ *
+ * The modifications take effect at the next launch of \p hGraphExec. Already 
+ * enqueued or running launches of \p hGraphExec are not affected by this call. 
+ * \p hNode is also not modified by this call.
+ * 
+ * \param hGraphExec  - The executable graph in which to set the specified node
+ * \param hNode       - kernel node from the graph from which graphExec was instantiated
+ * \param nodeParams  - Updated Parameters to set
+ * 
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * \note_graph_thread_safety
+ * \notefnerr
+ *
+ * \sa
+ * ::cuGraphAddKernelNode,
+ * ::cuGraphKernelNodeSetParams,
+ * ::cuGraphInstantiate
+ */
+ CUresult CUDAAPI cuGraphExecKernelNodeSetParams(CUgraphExec hGraphExec, CUgraphNode hNode, const CUDA_KERNEL_NODE_PARAMS *nodeParams);
+
+#endif /* __CUDA_API_VERSION >= 10010 */
 
 /**
  * \brief Launches an executable graph in a stream
@@ -12386,19 +12746,21 @@ CUresult CUDAAPI cuOccupancyMaxPotentialBlockSizeWithFlags(int *minGridSize, int
 #endif /* __CUDA_API_VERSION >= 6050 */
 
 /**
- * \defgroup CUDA_TEXREF Texture Reference Management
+ * \defgroup CUDA_TEXREF_DEPRECATED Texture Reference Management [DEPRECATED]
  *
- * ___MANBRIEF___ texture reference management functions of the low-level CUDA
- * driver API (___CURRENT_FILE___) ___ENDMANBRIEF___
+ * ___MANBRIEF___ deprecated texture reference management functions of the
+ * low-level CUDA driver API (___CURRENT_FILE___) ___ENDMANBRIEF___
  *
- * This section describes the texture reference management functions of the
- * low-level CUDA driver application programming interface.
+ * This section describes the deprecated texture reference management
+ * functions of the low-level CUDA driver application programming interface.
  *
  * @{
  */
 
 /**
  * \brief Binds an array as a texture reference
+ *
+ * \deprecated
  *
  * Binds the CUDA array \p hArray to the texture reference \p hTexRef. Any
  * previous address or CUDA array state associated with the texture reference
@@ -12429,6 +12791,8 @@ CUresult CUDAAPI cuTexRefSetArray(CUtexref hTexRef, CUarray hArray, unsigned int
 /**
  * \brief Binds a mipmapped array to a texture reference
  *
+ * \deprecated
+ *
  * Binds the CUDA mipmapped array \p hMipmappedArray to the texture reference \p hTexRef.
  * Any previous address or CUDA array state associated with the texture reference
  * is superseded by this function. \p Flags must be set to ::CU_TRSA_OVERRIDE_FORMAT. 
@@ -12457,6 +12821,8 @@ CUresult CUDAAPI cuTexRefSetMipmappedArray(CUtexref hTexRef, CUmipmappedArray hM
 #if __CUDA_API_VERSION >= 3020
 /**
  * \brief Binds an address as a texture reference
+ *
+ * \deprecated
  *
  * Binds a linear address range to the texture reference \p hTexRef. Any
  * previous address or CUDA array state associated with the texture reference
@@ -12501,6 +12867,8 @@ CUresult CUDAAPI cuTexRefSetAddress(size_t *ByteOffset, CUtexref hTexRef, CUdevi
 
 /**
  * \brief Binds an address as a 2D texture reference
+ *
+ * \deprecated
  *
  * Binds a linear address range to the texture reference \p hTexRef. Any
  * previous address or CUDA array state associated with the texture reference
@@ -12556,6 +12924,8 @@ CUresult CUDAAPI cuTexRefSetAddress2D(CUtexref hTexRef, const CUDA_ARRAY_DESCRIP
 /**
  * \brief Sets the format for a texture reference
  *
+ * \deprecated
+ *
  * Specifies the format of the data to be read by the texture reference
  * \p hTexRef. \p fmt and \p NumPackedComponents are exactly analogous to the
  * ::Format and ::NumChannels members of the ::CUDA_ARRAY_DESCRIPTOR structure:
@@ -12588,6 +12958,8 @@ CUresult CUDAAPI cuTexRefSetFormat(CUtexref hTexRef, CUarray_format fmt, int Num
 
 /**
  * \brief Sets the addressing mode for a texture reference
+ *
+ * \deprecated
  *
  * Specifies the addressing mode \p am for the given dimension \p dim of the
  * texture reference \p hTexRef. If \p dim is zero, the addressing mode is
@@ -12633,6 +13005,8 @@ CUresult CUDAAPI cuTexRefSetAddressMode(CUtexref hTexRef, int dim, CUaddress_mod
 /**
  * \brief Sets the filtering mode for a texture reference
  *
+ * \deprecated
+ *
  * Specifies the filtering mode \p fm to be used when reading memory through
  * the texture reference \p hTexRef. ::CUfilter_mode_enum is defined as:
  *
@@ -12666,6 +13040,8 @@ CUresult CUDAAPI cuTexRefSetFilterMode(CUtexref hTexRef, CUfilter_mode fm);
 
 /**
  * \brief Sets the mipmap filtering mode for a texture reference
+ *
+ * \deprecated
  *
  * Specifies the mipmap filtering mode \p fm to be used when reading memory through
  * the texture reference \p hTexRef. ::CUfilter_mode_enum is defined as:
@@ -12701,7 +13077,9 @@ CUresult CUDAAPI cuTexRefSetMipmapFilterMode(CUtexref hTexRef, CUfilter_mode fm)
 /**
  * \brief Sets the mipmap level bias for a texture reference
  *
- * Specifies the mipmap level bias \p bias to be added to the specified mipmap level when 
+ * \deprecated
+ *
+ * Specifies the mipmap level bias \p bias to be added to the specified mipmap level when
  * reading memory through the texture reference \p hTexRef.
  *
  * Note that this call has no effect if \p hTexRef is not bound to a mipmapped array.
@@ -12727,6 +13105,8 @@ CUresult CUDAAPI cuTexRefSetMipmapLevelBias(CUtexref hTexRef, float bias);
 
 /**
  * \brief Sets the mipmap min/max mipmap level clamps for a texture reference
+ *
+ * \deprecated
  *
  * Specifies the min/max mipmap level clamps, \p minMipmapLevelClamp and \p maxMipmapLevelClamp
  * respectively, to be used when reading memory through the texture reference 
@@ -12757,6 +13137,8 @@ CUresult CUDAAPI cuTexRefSetMipmapLevelClamp(CUtexref hTexRef, float minMipmapLe
 /**
  * \brief Sets the maximum anisotropy for a texture reference
  *
+ * \deprecated
+ *
  * Specifies the maximum anisotropy \p maxAniso to be used when reading memory through
  * the texture reference \p hTexRef. 
  *
@@ -12784,6 +13166,8 @@ CUresult CUDAAPI cuTexRefSetMaxAnisotropy(CUtexref hTexRef, unsigned int maxAnis
 
 /**
  * \brief Sets the border color for a texture reference
+ *
+ * \deprecated
  *
  * Specifies the value of the RGBA color via the \p pBorderColor to the texture reference
  * \p hTexRef. The color value supports only float type and holds color components in
@@ -12818,6 +13202,8 @@ CUresult CUDAAPI cuTexRefSetBorderColor(CUtexref hTexRef, float *pBorderColor);
 
 /**
  * \brief Sets the flags for a texture reference
+ *
+ * \deprecated
  *
  * Specifies optional flags via \p Flags to specify the behavior of data
  * returned through the texture reference \p hTexRef. The valid flags are:
@@ -12859,6 +13245,8 @@ CUresult CUDAAPI cuTexRefSetFlags(CUtexref hTexRef, unsigned int Flags);
 /**
  * \brief Gets the address associated with a texture reference
  *
+ * \deprecated
+ *
  * Returns in \p *pdptr the base address bound to the texture reference
  * \p hTexRef, or returns ::CUDA_ERROR_INVALID_VALUE if the texture reference
  * is not bound to any device memory range.
@@ -12885,6 +13273,8 @@ CUresult CUDAAPI cuTexRefGetAddress(CUdeviceptr *pdptr, CUtexref hTexRef);
 /**
  * \brief Gets the array bound to a texture reference
  *
+ * \deprecated
+ *
  * Returns in \p *phArray the CUDA array bound to the texture reference
  * \p hTexRef, or returns ::CUDA_ERROR_INVALID_VALUE if the texture reference
  * is not bound to any CUDA array.
@@ -12910,7 +13300,9 @@ CUresult CUDAAPI cuTexRefGetArray(CUarray *phArray, CUtexref hTexRef);
 /**
  * \brief Gets the mipmapped array bound to a texture reference
  *
- * Returns in \p *phMipmappedArray the CUDA mipmapped array bound to the texture 
+ * \deprecated
+ *
+ * Returns in \p *phMipmappedArray the CUDA mipmapped array bound to the texture
  * reference \p hTexRef, or returns ::CUDA_ERROR_INVALID_VALUE if the texture reference
  * is not bound to any CUDA mipmapped array.
  *
@@ -12934,6 +13326,8 @@ CUresult CUDAAPI cuTexRefGetMipmappedArray(CUmipmappedArray *phMipmappedArray, C
 
 /**
  * \brief Gets the addressing mode used by a texture reference
+ *
+ * \deprecated
  *
  * Returns in \p *pam the addressing mode corresponding to the
  * dimension \p dim of the texture reference \p hTexRef. Currently, the only
@@ -12961,6 +13355,8 @@ CUresult CUDAAPI cuTexRefGetAddressMode(CUaddress_mode *pam, CUtexref hTexRef, i
 /**
  * \brief Gets the filter-mode used by a texture reference
  *
+ * \deprecated
+ *
  * Returns in \p *pfm the filtering mode of the texture reference
  * \p hTexRef.
  *
@@ -12984,6 +13380,8 @@ CUresult CUDAAPI cuTexRefGetFilterMode(CUfilter_mode *pfm, CUtexref hTexRef);
 
 /**
  * \brief Gets the format used by a texture reference
+ *
+ * \deprecated
  *
  * Returns in \p *pFormat and \p *pNumChannels the format and number
  * of components of the CUDA array bound to the texture reference \p hTexRef.
@@ -13011,6 +13409,8 @@ CUresult CUDAAPI cuTexRefGetFormat(CUarray_format *pFormat, int *pNumChannels, C
 /**
  * \brief Gets the mipmap filtering mode for a texture reference
  *
+ * \deprecated
+ *
  * Returns the mipmap filtering mode in \p pfm that's used when reading memory through
  * the texture reference \p hTexRef.
  *
@@ -13035,6 +13435,8 @@ CUresult CUDAAPI cuTexRefGetMipmapFilterMode(CUfilter_mode *pfm, CUtexref hTexRe
 /**
  * \brief Gets the mipmap level bias for a texture reference
  *
+ * \deprecated
+ *
  * Returns the mipmap level bias in \p pBias that's added to the specified mipmap
  * level when reading memory through the texture reference \p hTexRef.
  *
@@ -13058,6 +13460,8 @@ CUresult CUDAAPI cuTexRefGetMipmapLevelBias(float *pbias, CUtexref hTexRef);
 
 /**
  * \brief Gets the min/max mipmap level clamps for a texture reference
+ *
+ * \deprecated
  *
  * Returns the min/max mipmap level clamps in \p pminMipmapLevelClamp and \p pmaxMipmapLevelClamp
  * that's used when reading memory through the texture reference \p hTexRef. 
@@ -13084,6 +13488,8 @@ CUresult CUDAAPI cuTexRefGetMipmapLevelClamp(float *pminMipmapLevelClamp, float 
 /**
  * \brief Gets the maximum anisotropy for a texture reference
  *
+ * \deprecated
+ *
  * Returns the maximum anisotropy in \p pmaxAniso that's used when reading memory through
  * the texture reference \p hTexRef. 
  *
@@ -13108,6 +13514,8 @@ CUresult CUDAAPI cuTexRefGetMaxAnisotropy(int *pmaxAniso, CUtexref hTexRef);
 /**
  * \brief Gets the border color used by a texture reference
  *
+ * \deprecated
+ *
  * Returns in \p pBorderColor, values of the RGBA color used by
  * the texture reference \p hTexRef.
  * The color value is of type float and holds color components in
@@ -13130,10 +13538,12 @@ CUresult CUDAAPI cuTexRefGetMaxAnisotropy(int *pmaxAniso, CUtexref hTexRef);
  * \sa ::cuTexRefSetAddressMode,
  * ::cuTexRefSetAddressMode, ::cuTexRefSetBorderColor
  */
-CUresult CUDAAPI cuTexRefGetBorderColor(float *pBorderColor, CUtexref hTexRef); 
+CUresult CUDAAPI cuTexRefGetBorderColor(float *pBorderColor, CUtexref hTexRef);
 
 /**
  * \brief Gets the flags used by a texture reference
+ *
+ * \deprecated
  *
  * Returns in \p *pFlags the flags of the texture reference \p hTexRef.
  *
@@ -13154,20 +13564,6 @@ CUresult CUDAAPI cuTexRefGetBorderColor(float *pBorderColor, CUtexref hTexRef);
  * ::cuTexRefGetFilterMode, ::cuTexRefGetFormat
  */
 CUresult CUDAAPI cuTexRefGetFlags(unsigned int *pFlags, CUtexref hTexRef);
-
-/** @} */ /* END CUDA_TEXREF */
-
-/**
- * \defgroup CUDA_TEXREF_DEPRECATED Texture Reference Management [DEPRECATED]
- *
- * ___MANBRIEF___ deprecated texture reference management functions of the
- * low-level CUDA driver API (___CURRENT_FILE___) ___ENDMANBRIEF___
- *
- * This section describes the deprecated texture reference management
- * functions of the low-level CUDA driver application programming interface.
- *
- * @{
- */
 
 /**
  * \brief Creates a texture reference
@@ -13192,7 +13588,7 @@ CUresult CUDAAPI cuTexRefGetFlags(unsigned int *pFlags, CUtexref hTexRef);
  *
  * \sa ::cuTexRefDestroy
  */
-__CUDA_DEPRECATED CUresult CUDAAPI cuTexRefCreate(CUtexref *pTexRef);
+CUresult CUDAAPI cuTexRefCreate(CUtexref *pTexRef);
 
 /**
  * \brief Destroys a texture reference
@@ -13212,13 +13608,13 @@ __CUDA_DEPRECATED CUresult CUDAAPI cuTexRefCreate(CUtexref *pTexRef);
  *
  * \sa ::cuTexRefCreate
  */
-__CUDA_DEPRECATED CUresult CUDAAPI cuTexRefDestroy(CUtexref hTexRef);
+CUresult CUDAAPI cuTexRefDestroy(CUtexref hTexRef);
 
 /** @} */ /* END CUDA_TEXREF_DEPRECATED */
 
 
 /**
- * \defgroup CUDA_SURFREF Surface Reference Management
+ * \defgroup CUDA_SURFREF_DEPRECATED Surface Reference Management [DEPRECATED]
  *
  * ___MANBRIEF___ surface reference management functions of the low-level CUDA
  * driver API (___CURRENT_FILE___) ___ENDMANBRIEF___
@@ -13231,6 +13627,8 @@ __CUDA_DEPRECATED CUresult CUDAAPI cuTexRefDestroy(CUtexref hTexRef);
 
 /**
  * \brief Sets the CUDA array for a surface reference.
+ *
+ * \deprecated
  *
  * Sets the CUDA array \p hArray to be read and written by the surface reference
  * \p hSurfRef.  Any previous CUDA array state associated with the surface
@@ -13259,6 +13657,8 @@ CUresult CUDAAPI cuSurfRefSetArray(CUsurfref hSurfRef, CUarray hArray, unsigned 
 /**
  * \brief Passes back the CUDA array bound to a surface reference.
  *
+ * \deprecated
+ *
  * Returns in \p *phArray the CUDA array bound to the surface reference
  * \p hSurfRef, or returns ::CUDA_ERROR_INVALID_VALUE if the surface reference
  * is not bound to any CUDA array.
@@ -13277,7 +13677,7 @@ CUresult CUDAAPI cuSurfRefSetArray(CUsurfref hSurfRef, CUarray hArray, unsigned 
  */
 CUresult CUDAAPI cuSurfRefGetArray(CUarray *phArray, CUsurfref hSurfRef);
 
-/** @} */ /* END CUDA_SURFREF */
+/** @} */ /* END CUDA_SURFREF_DEPRECATED */
 
 #if __CUDA_API_VERSION >= 5000
 /**
@@ -14115,6 +14515,54 @@ CUresult CUDAAPI cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource
 
 CUresult CUDAAPI cuGetExportTable(const void **ppExportTable, const CUuuid *pExportTableId);
 
+/**
+ * \brief Return NvSciSync attributes that this device can support.
+ *
+ * Returns in \p nvSciSyncAttrList, the properties of NvSciSync that
+ * this CUDA device, \p dev can support. The returned \p nvSciSyncAttrList
+ * can be used to create an NvSciSync object that matches this device’s capabilities.
+ * 
+ * If NvSciSyncAttrKey_RequiredPerm field in \p nvSciSyncAttrList is
+ * already set this API will return ::CUDA_ERROR_INVALID_VALUE.
+ * 
+ * The applications should set \p nvSciSyncAttrList to a valid 
+ * NvSciSyncAttrList failing which this API will return
+ * ::CUDA_ERROR_INVALID_HANDLE.
+ * 
+ * The \p flags controls how applications intends to use
+ * the NvSciSync created from the \p nvSciSyncAttrList. The valid flags are:
+ * - ::CUDA_NVSCISYNC_ATTR_SIGNAL, specifies that the applications intends to 
+ * signal an NvSciSync on this CUDA device.
+ * - ::CUDA_NVSCISYNC_ATTR_WAIT, specifies that the applications intends to 
+ * wait on an NvSciSync on this CUDA device.
+ *
+ * At least one of these flags must be set, failing which the API
+ * returns ::CUDA_ERROR_INVALID_VALUE. Both the flags are orthogonal
+ * to one another: a developer may set both these flags that allows to
+ * set both wait and signal specific attributes in the same \p nvSciSyncAttrList.
+ *
+ * \param nvSciSyncAttrList     - Return NvSciSync attributes supported.
+ * \param dev                   - Valid Cuda Device to get NvSciSync attributes for.
+ * \param flags                 - flags describing NvSciSync usage.
+ *
+ * \return
+ *
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_INVALID_HANDLE,
+ * ::CUDA_ERROR_INVALID_DEVICE,
+ * ::CUDA_ERROR_NOT_SUPPORTED,
+ * ::CUDA_ERROR_OUT_OF_MEMORY
+ *
+ * \sa
+ * ::cuImportExternalSemaphore,
+ * ::cuDestroyExternalSemaphore,
+ * ::cuSignalExternalSemaphoresAsync,
+ * ::cuWaitExternalSemaphoresAsync
+ */
+CUresult CUDAAPI cuDeviceGetNvSciSyncAttributes(void *nvSciSyncAttrList, CUdevice dev, int flags);
 
 /**
  * CUDA API versioning support
@@ -14209,6 +14657,7 @@ CUresult CUDAAPI cuGetExportTable(const void **ppExportTable, const CUuuid *pExp
     #undef cuStreamBeginCapture
     #undef cuStreamEndCapture
     #undef cuStreamIsCapturing
+    #undef cuStreamGetCaptureInfo
     #undef cuGraphLaunch
 #endif /* __CUDA_API_VERSION_INTERNAL */
 
@@ -14448,8 +14897,11 @@ CUresult CUDAAPI cuGetExportTable(const void **ppExportTable, const CUuuid *pExp
     CUresult CUDAAPI cuSignalExternalSemaphoresAsync(const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream);
     CUresult CUDAAPI cuWaitExternalSemaphoresAsync(const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream);
     CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream);
+    CUresult CUDAAPI cuStreamBeginCapture_ptsz(CUstream hStream);
+    CUresult CUDAAPI cuStreamBeginCapture_v2(CUstream hStream, CUstreamCaptureMode mode);
     CUresult CUDAAPI cuStreamEndCapture(CUstream hStream, CUgraph *phGraph);
     CUresult CUDAAPI cuStreamIsCapturing(CUstream hStream, CUstreamCaptureStatus *captureStatus);
+    CUresult CUDAAPI cuStreamGetCaptureInfo(CUstream hStream, CUstreamCaptureStatus *captureStatus, cuuint64_t *id);
     CUresult CUDAAPI cuGraphLaunch(CUgraphExec hGraph, CUstream hStream);
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -13,8 +13,8 @@
  * @b Description: This file contains the Core data types and API.
  */
 
-#ifndef _NVMEDIA_CORE_H
-#define _NVMEDIA_CORE_H
+#ifndef NVMEDIA_CORE_H
+#define NVMEDIA_CORE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +24,7 @@ extern "C" {
 #include <stdint.h>
 #include <time.h>
 
-#if !defined(__NVM_DEPRECATED__)
+#if !defined(NVM_DEPRECATED)
     #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 6)
         /*
          * deprecated as build time warnings to prompt developers to migrate
@@ -33,20 +33,21 @@ extern "C" {
          */
 
         #pragma GCC diagnostic warning "-Wdeprecated-declarations"
-        #define __NVM_DEPRECATED_MSG__(fmt) __attribute__((deprecated(fmt)))
+        #define NVM_DEPRECATED_MSG(fmt) __attribute__((deprecated(fmt)))
     #else
-        #define __NVM_DEPRECATED__
-        #define __NVM_DEPRECATED_MSG__(fmt) __NVM_DEPRECATED__
+        #define NVM_DEPRECATED
+        #define NVM_DEPRECATED_MSG(fmt) NVM_DEPRECATED
     #endif
 #else
-    #define __NVM_DEPRECATED_MSG__(fmt) __NVM_DEPRECATED__
+    #define NVM_DEPRECATED_MSG(fmt) NVM_DEPRECATED
 #endif
 
 /**
  * \defgroup nvmedia_common_top Common Declarations
  * \ingroup nvmedia_top
  *
- * \brief Defines basic types used for video and images throughout the NvMedia API.
+ * \brief Defines basic types used for video and images throughout the
+ *  NvMedia API.
  */
 
 /**
@@ -57,19 +58,19 @@ extern "C" {
  * @{
  */
 
-/** \brief Major Version number */
+/** \brief Release major version number. */
 #define NVMEDIA_RELEASE_VERSION_MAJOR   2
-/** \brief Minor Version number */
+/** \brief Release minor version number. */
 #define NVMEDIA_RELEASE_VERSION_MINOR   0
 
-/** \brief Major Version number */
+/** \brief Core major version number. */
 #define NVMEDIA_CORE_VERSION_MAJOR   1
-/** \brief Minor Version number */
-#define NVMEDIA_CORE_VERSION_MINOR   5
+/** \brief Core minor version number. */
+#define NVMEDIA_CORE_VERSION_MINOR   12
 
-/** \hideinitializer \brief A true \ref NvMediaBool value */
+/** \hideinitializer \brief A true \ref NvMediaBool value. */
 #define NVMEDIA_TRUE  (0 == 0)
-/** \hideinitializer \brief A false \ref NvMediaBool value */
+/** \hideinitializer \brief A false \ref NvMediaBool value. */
 #define NVMEDIA_FALSE (0 == 1)
 
 /**
@@ -91,45 +92,31 @@ typedef uint64_t NvMediaGlobalTime;
 /** \brief Defines clock base for NvMediaTime.
  */
 typedef enum {
-/** \hideinitializer \brief PTP clock is used for base time calculation. */
+    /** \hideinitializer \brief Specifies that PTP clock is used
+     for base time calculation. */
     NVMEDIA_TIME_BASE_CLOCK_PTP = 0,
-/** \hideinitializer \brief Kernel monotonic clock is used for base time calculation. */
+    /** \hideinitializer \brief Specifies that kernel monotonic clock is used
+     for base time calculation. */
     NVMEDIA_TIME_BASE_CLOCK_MONOTONIC,
-/** \hideinitializer \brief User defined clock is used for base time calculation. */
+    /** \hideinitializer \brief Specifies that a user defined clock is used
+     for base time calculation. */
     NVMEDIA_TIME_BASE_CLOCK_USER_DEFINED,
 } NvMediaTimeBase;
-
-/**
- * \brief Holds a constant RGBA color.
- *
- * @note the components are stored as float_t values in the
- * range 0.0...1.0 rather than format-specific integer values.
- * This allows NvMediaColor values to be independent from the exact
- * surface format(s) in use.
- */
-typedef struct {
-    /*! Red color component */
-    float_t red;
-    /*! Green color component */
-    float_t green;
-    /*! Blue color component */
-    float_t blue;
-    /*! Alpha color component */
-    float_t alpha;
-} NvMediaColor;
 
 /** \brief Defines color standards.
  */
 typedef enum {
-/** \hideinitializer \brief ITU BT.601 color standard. */
+    /** \hideinitializer \brief Specifies ITU BT.601 color standard. */
     NVMEDIA_COLOR_STANDARD_ITUR_BT_601,
-/** \hideinitializer \brief ITU BT.709 color standard. */
+    /** \hideinitializer \brief Specifies ITU BT.709 color standard. */
     NVMEDIA_COLOR_STANDARD_ITUR_BT_709,
-/** \hideinitializer \brief SMTE 240M color standard. */
+    /** \hideinitializer \brief Specifies SMTE 240M color standard. */
     NVMEDIA_COLOR_STANDARD_SMPTE_240M,
-/** \hideinitializer \brief ITU BT.601 color standard extended range. */
+    /** \hideinitializer \brief Specifies ITU BT.601 color standard extended
+     range. */
     NVMEDIA_COLOR_STANDARD_ITUR_BT_601_ER,
-/** \hideinitializer \brief ITU BT.709 color standard extended range. */
+    /** \hideinitializer \brief Specifies ITU BT.709 color standard extended
+     range. */
     NVMEDIA_COLOR_STANDARD_ITUR_BT_709_ER
 } NvMediaColorStandard;
 
@@ -139,7 +126,7 @@ typedef enum {
  * The co-ordinates are top-left inclusive, bottom-right
  * exclusive.
  *
- * The NvMedia co-ordinate system has its origin at the top-left
+ * The NvMedia co-ordinate system has its origin at the top left corner
  * of a surface, with x and y components increasing right and
  * down.
  */
@@ -155,66 +142,63 @@ typedef struct {
 } NvMediaRect;
 
 /**
- * \brief Holds a location on a 2-dimensional object.
+ * \brief Defines the location of a point on a two-dimensional object.
  */
 typedef struct {
-    /*! Horizontal location of the point */
+    /*! Holds the horizontal location of the point. */
     int32_t x;
-    /*! Vertical location of the point */
+    /*! Holds the vertical location of the point. */
     int32_t y;
 } NvMediaPoint;
 
 /**
- * \brief Holda a Region of Interest
- *
- * The co-ordinates are top-left inclusive, bottom-right
- * exclusive.
- *
+ * \brief Defines the double-precision location of a point on a two-dimensional
+ *  object.
  */
 typedef struct {
-    /** left column of a rectangle */
-    int32_t left;
-    /** top row of a rectangle */
-    int32_t top;
-    /** right column of a rectangle */
-    int32_t right;
-    /** bottom row of a rectangle */
-    int32_t bottom;
-} NvMediaROI;
+    /*! Holds the horizontal location of the point. */
+    double_t x;
+    /*! Holds the vertical location of the point. */
+    double_t y;
+} NvMediaPointDouble;
 
 /**
  * \hideinitializer
- * \brief The set of all possible error codes.
+ * \brief Defines all possible error codes.
  */
 typedef enum {
-    /** \hideinitializer The operation completed successfully; no error. */
+    /** \hideinitializer Specifies that the operation completed successfully
+     (with no error). */
     NVMEDIA_STATUS_OK = 0,
-    /** Bad parameter was passed. */
+    /** Specifies that a bad parameter was passed. */
     NVMEDIA_STATUS_BAD_PARAMETER,
-    /** Operation has not finished yet. */
+    /** Specifies that the operation has not finished yet. */
     NVMEDIA_STATUS_PENDING,
-    /** Operation timed out. */
+    /** Specifies that the operation timed out. */
     NVMEDIA_STATUS_TIMED_OUT,
-    /** Out of memory. */
+    /** Specifies that the process is out of memory. */
     NVMEDIA_STATUS_OUT_OF_MEMORY,
-    /** Not initialized. */
+    /** Specifies that a component requred by the function call is not
+     initialized. */
     NVMEDIA_STATUS_NOT_INITIALIZED,
-    /** Not supported. */
+    /** Specifies that the requested operation is not supported. */
     NVMEDIA_STATUS_NOT_SUPPORTED,
-    /** A catch-all error, used when no other error code applies. */
+    /** Specifies a catch-all error, used when no other error code applies. */
     NVMEDIA_STATUS_ERROR,
-    /** No operation is pending. */
+    /** Specifies that no operation is pending. */
     NVMEDIA_STATUS_NONE_PENDING,
-    /** Insufficient buffering. */
+    /** Specifies insufficient buffering. */
     NVMEDIA_STATUS_INSUFFICIENT_BUFFERING,
-    /** Invalid size. */
+    /** Specifies that the size of an object passed to a function was
+     invalid. */
     NVMEDIA_STATUS_INVALID_SIZE,
-    /** Incompatible version. */
+    /** Specifies that a library's version is incompatible with the
+     application. */
     NVMEDIA_STATUS_INCOMPATIBLE_VERSION,
-    /** Operation is cancelled when the hardware is timed out. */
-    NVMEDIA_STATUS_CANCELLED,
-    /** Undefined state. */
+    /** Specifies that the operation entered an undefined state. */
     NVMEDIA_STATUS_UNDEFINED_STATE,
+    /** Specifies an error from Permanent Fault Software Diagnostic. */
+    NVMEDIA_STATUS_PFSD_ERROR,
 } NvMediaStatus;
 
 /**
@@ -225,7 +209,7 @@ typedef enum {
 typedef struct {
     /*! Holds actual status - \ref NvMediaStatus. */
     NvMediaStatus status;
-    /*! Timestamp of end of operation. */
+    /*! Holds timestamp of end of operation. */
     uint64_t endTimestamp;
 } NvMediaTaskStatus;
 
@@ -237,23 +221,83 @@ typedef struct {
  */
 
 /**
- * Holds NvMedia Version information.
+ * Holds NvMedia version information.
  */
 typedef struct {
-    /*! Major version */
+    /*! Holds NvMedia major version number. */
     uint8_t major;
-    /*! Minor version */
+    /*! Holds NvMedia minor version number.*/
     uint8_t minor;
 } NvMediaVersion;
 
 /**
+ ******* Definitions ******************
+ * SOFFence - Start of frame \ref NvSciSyncFence. An NvSciSyncFence
+ *            whose expiry indicates that the processing has started.
+ * EOFFence - End of frame NvSciSyncFence. An NvSciSyncFence
+ *            whose expiry indicates that the processing is done.
+ * PREFence - An NvSciSyncFence on which the start of processing is
+ *            blocked until the expiry of the fence.
+ **************************************
+ */
+
+/**
+ * \brief NvMedia NvSciSync ClientType
+ */
+typedef enum {
+    /* An NvMedia component acts as a signaler. */
+    NVMEDIA_SIGNALER,
+    /* An NvMedia component acts as a waiter. */
+    NVMEDIA_WAITER,
+    /* An NvMedia component acts as a signaler and waiter also for the same
+     \ref NvSciSyncObj. */
+    NVMEDIA_SIGNALER_WAITER
+} NvMediaNvSciSyncClientType;
+
+/**
+ * \brief Defines NvMedia \ref NvSciSyncObj types.
+ */
+typedef enum {
+    /** Specifies an NvSciSyncObj type for which an NvMedia component acts
+     as a waiter. */
+    NVMEDIA_PRESYNCOBJ,
+    /** Specifies an NvSciSyncObj type for which an NvMedia component acts
+     as a signaler, signaling EOFFence. */
+    NVMEDIA_EOFSYNCOBJ,
+    /** Specifies an NvSciSyncObj type for which an NvMedia component acts
+     as a signaler, signaling SOFFence. */
+    NVMEDIA_SOFSYNCOBJ,
+    /** Specifies an NvSciSyncObj type for which an NvMedia component acts
+     both as a signaler, signaling EOFFence, and as a waiter.
+       Use this type in use cases where a EOFfence from an NvMedia component
+       handle in one iteration is used as a PREfence for the same
+       handle in the next iteration. */
+    NVMEDIA_EOF_PRESYNCOBJ,
+    /** Specifies an NvSciSyncObj type for which an NvMedia component acts
+     as a signaler, signaling SOFFence, as a waiter.
+       Use this type in use cases where a SOFfence from an NvMedia component
+       handle in one iteration is used as a PREfence for the same
+       handle in the next iteration. */
+    NVMEDIA_SOF_PRESYNCOBJ
+
+} NvMediaNvSciSyncObjType;
+
+/*
+ * \brief Defines all possible access modes.
+ */
+typedef enum {
+    /** Specifies read-only access mode. */
+    NVMEDIA_ACCESS_MODE_READ,
+    /** Specifies read/write access mode. */
+    NVMEDIA_ACCESS_MODE_READ_WRITE,
+} NvMediaAccessMode;
+
+/**
  * \brief Gets the release version information for the NvMedia library.
- * \param[in] version A pointer to a \ref NvMediaVersion structure
+ * \param[in] version A pointer to a structure
  *                      to be filled by the function.
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
+ * \return  NVMEDIA_STATUS_OK if the operation was successful, or
+ *  NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
  */
 NvMediaStatus
 NvMediaReleaseGetVersion(
@@ -262,12 +306,10 @@ NvMediaReleaseGetVersion(
 
 /**
  * \brief Gets the core version information for the NvMedia library.
- * \param[in] version A pointer to a \ref NvMediaVersion structure
+ * \param[in] version A pointer to a structure
  *                      to be filled by the function.
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
+ * \return  NVMEDIA_STATUS_OK if the operation was successful, or
+ *  NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
  */
 NvMediaStatus
 NvMediaCoreGetVersion(
@@ -279,24 +321,24 @@ NvMediaCoreGetVersion(
 /**
  * \defgroup device_api Device
  *
- * Manages NvMediaDevice objects, which are the root of the Nvmedia object
+ * Manages \ref NvMediaDevice objects, which are the root of the Nvmedia object
  * system.
  *
- * The NvMediaDevice is the root of the NvMedia object system. Using a
- * NvMediaDevice object, all other object types may be created. See
- * the sections describing those other object types for details
+ * A caller can use an
+ * NvMediaDevice object to create objects of all other types. See
+ * the sections describing the other object types for details
  * on object creation.
  * @{
  */
 
 /**
- * \brief  An opaque handle representing a NvMediaDevice object.
+ * \brief  An opaque handle representing an NvMediaDevice object.
  */
-typedef void NvMediaDevice;
+typedef struct NvMediaDevice NvMediaDevice;
 
 /**
  * \brief Creates an NvMediaDevice.
- * \return The new handle for the device, or NULL if unsuccessful.
+ * \return The new handle for the device if successful, or NULL otherwise.
  */
 NvMediaDevice *
 NvMediaDeviceCreate(
@@ -305,7 +347,7 @@ NvMediaDeviceCreate(
 
 /**
  * \brief Destroys an NvMediaDevice.
- * \param[in] device A pointer to the device to destroy.
+ * \param[in] device A pointer to the device to be destroyed.
  */
 void
 NvMediaDeviceDestroy(
@@ -354,10 +396,33 @@ NvMediaDeviceDestroy(
  *   NvMediaPaletteCreate
  *   NvMediaPaletteDestroy
  *   NvMediaPaletteLoad
+ *
+ * <b> Version 1.6 </b> Sep 12, 2018
+ * - Add \ref NvMediaPointDouble
+ *
+ * <b> Version 1.7 </b> Dec 12, 2018
+ * - MISRA Rule 21.1 and 21.2 violations are fixed
+ *
+ * <b> Version 1.8 </b> Feb 4, 2019
+ * - Removed \ref NvMediaROI
+ * - Moved \ref NvMediaColor to nvmedia_vmp.h
+ * - Changed \ref NvMediaDevice type from void to struct
+ *
+ * <b> Version 1.9 </b> March 7, 2019
+ * - Added \ref NvMediaNvSciSyncClientType and \ref NvMediaNvSciSyncObjType.
+ *
+ * <b> Version 1.10 </b> March 18, 2019
+ * - Added /ref NvMediaAccessMode
+ *
+ * <b> Version 1.11 </b> March 25, 2019
+ * - Removed enum value NVMEDIA_STATUS_CANCELLED from \ref NvMediaStatus
+ *
+ * <b> Version 1.12 </b> April 2, 2019
+ * - Added enum value NVMEDIA_STATUS_PFSD_ERROR to \ref NvMediaStatus
  */
 
 #ifdef __cplusplus
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_CORE_H */
+#endif /* NVMEDIA_CORE_H */

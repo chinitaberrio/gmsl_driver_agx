@@ -241,28 +241,6 @@ ilmErrorTypes ilm_layerSetSourceRectangle(t_ilm_layer layerId, t_ilm_uint x, t_i
 ilmErrorTypes ilm_layerSetDestinationRectangle(t_ilm_layer layerId, t_ilm_int x, t_ilm_int y, t_ilm_int width, t_ilm_int height);
 
 /**
- * \brief Sets the orientation of a layer.
- * \ingroup ilmControl
- * \param[in] layerId Id of layer.
- * \param[in] orientation Orientation of the layer.
- * \note ilmOrientation for more information on orientation values
- * \return ILM_SUCCESS if the method call was successful
- * \return ILM_FAILED if the client can not call the method on the service.
- */
-ilmErrorTypes ilm_layerSetOrientation(t_ilm_layer layerId, ilmOrientation orientation) ILM_DEPRECATED;
-
-/**
- * \brief Gets the orientation of a layer.
- * \ingroup ilmControl
- * \param[in] layerId Id of layer.
- * \param[out] pOrientation Address where orientation of the layer should be stored.
- * \note ilmOrientation for more information on orientation values
- * \return ILM_SUCCESS if the method call was successful
- * \return ILM_FAILED if the client can not call the method on the service.
- */
-ilmErrorTypes ilm_layerGetOrientation(t_ilm_layer layerId, ilmOrientation *pOrientation) ILM_DEPRECATED;
-
-/**
  * \brief Sets render order of surfaces within one layer
  * \ingroup ilmControl
  * \param[in] layerId Id of layer.
@@ -346,37 +324,27 @@ ilmErrorTypes ilm_surfaceSetSourceRectangle(t_ilm_surface surfaceId, t_ilm_int x
 ilmErrorTypes ilm_surfaceSetDestinationRectangle(t_ilm_surface surfaceId, t_ilm_int x, t_ilm_int y, t_ilm_int width, t_ilm_int height);
 
 /**
- * \brief Sets the orientation of a surface.
+ * \brief Set the type of a surface. If a surface is not visible it will not be rendered.
+ * If a surface is restricted type, visible contents of the surface is strictly
+ * controlled by the compositor. Its content is not allowed to be go out of
+ * its destination region. If the application resizes its buffers or uses
+ * wp_viewporter protocol to scale its contents, the old destination region
+ * would causes visible glitches.
+ * To avoid these issues, the controller process mark a surface as desktop
+ * compatible. Source and destination regions of a desktop compatible
+ * surface will be modified accordingly,when application sends a request
+ * for resizing or scaling its contents. Therefore, applications contents
+ * will be drawn according to application's wishes.
+ * On the other hand, source and destination regions will be strictly
+ * enforced, when the surface's type is restricted. The default type for
+ * a surface is restricted.
  * \ingroup ilmControl
- * \param[in] surfaceId Id of surface.
- * \param[in] orientation Orientation of the surface.
- * \note ilmOrientation for information about orientation values
+ * \param[in] surfaceId Id of the surface to set the type of
+ * \param[in] type Type of the surface
  * \return ILM_SUCCESS if the method call was successful
  * \return ILM_FAILED if the client can not call the method on the service.
  */
-ilmErrorTypes ilm_surfaceSetOrientation(t_ilm_surface surfaceId, ilmOrientation orientation) ILM_DEPRECATED;
-
-/**
- * \brief Gets the orientation of a surface.
- * \ingroup ilmControl
- * \param[in]  surfaceId Id of surface.
- * \param[out] pOrientation Address where orientation of the surface should be stored.
- * \note ilmOrientation for information about orientation values
- * \return ILM_SUCCESS if the method call was successful
- * \return ILM_FAILED if the client can not call the method on the service.
- */
-ilmErrorTypes ilm_surfaceGetOrientation(t_ilm_surface surfaceId, ilmOrientation *pOrientation) ILM_DEPRECATED;
-
-/**
- * \brief Gets the pixelformat of a surface.
- * \ingroup ilmControl
- * \param[in] surfaceId Id of surface.
- * \param[out] pPixelformat Pointer where the pixelformat of the surface should be stored
- * \note ilmPixelFormat for information about pixel format values
- * \return ILM_SUCCESS if the method call was successful
- * \return ILM_FAILED if the client can not call the method on the service.
- */
-ilmErrorTypes ilm_surfaceGetPixelformat(t_ilm_layer surfaceId, ilmPixelFormat *pPixelformat) ILM_DEPRECATED;
+ilmErrorTypes ilm_surfaceSetType(t_ilm_surface surfaceId, ilmSurfaceType type);
 
 /**
  * \brief Sets render order of layers on a display
@@ -399,17 +367,6 @@ ilmErrorTypes ilm_displaySetRenderOrder(t_ilm_display display, t_ilm_layer *pLay
  * \return ILM_FAILED if the client can not call the method on the service.
  */
 ilmErrorTypes ilm_takeScreenshot(t_ilm_uint screen, t_ilm_const_string filename);
-
-/**
- * \brief Take a screenshot of a certain layer
- * The screenshot is saved as bmp file with the corresponding filename.
- * \ingroup ilmControl
- * \param[in] filename Location where the screenshot should be stored
- * \param[in] layerid Identifier of the layer to take the screenshot of
- * \return ILM_SUCCESS if the method call was successful
- * \return ILM_FAILED if the client can not call the method on the service.
- */
-ilmErrorTypes ilm_takeLayerScreenshot(t_ilm_const_string filename, t_ilm_layer layerid);
 
 /**
  * \brief Take a screenshot of a certain surface
@@ -483,6 +440,23 @@ ilmErrorTypes ilm_registerNotification(notificationFunc callback, void *user_dat
  * \return ILM_FAILED if the client can not call the method on the service.
  */
 ilmErrorTypes ilm_unregisterNotification(void);
+
+/**
+ * \brief returns the global error flag.
+ * When compositor sends an error, the error flag is set to appropriate error code
+ * value. No other errors are recorded until ilm_getError is called. Calling this
+ * API sets the error flag to ILM_SUCCESS.
+ * \ingroup ilmControl
+ * \return ILM_SUCCESS if there is no error
+ * \return ILM_FAILED if the method call has failed
+ * \return ILM_ERROR_INVALID_ARGUMENTS, if an invalid arguments error has occurred
+ * \return ILM_ERROR_ON_CONNECTION, if a connection error has occurred
+ * \return ILM_ERROR_RESOURCE_ALREADY_INUSE, if resource is already in use
+ * \return ILM_ERROR_RESOURCE_NOT_FOUND, if resource was not found
+ * \return ILM_ERROR_NOT_IMPLEMENTED, if feature is not implemented
+ * \return ILM_ERROR_UNEXPECTED_MESSAGE, if received message has unexpected type
+ */
+ilmErrorTypes ilm_getError(void);
 #ifdef __cplusplus
 } /**/
 #endif /* __cplusplus */

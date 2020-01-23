@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved. All
+ * Copyright (c) 2015-2019, NVIDIA CORPORATION.  All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#include "nvmedia_core.h"
 #include "nvmedia_ipp.h"
 /**
  * \defgroup image_acp_api Camera AutoControl Plugin
@@ -29,7 +30,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_ACP_VERSION_MAJOR   1u
 /** \brief Minor Version number */
-#define NVMEDIA_ACP_VERSION_MINOR   3u
+#define NVMEDIA_ACP_VERSION_MINOR   4u
 
 /**
  * \brief Version information for the NvMedia ACP library.

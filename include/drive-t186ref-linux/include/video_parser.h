@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 NVIDIA Corporation.  All Rights Reserved.
+ * Copyright (c) 2011-2019 NVIDIA Corporation.  All Rights Reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property and
  * proprietary rights in and to this software and related documentation.  Any
@@ -8,8 +8,8 @@
  * is strictly prohibited.
  */
 
-#ifndef _VIDEO_PARSER_H
-#define _VIDEO_PARSER_H
+#ifndef VIDEO_PARSER_H
+#define VIDEO_PARSER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,7 @@ extern "C" {
 
 #define DEFAULT_WIDTH_IN_MBS_FOR_AES      120 // This is for 1080p resolution
 #define DEFAULT_HEIGHT_IN_MBS_FOR_AES      68 // This is for 1080p resolution
-#define MAX_USER_SEI_PAYLOAD              128 // maximum user defined sei payload size
+#define MAX_USER_SEI_PAYLOAD              128U // maximum user defined sei payload size
 
 // Compression Standard
 typedef enum _NvVideoCompressionStd
@@ -45,9 +45,7 @@ typedef enum _NvVideoCompressionStd
     NVCS_VP8        =9,     // VP8
     NVCS_H265       =10,    // H265
     NVCS_VP9        =11,    // VP9
-#if defined(NV_BUILD_CONFIGURATION_EXPOSING_T19X) && (NV_BUILD_CONFIGURATION_EXPOSING_T19X)
     NVCS_H265_MV    =12,    // H265 MV
-#endif
 } NvVideoCompressionStd;
 
 // Definitions for video_format
@@ -116,7 +114,8 @@ enum {
     NVETransferCharacteristics_BT2020_1,    // same 1, 6, 14, 15
     NVETransferCharacteristics_BT2020_2,    // same 1, 6, 14, 15
     NVETransferCharacteristics_SMPTE2084,   // applicable for 10, 12, 14, 16 bit
-    NVETransferCharacteristics_ST418_1
+    NVETransferCharacteristics_ST418_1,
+    NVETransferCharacteristics_HLG
 };
 
 // Supporting DRM modes
@@ -173,9 +172,10 @@ typedef enum
     NVDVideoParserAttribute_DpbSize_SetTo_MaxRefFrames,    // DPB size is set to max number of reference frames
     NVDVideoParserAttribute_ErrorStatusReporting,    // Enable error status reporting
     NVDVideoParserAttribute_SecureDecode,        // Enable m_pSlhData allocation for encrypted streams in parser
-    NVDVideoParserAttribute_GetBitstreamError,      // Get bitstream error for current input buffer
-    NVDVideoParserAttribute_PrevFrameLostFlag,      // To get the status whether previous frame was lost
-    NVDVideoParserAttribute_SliceLevelDecode     //Enable Slice level decode feature using HW decoder. Applicable only for hevc
+    NVDVideoParserAttribute_GetBitstreamError,   // Get bitstream error for current input buffer
+    NVDVideoParserAttribute_PrevFrameLostFlag,   // To get the status whether previous frame was lost
+    NVDVideoParserAttribute_SliceLevelDecode,    //Enable Slice level decode feature using HW decoder. Applicable only for hevc
+    NVDVideoParserAttribute_Undefined
 } NVDVideoParserAttribute;
 
 typedef void NVDPicBuff;
@@ -191,7 +191,13 @@ typedef struct _NVMasteringDisplayData
     NvU32 min_display_parameter_luminance;      // nominal minimum display luminance in units of 0.0001 candelas per square metre
 } NVMasteringDisplayData;
 
-#define MAX_SEQ_HDR_LEN   512        // 512 bytes
+#define MAX_SEQ_HDR_LEN   512U
+typedef struct _NVContentLightLevelInfo
+{
+    NvU16 max_content_light_level;
+    NvU16 max_pic_average_light_level;
+} NVContentLightLevelInfo;
+
 
 // Sequence information
 typedef struct _NVDSequenceInfo
@@ -199,7 +205,7 @@ typedef struct _NVDSequenceInfo
     NvVideoCompressionStd eCodec;     // Compression Standard
     double fFrameRate;                // Frame Rate stored in the bitstream
     NvS32 nDecodeBuffers;             // Number of decode buffers required
-    NvS32 bProgSeq;                   // Progressive Sequence
+    NvBool bProgSeq;                  // Progressive Sequence
     NvS32 nDisplayLeftOffset;         // Left offset for display
     NvS32 nDisplayTopOffset;          // Top offset for display
     NvS32 nDisplayWidth;              // Displayed Horizontal Size
@@ -217,13 +223,15 @@ typedef struct _NVDSequenceInfo
     NvU32 SARWidth, SARHeight;        // Sample Aspect Ratio
     NvS32 lVideoFormat;               // Video Format (NVEVideoFormat_XXX)
     NvS32 lVideoFullRangeFlag;        // Video Range (0-255) vs (16-235)
-    NvS32 lColorPrimaries;            // Colour Primaries (NVEColorPrimaries_XXX)
-    NvS32 lTransferCharacteristics;   // Transfer Characteristics
-    NvS32 lMatrixCoefficients;        // Matrix Coefficients
-    NvS32 cbSequenceHeader;           // Number of bytes in SequenceHeaderData
+    NvU32 lColorPrimaries;            // Colour Primaries (NVEColorPrimaries_XXX)
+    NvU32 lTransferCharacteristics;   // Transfer Characteristics
+    NvU32 lMatrixCoefficients;        // Matrix Coefficients
+    NvU32 cbSequenceHeader;           // Number of bytes in SequenceHeaderData
     NvU32 MaxBitstreamSize;           // maximum size of bitstream buffer
-    NvU8 bMasteringDispDataPresent;              // flag to indicated mastering display data is present
+    NvBool bMasteringDispDataPresent;              // flag to indicated mastering display data is present
     NVMasteringDisplayData MasteringDispData;
+    NvBool bContentLightLevelInfoPresent;
+    NVContentLightLevelInfo ContentLightLevelInfo;
     NvU8 SequenceHeaderData[MAX_SEQ_HDR_LEN]; // Raw sequence header data (codec-specific)
     NvU8 ChromaLocTopField;           //chroma_sample_loc_type_top_field
     NvU8 ChomaLocBottomField;         //chroma_sample_loc_type_bottom_field
@@ -250,17 +258,17 @@ typedef struct _NVMPEG2PictureData
 {
     NVDPicBuff *pForwardRef;           // Forward reference (P/B-frames)
     NVDPicBuff *pBackwardRef;          // Backward reference (B-frames)
-    NvS32 picture_coding_type;         // TYPE_?FRAME
-    NvS32 picture_structure;
-    NvS32 full_pel_forward_vector;
-    NvS32 full_pel_backward_vector;
-    NvS32 f_code[2][2];
-    NvS32 intra_dc_precision;
-    NvS32 frame_pred_frame_dct;
-    NvS32 concealment_motion_vectors;
-    NvS32 q_scale_type;
-    NvS32 intra_vlc_format;
-    NvS32 alternate_scan;
+    NvU32 picture_coding_type;         // TYPE_?FRAME
+    NvU32 picture_structure;
+    NvU32 full_pel_forward_vector;
+    NvU32 full_pel_backward_vector;
+    NvU32 f_code[2][2];
+    NvU32 intra_dc_precision;
+    NvBool frame_pred_frame_dct;
+    NvBool concealment_motion_vectors;
+    NvBool q_scale_type;
+    NvBool intra_vlc_format;
+    NvBool alternate_scan;
 
     // Encryption params
     NVDEncryptParams encryptParams;
@@ -426,33 +434,33 @@ typedef struct _NVVC1PictureData
     NvS32 ptype;               // Picture type
     NvS32 fcm;                 // Frame coding mode
     // SEQUENCE
-    NvS32 profile;
-    NvS32 postprocflag;
-    NvS32 pulldown;
-    NvS32 interlace;
-    NvS32 tfcntrflag;
-    NvS32 finterpflag;
-    NvS32 psf;
-    NvS32 multires;
-    NvS32 syncmarker;
-    NvS32 rangered;
-    NvS32 maxbframes;
+    NvU32 profile;
+    NvU32 postprocflag;
+    NvBool pulldown;
+    NvBool interlace;
+    NvBool tfcntrflag;
+    NvBool finterpflag;
+    NvBool psf;
+    NvU32 multires;
+    NvU32 syncmarker;
+    NvU32 rangered;
+    NvU32 maxbframes;
     // ENTRYPOINT
-    NvS32 panscan_flag;
-    NvS32 refdist_flag;
-    NvS32 extended_mv;
-    NvS32 dquant;
-    NvS32 vstransform;
-    NvS32 loopfilter;
-    NvS32 fastuvmc;
-    NvS32 overlap;
-    NvS32 quantizer;
-    NvS32 extended_dmv;
-    NvS32 range_mapy_flag;
-    NvS32 range_mapy;
-    NvS32 range_mapuv_flag;
-    NvS32 range_mapuv;
-    NvS32 rangeredfrm;    // range reduction state
+    NvBool panscan_flag;
+    NvBool refdist_flag;
+    NvBool extended_mv;
+    NvU32 dquant;
+    NvBool vstransform;
+    NvBool loopfilter;
+    NvBool fastuvmc;
+    NvBool overlap;
+    NvU32 quantizer;
+    NvBool extended_dmv;
+    NvBool range_mapy_flag;
+    NvU32 range_mapy;
+    NvBool range_mapuv_flag;
+    NvU32 range_mapuv;
+    NvBool rangeredfrm;    // range reduction state
 
     // Encryption params
     NVDEncryptParams encryptParams;
@@ -651,36 +659,36 @@ typedef struct _NVVP8PictureData
     NVDPicBuff *pLastRef;            // Last reference frame
     NVDPicBuff *pGoldenRef;          // Golden reference frame
     NVDPicBuff *pAltRef;             // Alternate reference frame
-    NvU8 key_frame;
-    NvU8 version;
-    NvU8 show_frame;
-    NvU8 clamp_type;           // 0 means clamp needed in decoder. 1: no clamp needed
+    NvBool key_frame;
+    NvU32 version;
+    NvBool show_frame;
+    NvBool clamp_type;           // 0 means clamp needed in decoder. 1: no clamp needed
     //16
-    NvU8 segmentation_enabled;
-    NvU8 update_mb_seg_map;
-    NvU8 update_mb_seg_data;
-    NvU8 update_mb_seg_abs;    // 0 means delta, 1 means absolute value
-    NvU8 filter_type;
-    NvU8 loop_filter_level;
-    NvU8 sharpness_level;
-    NvU8 mode_ref_lf_delta_enabled;
-    NvU8 mode_ref_lf_delta_update;
-    NvU8 num_of_partitions;
-    NvU8 dequant_index;
+    NvBool segmentation_enabled;
+    NvBool update_mb_seg_map;
+    NvBool update_mb_seg_data;
+    NvBool update_mb_seg_abs;   // 0 means delta, 1 means absolute value
+    NvBool filter_type;
+    NvU32 loop_filter_level;
+    NvU32 sharpness_level;
+    NvBool mode_ref_lf_delta_enabled;
+    NvBool mode_ref_lf_delta_update;
+    NvU32 num_of_partitions;
+    NvU32 dequant_index;
     NvS8 deltaq[5];
     //32
-    NvU8 golden_ref_frame_sign_bias;
-    NvU8 alt_ref_frame_sign_bias;
-    NvU8 refresh_entropy_probs;
-    NvU8 CbrHdrBedValue;
-    NvU8 CbrHdrBedRange;
+    NvBool golden_ref_frame_sign_bias;
+    NvBool alt_ref_frame_sign_bias;
+    NvBool refresh_entropy_probs;
+    NvU32 CbrHdrBedValue;
+    NvU32 CbrHdrBedRange;
     NvU8 mb_seg_tree_probs [3];
     //40
     NvS8 seg_feature[2][4];
     NvS8 ref_lf_deltas[4];
     NvS8 mode_lf_deltas[4];
     //56
-    NvU8 BitsConsumed;              //Bit cosumed for current bitstream byte.
+    NvU32 BitsConsumed;             //Bit consumed for current bitstream byte.
     NvU8 AlignByte[3];
     //60
     NvU32 hdr_partition_size;       // Remaining header parition size
@@ -689,9 +697,9 @@ typedef struct _NVVP8PictureData
     NvU32 coeff_partition_size[8];
     NvU32 coeff_partition_start_offset[8];
     //136
-    NvU32 RetRefreshGoldenFrame;
-    NvU32 RetRefreshAltFrame;
-    NvU32 RetRefreshLastFrame;
+    NvBool RetRefreshGoldenFrame;
+    NvBool RetRefreshAltFrame;
+    NvBool RetRefreshLastFrame;
     // Encryption params
     NVDEncryptParams encryptParams;
 } NVVP8PictureData;
@@ -1003,11 +1011,12 @@ typedef struct _NVHEVCPictureData
     NvU8 log2SaoOffsetScaleChroma;             //pps log2_sao_offset_scale_chroma
     NvS8 cb_qp_adjustment[6];                    //-[12,+12]
     NvS8 cr_qp_adjustment[6];                    //-[12,+12]
-    NvU8 bMasteringDispDataPresent;              // flag to indicated mastering display data is present
+    NvBool bMasteringDispDataPresent;            // flag to indicated mastering display data is present
     NVMasteringDisplayData MasteringDispData;
+    NvBool bContentLightLevelInfoPresent;              // flag to indicated mastering display data is present
+    NVContentLightLevelInfo ContentLightLevelInfo;
     // Encryption params
     NVDEncryptParams encryptParams;
-#if defined(NV_BUILD_CONFIGURATION_EXPOSING_T19X) && (NV_BUILD_CONFIGURATION_EXPOSING_T19X)
     // hevc-mv extension
     struct
     {
@@ -1023,7 +1032,6 @@ typedef struct _NVHEVCPictureData
         NvS32 RefPicSetInterLayer0[32];
         NvS32 RefPicSetInterLayer1[32];
     } mvext;
-#endif
 } NVHEVCPictureData;
 
 typedef struct _NVDAesMetaData
@@ -1062,7 +1070,6 @@ typedef struct _NVDDpbInfo
     DecRefFrame RPSList[16];  // RPS List as signaled in slice header excluding current frame, only first nActiveRefFrames are valid. This can be different from list of frames in current DPB due to frame loss.
 } NVDDpbInfo;
 
-#if NV_BUILD_CONFIGURATION_EXPOSING_T19X
 typedef struct
 {
     /** Bitstream data*/
@@ -1085,7 +1092,6 @@ typedef struct
     /** Single slice flag: whether this is complete frame with only 1 slice */
     NvBool bSingleSliceCase;
 } NvVideoParserSliceData;
-#endif
 
 typedef struct _NVDPictureData
 {
@@ -1094,16 +1100,16 @@ typedef struct _NVDPictureData
 
     NVDPicBuff *pCurrPic; // Current picture (output)
 
-    NvS32 field_pic_flag;     // 0=frame picture, 1=field picture
-    NvS32 bottom_field_flag;  // 0=top field, 1=bottom field (ignored if field_pic_flag=0)
-    NvS32 second_field;       // Second field of a complementary field pair
-    NvS32 progressive_frame;  // Frame is progressive
-    NvS32 top_field_first;    // Frame pictures only
-    NvS32 repeat_first_field; // For 3:2 pulldown (number of additional fields, 2=frame doubling, 4=frame tripling)
-    NvS32 ref_pic_flag;       // Frame is a reference frame
-    NvS32 intra_pic_flag;     // Frame is entirely intra coded (no temporal dependencies)
-    NvS32 chroma_format;      // Chroma Format (should match sequence info)
-    NvS32 picture_order_count; // picture order count (if known)
+    NvBool field_pic_flag;    // 0=frame picture, 1=field picture
+    NvBool bottom_field_flag; // 0=top field, 1=bottom field (ignored if field_pic_flag=0)
+    NvBool second_field;      // Second field of a complementary field pair
+    NvBool progressive_frame; // Frame is progressive
+    NvBool top_field_first;   // Frame pictures only
+    NvU32 repeat_first_field; // For 3:2 pulldown (number of additional fields, 2=frame doubling, 4=frame tripling)
+    NvBool ref_pic_flag;      // Frame is a reference frame
+    NvBool intra_pic_flag;    // Frame is entirely intra coded (no temporal dependencies)
+    NvU32 chroma_format;      // Chroma Format (should match sequence info)
+    NvU32 picture_order_count;// picture order count (if known)
     // Bitstream data
     NvU32 nBitstreamDataLen;  // Number of bytes in bitstream data buffer
     NvU8 *pBitstreamData;     // Ptr to bitstream data for this picture (slice-layer)
@@ -1216,9 +1222,9 @@ typedef struct _NVDAesParams
 typedef struct _bitstream_packet_s
 {
     const NvU8 *pByteStream;  // Ptr to byte stream data
-    NvS32 nDataLength;        // Data length for this packet
-    NvS32 bEOS;               // TRUE if this is an End-Of-Stream packet (flush everything)
-    NvS32 bPTSValid;          // TRUE if llPTS is valid (also used to detect frame boundaries for VC1 SP/MP)
+    NvU32 nDataLength;        // Data length for this packet
+    NvBool bEOS;              // TRUE if this is an End-Of-Stream packet (flush everything)
+    NvBool bPTSValid;         // TRUE if llPTS is valid (also used to detect frame boundaries for VC1 SP/MP)
     NvS32 bDiscontinuity;     // TRUE if DecMFT is signalling a discontinuity
     NvS32 bCompletePicture;   // TRUE if this packet contains complete picture
     NvS32 bCompleteSlice;     // TRUE if this packet contains complete Slice
@@ -1236,11 +1242,11 @@ NvBool video_parser_parse(video_parser_context_s *ctx, bitstream_packet_s *pkt);
 NvBool video_parser_scan(video_parser_context_s *ctx, bitstream_packet_s *pkt);
 NvBool video_parser_set_encryption(video_parser_context_s *ctx, NVDAesParams *pAesParams);
 void video_parser_flush(video_parser_context_s *ctx);
-NvBool video_parser_set_attribute(video_parser_context_s *ctx, NvU32 AttributeType, NvU32 AttributeSize,void *pAttribute);
-NvBool video_parser_get_attribute(video_parser_context_s *ctx, NvU32 AttributeType, NvU32 AttributeSize,void *pAttribute);
+NvBool video_parser_set_attribute(video_parser_context_s *ctx, NVDVideoParserAttribute AttributeType, NvU32 AttributeSize,void *pAttribute);
+NvBool video_parser_get_attribute(video_parser_context_s *ctx, NVDVideoParserAttribute AttributeType, NvU32 AttributeSize,void *pAttribute);
 
 #ifdef __cplusplus
 };     /* extern "C" */
 #endif
 
-#endif //_VIDEO_PARSER_H
+#endif //VIDEO_PARSER_H

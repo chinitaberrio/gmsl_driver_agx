@@ -199,7 +199,9 @@
 static NV_FORCE_INLINE  NvU64
 NvDiv64Inline(NvU64 dividend, NvU32 divisor)
 {
-    if (!divisor) return 0;
+    if (divisor == 0U) {
+        return 0;
+    }
     return dividend / divisor;
 }
 

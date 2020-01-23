@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -35,7 +35,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VIDEO_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_VIDEO_VERSION_MINOR   4
+#define NVMEDIA_VIDEO_VERSION_MINOR   6
 
 /**
  * \defgroup surface_api Video Surface
@@ -79,16 +79,11 @@ typedef struct {
  *     <td><b> Filled members </b></td>
  *  </tr>
  *  <tr>
- *     <td><b> \ref NvMediaSurfaceType_Video_420 \n \ref NvMediaSurfaceType_Video_422 \n \ref NvMediaSurfaceType_Video_444 </b></td>
+ *     <td><b> \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, YUV, 420/422/444, PACKED/SEMI-PLANAR/PLANAR, 8, PL/BL) </b></td>
  *     <td> lumaWidth, lumaHeight, pY, pitchY, pU, pitchU, pV, pitchV </td>
  *  </tr>
  *  <tr>
- *     <td><b> \ref NvMediaSurfaceType_VideoCapture_422 </b></td>
- *     <td> lumaWidth, lumaHeight, pY, pitchY, pU, pitchU, pV, pitchV, pY2, pitchY2, pU2, pitchU2, pV2, pitchV2
- *          \n Member names ending with 2 refer to the second field of that surface. </td>
- *  </tr>
- *  <tr>
- *     <td><b> \ref NvMediaSurfaceType_VideoCapture_YUYV_422 </b></td>
+ *     <td><b> \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, YUYV, 422, PACKED, 8, PL) </b></td>
  *     <td> lumaWidth, lumaHeight, pY, pitchY
  *          \n Y refer to YUYV. </td> *  </tr>
  *  <tr>
@@ -197,6 +192,9 @@ NvMediaVideoSurfaceUnlock(
  *       Structure containing co-ordinates of the rectangle in the destination surface
  *       to which the client surface is to be copied. Setting dstRect to NULL implies
  *       rectangle of full surface size.
+ *       dstRect is supported only for NvMediaVideoSurfaces whose NvMediaSurfaceType
+ *       was derived with NVM_SURF_ATTR_SURF_TYPE attribute set to NVM_SURF_ATTR_SURF_TYPE_RGBA
+ *       For all other surface types, it is ignored.
  * \param[in] srcPntrs
  *       Array of pointers to the client surface planes
  * \param[in] srcPitches
@@ -225,6 +223,9 @@ NvMediaVideoSurfacePutBits(
  *       Structure containing co-ordinates of the rectangle in the source surface
  *       from which the client surface is to be copied. Setting srcRect to NULL
  *       implies rectangle of full surface size.
+ *       srcRect is supported only for NvMediaVideoSurfaces whose NvMediaSurfaceType
+ *       was derived with NVM_SURF_ATTR_SURF_TYPE attribute set to NVM_SURF_ATTR_SURF_TYPE_RGBA
+ *       For all other surface types, it is ignored.
  * \param[out] dstPntrs
  *       Array of pointers to the destination surface planes
  * \param[in] dstPitches
@@ -271,6 +272,12 @@ NvMediaVideoSurfaceGetBits(
  *   NVMEDIA_SURFACE_ATTRIBUTE_INTERLACED
  * - Deprecated \ref NvMediaVideoSurfaceCreate, \ref NvMediaVideoSurfaceCreateEx,
  *   \ref NvMediaVideoSurfaceSetAttributes
+ *
+ * <b> Version 1.5 </b> October 5, 2018
+ * - Updated the comments in the header to use new NvMediaSurfaceType values
+ *
+ * <b> Version 1.6 </b> January 16, 2019
+ * - Updated description for \ref NvMediaVideoSurfaceGetBits and \ref NvMediaVideoSurfacePutBits
  *
  */
 

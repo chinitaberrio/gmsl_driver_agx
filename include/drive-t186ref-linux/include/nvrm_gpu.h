@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 NVIDIA Corporation.  All rights reserved.
+ * Copyright (c) 2014-2018 NVIDIA Corporation.  All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -24,17 +24,19 @@ extern "C"
 #endif
 
 /**
- * \file
- * \brief <b> NVIDIA Resource Manager: Discrete GPU</b>
+ * @file
+ * @brief <b> NVIDIA Resource Manager: Discrete GPU</b>
  *
+ * @ifnot NVRM_GPU_PRIVATE
  * @b Description: This file contains a resource manager API
  *    for GPU clock controls.
- */
-
- /**
+ * @endif
+ *
  * @defgroup nvrm_gpu_group GPU Resource Manager API
  *
  * Manages GPU resources.
+ *
+ * @ifnot NVRM_GPU_PRIVATE
  * For related information, see
  * <a href="../Clock Freq and Thermal/discrete_GPU.html" target="_blank">
  * Discrete GPU</a> in the _Development Guide_.
@@ -71,13 +73,13 @@ extern "C"
  *   closed only if there are no concurrent operations on-going on
  *   it. Attempting to close an object during an on-going operation is a fatal
  *   error.
+ * @endif
  * @{
  */
 
-
-/** Handle type. */
+/** Library handle type. */
 typedef struct NvRmGpuLibRec NvRmGpuLib;
-/** Handle type. */
+/** Device handle type. */
 typedef struct NvRmGpuDeviceRec NvRmGpuDevice;
 
 /**** Generic functions ****/
@@ -100,12 +102,22 @@ NvRmGpuLib *NvRmGpuLibOpen(const NvRmGpuLibOpenAttr *attr);
 
 /**
  * Closes the library and releases all resources.
+ *
+ * @return NvSuccess if closing the library was successful. Regardless of
+ * possible errors in deinitialization, the library object will be closed.
  */
-void NvRmGpuLibClose(NvRmGpuLib *hlib);
+NvError NvRmGpuLibClose(NvRmGpuLib *hlib);
+
+typedef enum
+{
+    NvRmGpuLibDeviceState_Detached,
+    NvRmGpuLibDeviceState_Attached,
+} NvRmGpuDeviceState;
 
 typedef struct NvRmGpuLibDeviceListEntryRec
 {
     int deviceIndex;
+    NvRmGpuDeviceState deviceState;
     const char *name; // temporary name, e.g., Nouveau GPU 0 or some such
 } NvRmGpuLibDeviceListEntry;
 
@@ -125,6 +137,24 @@ typedef struct NvRmGpuLibDeviceListEntryRec
  *   NvRmGpuDeviceOpen().
  */
 const NvRmGpuLibDeviceListEntry *NvRmGpuLibListDevices(NvRmGpuLib *hlib, size_t *pnumDevices);
+
+/**
+ * Power up and attach a GPU.
+ * hlib: handle to nvrm gpu lib.
+ * deviceIndex: GPU device index.
+ *
+ * Returns NvSuccess on a succesful GPU attach. Returns NvError otherwise.
+ */
+NvError NvRmGpuLibAttachDevice(NvRmGpuLib *const hlib, const int deviceIndex);
+
+/**
+ * Detach and power down a GPU.
+ * hlib: handle to nvrm gpu lib.
+ * deviceIndex: GPU device index.
+ *
+ * Returns NvSuccess on a succesful GPU power-off. Returns NvError otherwise.
+ */
+NvError NvRmGpuLibDetachDevice(NvRmGpuLib *const hlib, const int deviceIndex);
 
 /**** Device functions ****/
 
@@ -167,14 +197,19 @@ typedef struct NvRmGpuDeviceOpenAttrRec
  * @note Do not assume that the device indexes are sequential and start from
  * zero. Use the NVRM_GPU_DEVICE_INDEX_DEFAULT for the primary GPU when the
  * system has more than one GPU.
+ * @note Only attached GPUs can be opened. A detached GPU can be attached
+ * with help of NvRmGpuLibAttachDevice(deviceIndex).
  */
 NvError NvRmGpuDeviceOpen(NvRmGpuLib *hLib, int deviceIndex, const NvRmGpuDeviceOpenAttr *attr,
                           NvRmGpuDevice **phDevice);
 
 /**
  * Closes the GPU device.
+ *
+ * @return NvSuccess if closing the device object was successful. Regardless of
+ * possible errors in deinitialization, the device object will be closed.
  */
-void NvRmGpuDeviceClose(NvRmGpuDevice *hDevice);
+NvError NvRmGpuDeviceClose(NvRmGpuDevice *hDevice);
 
 /**
  * NvRmGpuDevice subinterface for application-driven GPU clock frequency management.
@@ -203,7 +238,13 @@ void NvRmGpuDeviceClose(NvRmGpuDevice *hDevice);
  *
  */
 
-typedef struct NvRmGpuClockAsyncReqRec *NvRmGpuClockAsyncReqHandle;
+#if NVOS_IS_LINUX || NVOS_IS_QNX
+#define NVRM_GPU_CLOCK_ASYNC_REQ_HANDLE_PRIFMT "d"
+typedef int NvRmGpuClockAsyncReqHandle;
+#else
+#define NVRM_GPU_CLOCK_ASYNC_REQ_HANDLE_PRIFMT "p"
+typedef struct NvRmGpuClockAsyncNotImplemented *NvRmGpuClockAsyncReqHandle;
+#endif
 
 /**
  * Clock domains
@@ -392,6 +433,17 @@ NvError NvRmGpuClockWaitAnyEvent(NvRmGpuDevice *hDevice,
 NvError NvRmGpuClockGet(NvRmGpuDevice *hDevice,
                         NvRmGpuClockGetEntry *pClkGetEntries,
                         size_t numEntries);
+
+/**
+ * Gets gpu load.
+ *
+ * @param[in] hDevice GPU device handle
+ * @param[out] pLoadPerMille GPU load in permille
+ *
+ * @return NvSuccess indicates that request was successful.
+ */
+NvError NvRmGpuDeviceGetLoad(NvRmGpuDevice *hDevice,
+                              uint32_t *pLoadPerMille);
 
 typedef enum
 {
@@ -633,12 +685,12 @@ NvError NvRmGpuDeviceEventSessionRead(NvRmGpuDeviceEventSession *hSession,
  *
  * @param hSession Event session handle
  *
- * @return NvSuccess on successful operation.
-
+ * @return NvSuccess if closing the object was successful. Regardless of
+ * possible errors in deinitialization, the object will be closed.
  */
-void NvRmGpuDeviceEventSessionClose(NvRmGpuDeviceEventSession *hSession);
+NvError NvRmGpuDeviceEventSessionClose(NvRmGpuDeviceEventSession *hSession);
 
-/** @} */
+/** @} nvrm_gpu_group */
 
 #if defined(__cplusplus)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -10,12 +10,12 @@
  * \file
  * \brief <b> NVIDIA Media Interface: Arrays </b>
  *
- * @b Description: This file contains the API to access 1 dimensional arrays managed by
- *                 NvMedia used in multimedia applications.
+ * @b Description: This file contains the API to access one-dimensional arrays
+ *    managed by NvMedia for use in multimedia applications.
  */
 
-#ifndef _NVMEDIA_ARRAY_H
-#define _NVMEDIA_ARRAY_H
+#ifndef NVMEDIA_ARRAY_H
+#define NVMEDIA_ARRAY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,41 +34,46 @@ extern "C" {
  * @{
  */
 
-/** \brief Major Version number */
+/** \brief Major version number. */
 #define NVMEDIA_ARRAY_VERSION_MAJOR   2
-/** \brief Minor Version number */
+/** \brief Minor version number. */
 #define NVMEDIA_ARRAY_VERSION_MINOR   1
 
 /**
  * \hideinitializer
  * \brief Infinite time-out for \ref NvMediaArrayGetStatus.
  */
-#define NVMEDIA_ARRAY_TIMEOUT_INFINITE  0xFFFFFFFF
+#define NVMEDIA_ARRAY_TIMEOUT_INFINITE  0xFFFFFFFFu
 
-/** \brief Defines the different types of Arrays.
+/** \brief Defines the different types of arrays.
  */
 typedef enum {
-    /*! Undefined array type. */
+    /*! Specifies an undefined array type. */
     NVMEDIA_ARRAY_TYPE_UNDEFINED = 0,
-    /*! Signed 8 bit.*/
+    /*! Specifies a signed 8-bit array.*/
     NVMEDIA_ARRAY_TYPE_INT8 = 1,
-    /*! Unsigned 8 bit.*/
+    /*! Specifies an unsigned 8-bit array.*/
     NVMEDIA_ARRAY_TYPE_UINT8 = 2,
-    /*! Signed 16 bit.*/
+    /*! Specifies a signed 16-bit array.*/
     NVMEDIA_ARRAY_TYPE_INT16 = 3,
-    /*! Unsigned 16 bit.*/
+    /*! Specifies an unsigned 16-bit array.*/
     NVMEDIA_ARRAY_TYPE_UINT16 = 4,
-    /*! Float 16 bit.*/
+    /*! Specifies a float 16-bit array.*/
     NVMEDIA_ARRAY_TYPE_FLOAT16 = 5,
-    /*! Unsigned 32 bit.*/
+    /*! Specifies a unsigned 32-bit array.*/
     NVMEDIA_ARRAY_TYPE_UINT32 = 6,
-    /*! Number of types - If more types are needed, add above this and update this.*/
-    NVMEDIA_ARRAY_NUM_TYPES = 6,
+    /*! Specifies a signed 32-bit array.*/
+    NVMEDIA_ARRAY_TYPE_INT32 = 7,
+    /*! Specifies a float 32-bit array.*/
+    NVMEDIA_ARRAY_TYPE_FLOAT32 = 8,
+    /*! Number of types - If more types are needed, add above this pointer and
+     update this constant.*/
+    NVMEDIA_ARRAY_NUM_TYPES = 8,
 } NvMediaArrayType;
 
 /**
- * \brief Holds a descriptor for the array.
- * Note: The array needs to be created and destroyed using the corresponding
+ * \brief Holds a descriptor for an array.
+ * Note: Create and destroy an array with the corresponding
  *       NvMediaArrayCreate() and NvMediaArrayDestroy() functions.
  */
 typedef struct NvMediaArray NvMediaArray;
@@ -77,24 +82,24 @@ typedef struct NvMediaArray NvMediaArray;
  * \brief Defines NvMedia array allocation attribute types.
  */
 typedef enum {
-    /**! CPU access to surface flags (default: uncached) */
+    /**! CPU access to surface flags (default: uncached). */
     NVM_ARRAY_ATTR_CPU_ACCESS,
 } NvMediaArrayAllocAttrType;
 
 /** \brief \ref NVM_SURF_ATTR_CPU_ACCESS flags
   */
-/** Uncached (mapped) access type flag */
-#define NVM_ARRAY_ATTR_CPU_ACCESS_UNCACHED 0x00000000
+/** Uncached (mapped) access type flag. */
+#define NVM_ARRAY_ATTR_CPU_ACCESS_UNCACHED 0x00000000u
 /** NVM_SURF_ATTR_CPU_ACCESS flag: Cached (mapped) access type flag */
-#define NVM_ARRAY_ATTR_CPU_ACCESS_CACHED 0x00000001
+#define NVM_ARRAY_ATTR_CPU_ACCESS_CACHED 0x00000001u
 
 /**
  * \brief Holds array allocation attributes.
  */
 typedef struct {
-    /** \brief Array Allocation Attribute Type */
+    /** \brief Array allocation attribute type. */
     NvMediaArrayAllocAttrType type;
-    /** \brief Array Allocation Attribute Value */
+    /** \brief Array allocation attribute value. */
     uint32_t value;
 } NvMediaArrayAllocAttr;
 
@@ -103,22 +108,20 @@ typedef struct {
  * \ingroup lock_unlock
  */
 typedef enum {
-    /** Read access */
-    NVMEDIA_ARRAY_ACCESS_READ       = (1 << 0),
-    /** Write access */
-    NVMEDIA_ARRAY_ACCESS_WRITE      = (1 << 1),
-    /** Read/Write access */
-    NVMEDIA_ARRAY_ACCESS_READ_WRITE = (NVMEDIA_ARRAY_ACCESS_READ | NVMEDIA_ARRAY_ACCESS_WRITE),
+    /** Specifies read access. */
+    NVMEDIA_ARRAY_ACCESS_READ       = 1,
+    /** Specifies write access. */
+    NVMEDIA_ARRAY_ACCESS_WRITE      = 2,
+    /** Specifies read/write access. */
+    NVMEDIA_ARRAY_ACCESS_READ_WRITE = 3,
 } NvMediaArrayLockAccess;
 
 /**
- * \brief Returns the version information for the NvMediaArray library.
- * \param[in] version A pointer to a \ref NvMediaVersion structure
- *                    filled by the NvMediaArray library.
- * \return \ref NvMediaStatus The status of the operation.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
+ * \brief Returns version information for the NvMediaArray library.
+ * \param[in] version A pointer to an \ref NvMediaVersion structure
+ *                    filled by the function.
+ * \return A status code; \ref NVMEDIA_STATUS_OK if the call is successful, or
+ *  \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
  */
 NvMediaStatus
 NvMediaArrayGetVersion(
@@ -127,13 +130,15 @@ NvMediaArrayGetVersion(
 
 /**
  * \brief Creates an NvMedia Array.
- * \param[in] device Handle to the NvMedia device obtained by calling \ref NvMediaDeviceCreate.
- * \param[in] type \ref NvMediaArrayType Type of Array to be created.
- * \param[in] stride Stride in bytes of each element.
- * \param[in] numElements number of Elements in the array.
- * \param[in] attrs An array of \ref NvMediaArrayAllocAttr Allocation attributes.
- * \param[in] numAttrs Number of allocation objects @a attrs.
- * \return \ref NvMediaArray Handle to array. Null if unsuccessful.
+ * \param[in] device        Handle to the NvMedia device obtained by calling
+ *                           NvMediaDeviceCreate().
+ * \param[in] type          Type of array to be created.
+ * \param[in] stride        Stride in bytes of each element.
+ * \param[in] numElements   Number of elements in the array.
+ * \param[in] attrs         An array of \ref NvMediaArrayAllocAttr allocation
+ *                           attributes to be applied to the created array.
+ * \param[in] numAttrs      Number of allocation attributes in @a attrs.
+ * \return  A handle to the array if the call is successful, or NULL otherwise.
  */
 NvMediaArray *
 NvMediaArrayCreate(
@@ -148,11 +153,9 @@ NvMediaArrayCreate(
 /**
  * \brief Destroys an array created by NvMediaArrayCreate().
  * \param[in] handle The handle to the array to be destroyed.
- * \return \ref NvMediaStatus The status of the API.
- * Possible return values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if input argument is NULL.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a handle is NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates any other error.
  */
 NvMediaStatus
 NvMediaArrayDestroy(
@@ -160,14 +163,13 @@ NvMediaArrayDestroy(
 );
 
 /**
- * \brief Gets the size of an element, for a particular type of array element.
- * \param[in] type \ref NvMediaArrayType Type of element.
- * \param[out] elementSize Pointer to size of element in bytes.
- * \return \ref NvMediaStatus The status of the API.
- * Possible return values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER for invalid type, or NULL pointer.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
+ * \brief Gets the size of a specified type of array element.
+ * \param[in]  type         Type of element.
+ * \param[out] elementSize  A pointer to the size of an element in bytes.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a type is invalid or
+ *  @a elementSize is NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates any other error.
  */
 NvMediaStatus
 NvMediaArrayGetElemSizeForType(
@@ -176,17 +178,17 @@ NvMediaArrayGetElemSizeForType(
 );
 
 /**
- * \brief Gets the size of the array.
- *        An array's size is the number of populated elements in the array.
- *        If the array has not been written to,
- *        the function sets \a *numElementsPtr to 0.
- * \param[in] handle The handle to the array.
- * \param[out] numElementsPtr Pointer to the number of valid elements.
- * \return \ref NvMediaStatus The status of the API.
- * Possible return values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if input argument is NULL.
- * - \ref NVMEDIA_STATUS_ERROR if array is not locked.
+ * \brief Gets the size of an array.
+ *
+ * An array's size is the number of populated elements in the array. If the
+ * array has not been written to, the function returns a size of 0.
+ *
+ * \param[in]  handle           The handle to the array.
+ * \param[out] numElementsPtr   A pointer to the number of elements.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a handle or
+ *  @c numElementsPtr is NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the array is not locked.
  */
 NvMediaStatus
 NvMediaArrayGetSize(
@@ -195,20 +197,21 @@ NvMediaArrayGetSize(
 );
 
 /**
- * \brief Sets the size of the array.
- *        Call this function before writing to the array.
- *        The number of elements must be less than the number with which the
- *        array was created.
- *        An array's size is the number of populated elements in the array.
-  * \sa NvMediaArrayCreate().
- * \param[in] handle The handle to the array.
- * \param[in] numElements Number of elements to set the size to.
- * \return \ref NvMediaStatus The status of the API.
- * Possible return values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if input argument is NULL.
- * - \ref NVMEDIA_STATUS_INVALID_SIZE if numElements is greater than initial size.
- * - \ref NVMEDIA_STATUS_ERROR if array is not locked.
+ * \brief Sets the size of an array (the number of populated elements in the
+ * array).
+ *
+ * Call this function before writing to the array. The specified size
+ * must be less than or equal to the number of elements with which the array
+ * was created.
+ *
+ * \sa NvMediaArrayCreate().
+ * \param[in] handle        The handle to the array.
+ * \param[in] numElements   Size of the array.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a handle is NULL.
+ * \retval  NVMEDIA_STATUS_INVALID_SIZE indicates that numElements is greater
+ *  than the array's initial size.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the array is not locked.
  */
 NvMediaStatus
 NvMediaArraySetSize(
@@ -217,16 +220,17 @@ NvMediaArraySetSize(
 );
 
 /**
- * \brief Helper function to get array properties with which array was created.
- * \param[in] handle The handle to the array.
- * \param[out] elementType Type of elements \ref NvMediaArrayType.
- * \param[out] capacity Pointer to the capacity (Number of elements).
- * \param[out] stride Pointer to the stride (Stride in bytes to move to next element).
- * \return \ref NvMediaStatus The status of the API.
- * Possible return values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if any argument is NULL.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
+ * \brief  Gets the array properties with which array was created.
+ * \param[in]  handle       The handle to the array.
+ * \param[out] elementType  Type of elements in the array.
+ * \param[out] capacity     A pointer to the array's capacity (the number of
+ *                           elements).
+ * \param[out] stride       A pointer to the array's stride (the offset in
+ *                           bytes between one elelment and the next).
+ * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more arguments
+ *  are NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates any other error.
  */
 NvMediaStatus
 NvMediaArrayGetProperties(
@@ -237,20 +241,21 @@ NvMediaArrayGetProperties(
 );
 
 /**
- * \brief Gets the status of the current/last operation for the Array
-          and optionally waits for the operation to complete/timeout.
- * \param[in] handle The handle to the array.
- * \param[in] millisecondWait Time  in milliseconds to wait for operation to
-              complete before getting status.
-              \ref NVMEDIA_ARRAY_TIMEOUT_INFINITE means wait till operation is completed
-              and then get status.
- * \param[out] status Status of the operation.
- * \return \ref NvMediaStatus The status of the function call.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_TIMED_OUT
- * - \ref NVMEDIA_STATUS_ERROR
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER
+ * \brief Gets the status of the current or most recent operation on the array;
+ *        optionally waits for the operation to complete or time out.
+ *
+ * \param[in]  handle   The handle to the array.
+ * \param[in]  millisecondWait
+ *                      Time in milliseconds to wait for the current operation
+ *                      to complete. \ref NVMEDIA_ARRAY_TIMEOUT_INFINITE
+ *                      means wait indefinitely.
+ * \param[out] status   Status of the operation.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
+ * \retval  NVMEDIA_STATUS_TIMED_OUT indicates that the operation did not
+ *  complete within the specified wait time.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that a parameter has an
+ *  invalid value.
+ * \retval  NVMEDIA_STATUS_ERROR indicates any other error.
  */
 NvMediaStatus
 NvMediaArrayGetStatus(
@@ -260,22 +265,25 @@ NvMediaArrayGetStatus(
 );
 
 /**
- * Locks an Array to which data can be written/read
- * without interference from another thread/process.
- * If the array is being used by an internal engine, this function waits until
- * the completion of this operation.
+ * \brief  Locks an array. A client can read or write a locked array
+ *  without interference from another thread or process.
  *
- * \param[in] handle Handle to the array to be locked.
- * \param[in] lockAccessType Determines the access type.
- * \param[out] ptr CPU mapped pointer to which data can be read/written.
- * The following access types are supported and may be OR'd together:
- * - \ref NVMEDIA_ARRAY_ACCESS_READ Read access
- * - \ref NVMEDIA_ARRAY_ACCESS_WRITE Write access
- * - \ref NVMEDIA_ARRAY_ACCESS_READ_WRITE Read/Write access
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK
- * - \ref NVMEDIA_STATUS_ERROR
+ * If the array is being used by an internal engine, this function waits until
+ * the operation is completed.
+ *
+ * \param[in]  handle   Handle to the array to be locked.
+ * \param[in]  lockAccessType
+ *                      Specifies the access type. The following access types
+ *                       are supported, and may be OR'd together:
+ *                      - \ref NVMEDIA_ARRAY_ACCESS_READ specifies read access.
+ *                      - \ref NVMEDIA_ARRAY_ACCESS_WRITE specifies write
+ *                          access.
+ *                      - \ref NVMEDIA_ARRAY_ACCESS_READ_WRITE Specifies
+ *                          read/write access.
+ * \param[out] ptr      A CPU mapped pointer which may be used to read or write
+ *                       data.
+ * \return  A status code; \ref NVMEDIA_STATUS_OK if the call is successful, or
+ *  \ref NVMEDIA_STATUS_ERROR otherwise.
  * \ingroup lock_unlock
  */
 NvMediaStatus
@@ -286,10 +294,12 @@ NvMediaArrayLock(
 );
 
 /**
- * Unlocks an Array.
- * To be called after data has been written to it/read from it by client.
+ * Unlocks an array.
+ *
+ * Call this function when the client has finished writing to or reading from
+ * the array.
+ *
  * \param[in] handle Handle to the array to be unlocked.
- * \return void
  * \ingroup lock_unlock
  */
 void
@@ -319,4 +329,4 @@ NvMediaArrayUnlock(
 };     /* extern "C" */
 #endif
 
-#endif // _NVMEDIA_ARRAY_H
+#endif // NVMEDIA_ARRAY_H

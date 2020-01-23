@@ -1,20 +1,20 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
  */
 
 
-#ifndef _NVMEDIA_PARSER_H
-#define _NVMEDIA_PARSER_H
+#ifndef NVMEDIA_PARSER_H
+#define NVMEDIA_PARSER_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "nvcommon.h"
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
 #include "nvmedia_drm.h"
 
 /**
@@ -152,7 +152,9 @@ typedef enum {
     /** transfer characteristics: SMPTE2084 */
     NvMTransferCharacteristics_SMPTE2084,
     /** transfer characteristics: ST418_1 */
-    NvMTransferCharacteristics_ST418_1
+    NvMTransferCharacteristics_ST418_1,
+    /** transfer characteristics: HLG */
+    NvMTransferCharacteristics_HLG
 } NvMediaTransferCharacteristicsType;
 
 /** \brief Defines the parser decode modes. */
@@ -316,7 +318,7 @@ typedef struct
  * \brief Defines the maximum size of the sequence header.
  */
 
-#define MAX_SEQ_HDR_LEN   512
+#define MAX_SEQ_HDR_LEN   512U
 
 /** \brief Holds video sequence information.
  *
@@ -402,6 +404,10 @@ typedef struct
     NvMediaBool bMasteringDispDataPresent;
     /** Color info: Specifies Only: Mastering display data if present */
     NvMediaMasteringDisplayData MasteringDispData;
+    /** Color info: Specifies Only: Content Light Level data if present */
+    NvMediaBool bContentLightLevelInfoPresent;
+    /** Color info: Specifies Only: Content Light Level data if present */
+    NvMediaContentLightLevelInfo ContentLightLevelInfo;
 } NvMediaParserSeqInfo;
 
 
@@ -609,7 +615,7 @@ typedef void NvMediaParser;
 
 NvMediaParser *
 NvMediaParserCreate(
-    NvMediaParserParams *pParserParams
+    const NvMediaParserParams *pParserParams
 );
 
 /** \brief Destroys a video decoder parser object.
@@ -657,8 +663,8 @@ NvMediaParserDestroy(
  */
 NvMediaStatus
 NvMediaParserParse(
-    NvMediaParser *pParser,
-    NvMediaBitStreamPkt *pStreamPacket
+    const NvMediaParser *pParser,
+    const NvMediaBitStreamPkt *pStreamPacket
 );
 
 /**
@@ -687,8 +693,8 @@ NvMediaParserParse(
  */
 NvMediaStatus
 NvMediaParserScan(
-    NvMediaParser *pParser,
-    NvMediaBitStreamPkt *pStreamPacket
+    const NvMediaParser *pParser,
+    const NvMediaBitStreamPkt *pStreamPacket
 );
 
 /**
@@ -706,8 +712,8 @@ NvMediaParserScan(
  */
 NvMediaStatus
 NvMediaParserSetEncryption(
-    NvMediaParser *pParser,
-    NvMediaAESParams *pAesParams
+    const NvMediaParser *pParser,
+    const NvMediaAESParams *pAesParams
 );
 
 /**
@@ -725,7 +731,7 @@ NvMediaParserSetEncryption(
  */
 void
 NvMediaParserFlush(
-    NvMediaParser *pParser
+    const NvMediaParser *pParser
 );
 
 /**
@@ -766,7 +772,7 @@ NvMediaParserSetAttribute(
  */
 NvMediaStatus
 NvMediaParserGetAttribute(
-    NvMediaParser *pParser,
+    const NvMediaParser *pParser,
     NvMediaParserAttr eAttributeType,
     uint32_t uAttributeSize,
     void *pAttribute
@@ -778,4 +784,4 @@ NvMediaParserGetAttribute(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_PARSER_H */
+#endif /* NVMEDIA_PARSER_H */

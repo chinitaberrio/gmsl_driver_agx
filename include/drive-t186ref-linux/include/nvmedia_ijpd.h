@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -12,14 +12,16 @@
  * @b Description: This file contains the \ref image_jpeg_decode_api "Image JPEG Decode Processing API".
  */
 
-#ifndef _NVMEDIA_IJPD_H
-#define _NVMEDIA_IJPD_H
+#ifndef NVMEDIA_IJPD_H
+#define NVMEDIA_IJPD_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
+#include "nvmedia_image.h"
 
 /**
  * \defgroup image_jpeg_decode_api Image JPEG Decoder
@@ -33,7 +35,7 @@ extern "C" {
 /** \brief Major version number */
 #define NVMEDIA_IJPD_VERSION_MAJOR   1
 /** \brief Minor version number */
-#define NVMEDIA_IJPD_VERSION_MINOR   3
+#define NVMEDIA_IJPD_VERSION_MINOR   6
 
 /**
  * \hideinitializer
@@ -145,6 +147,8 @@ typedef struct {
     uint32_t maxBitstreamBytes;
     /** Flag indicates support partial acceleration or not */
     uint8_t supportPartialAccel;
+    /** An Opaque pointer for internal use */
+    struct NvMediaIJPDPriv_ *jpegDecPriv;
 } NvMediaIJPD;
 
 /**
@@ -179,7 +183,7 @@ NvMediaIJPDGetVersion(
  */
 NvMediaIJPD *
 NvMediaIJPDCreate(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     uint16_t maxWidth,
     uint16_t maxHeight,
     uint32_t maxBitstreamBytes,
@@ -230,9 +234,9 @@ NvMediaIJPDResize (
  */
 NvMediaStatus
 NvMediaIJPDSetAttributes(
-   NvMediaIJPD *decoder,
+   const NvMediaIJPD *decoder,
    uint32_t attributeMask,
-   void *attributes
+   const void *attributes
 );
 
 /**
@@ -359,7 +363,7 @@ NvMediaIJPDGetInfo (
  */
 NvMediaStatus
 NvMediaIJPDRender(
-   NvMediaIJPD *decoder,
+   const NvMediaIJPD *decoder,
    NvMediaImage *output,
    const NvMediaRect *srcRect,
    const NvMediaRect *dstRect,
@@ -416,7 +420,7 @@ NvMediaIJPDRender(
  */
 NvMediaStatus
 NvMediaIJPDRenderYUV(
-   NvMediaIJPD *decoder,
+   const NvMediaIJPD *decoder,
    NvMediaImage *output,
    uint8_t downscaleLog2,
    uint32_t numBitstreamBuffers,
@@ -443,6 +447,17 @@ NvMediaIJPDRenderYUV(
  *
  * <b> Version 1.3 </b> October 5, 2017
  * - Added \ref NvMediaJPEGAppMarkerInfo to store the App info.
+ *
+ * <b> Version 1.4 </b> January 15, 2019
+ * - Fix MISRA violations 8.13, 21.1 and 21.2
+ *
+ * <b> Version 1.5 </b> Feb 20, 2019
+ * - Added opaque pointer for jpeg decoder
+ *   internal usage into jpeg decoder object
+ * - Fix MISRA violations 11.3
+ *
+ * <b> Version 1.6 </b> February 28, 2019
+ * - Add dependent header include nvmedia_core and nvmedia_image.h
  */
 
 /** @} */
@@ -451,4 +466,4 @@ NvMediaIJPDRenderYUV(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IJPD_H */
+#endif /* NVMEDIA_IJPD_H */

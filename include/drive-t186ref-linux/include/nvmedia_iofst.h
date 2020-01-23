@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -11,8 +11,8 @@
  *        (OFST) Estimator API </b>
  */
 
-#ifndef _NVMEDIA_IOFST_H
-#define _NVMEDIA_IOFST_H
+#ifndef NVMEDIA_IOFST_H
+#define NVMEDIA_IOFST_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +21,9 @@ extern "C" {
 #include <stdint.h>
 #include "nvmedia_image.h"
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
+#include "nvmedia_surface.h"
+#include "nvmedia_array.h"
 
 /**
  * \defgroup image_ofst_api Image OpticalFlow/StereoDisparity (OFST) Estimator
@@ -34,7 +37,7 @@ extern "C" {
 /** \brief Major version number. */
 #define NVMEDIA_IOFST_VERSION_MAJOR   1
 /** \brief Minor version number. */
-#define NVMEDIA_IOFST_VERSION_MINOR   4
+#define NVMEDIA_IOFST_VERSION_MINOR   10
 
 /**
  * \brief Defines the image estimation type.
@@ -74,6 +77,8 @@ typedef struct {
     NvMediaSurfaceType outputFormat;
     /** Instance ID. */
     NvMediaEncoderInstanceId instanceId;
+    /** An Opaque pointer for internal use */
+    struct NvMediaIOFSTPriv_ *ofstPriv;
 } NvMediaIOFST;
 
 /**
@@ -84,18 +89,6 @@ typedef struct {
     uint16_t width;
     /** OFST height.*/
     uint16_t height;
-    /** @c NVMEDIA_TRUE to enable external ME hints, or @c NVMEDIA_FALSE to
-     disable. */
-    NvMediaBool enableExternalMEHints;
-    /** Maximum number of hint candidates per block. If the client wants to
-     pass external motion vectors in the
-     \ref NvMediaOFSTExternalHintParams structure's meExternalHints buffer it
-     must specify this value, and must set
-     \ref enableExternalMEHints to @c NV_TRUE. */
-    NvMediaEncodeExternalMeHintCountsPerBlocktype maxMEHintCountsPerBlock;
-    /** @c NVMEDIA_TRUE to enable external segment ID map, or @c NVMEDIA_FALSE
-     to disable. */
-    NvMediaBool enableSegmentMap;
     /** Specifies bitwise OR'ed configuration feature flags. See the enum
      NvMediaOFSTConfigFeatures. */
     uint32_t features;
@@ -106,29 +99,26 @@ typedef struct {
  * basis.
  */
 typedef struct {
-    /** Specifies the number of hint candidates per block for the current frame.
-      The candidate count in @a meHintCountsPerBlock must never exceed the
-      value of the \ref NvMediaOFSTInitializeParams structure's
-      @c maxMEHintCountsPerBlock member provided during estimator
-      initialization. */
-    NvMediaEncodeExternalMeHintCountsPerBlocktype meHintCountsPerBlock;
-    /** Specifies a pointer to ME external hints for the current frame.
-        The size of the ME hint buffer must equal the number of macroblocks
-        multiplied by the total number of candidates per macroblock.
-        The total number of candidates per macroblock is
-        @code
-          1*meHintCountsPerBlock.numCandsPerBlk16x16 +
-          2*meHintCountsPerBlock.numCandsPerBlk16x8 +
-          2*meHintCountsPerBlock.numCandsPerBlk8x16 +
-          4*meHintCountsPerBlock.numCandsPerBlk8x8.
-        @endcode
-     */
-    NvMediaEncodeExternalMEHint *meExternalHints;
+    /** Specifies a pointer to ME external hints for the current frame. */
+    NvMediaArray *meExternalHints;
     /** @c Enables the external segment ID map, as follows:
      \n A value of @c NVMEDIA_TRUE enables it.
      \n A value of @c NVMEDIA_FALSE disables it. */
     NvMediaBool enableSegmentMap;
 } NvMediaOFSTExternalHintParams;
+
+/**
+ * \brief Returns the version information for the NvMedia IOFST library.
+ * \param[out] version : A pointer to a \ref NvMediaVersion structure
+ *                       filled by the IOFST library.
+ * \return \ref NvMediaStatus, the completion status of the operation:
+ *  \ref NVMEDIA_STATUS_OK if successful, or
+ *  \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
+ */
+NvMediaStatus
+NvMediaIOFSTGetVersion(
+    NvMediaVersion *version
+);
 
 /**
  * \brief Creates an OFST object that can create motion vectors based on the
@@ -176,11 +166,11 @@ typedef struct {
  */
 NvMediaIOFST *
 NvMediaIOFSTCreate(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaIOFSTType estimationType,
     NvMediaSurfaceType inputFormat,
     NvMediaSurfaceType outputFormat,
-    NvMediaOFSTInitializeParams *initParams,
+    const NvMediaOFSTInitializeParams *initParams,
     uint8_t maxInputBuffering,
     NvMediaEncoderInstanceId instanceId
 );
@@ -189,7 +179,7 @@ NvMediaIOFSTCreate(
  * \brief Destroys an NvMediaIOFST object.
  * \param[in] ofst    The OFST object to destroy.
  */
-void NvMediaIOFSTDestroy(NvMediaIOFST *ofst);
+void NvMediaIOFSTDestroy(const NvMediaIOFST *ofst);
 
 /**
  * \brief Performs OFST estimation on a specified frame pair.
@@ -224,11 +214,11 @@ void NvMediaIOFSTDestroy(NvMediaIOFST *ofst);
  */
 NvMediaStatus
 NvMediaIOFSTProcessFrame(
-    NvMediaIOFST *ofst,
+    const NvMediaIOFST *ofst,
     NvMediaImage *frame,
     NvMediaImage *refFrame,
     NvMediaImage *mvs,
-    NvMediaOFSTExternalHintParams *extHintParams,
+    const NvMediaOFSTExternalHintParams *extHintParams,
     NvMediaEncoderInstanceId instanceId
 );
 
@@ -258,6 +248,30 @@ NvMediaIOFSTProcessFrame(
  *
  * <b> Version 1.4 </b/> June 19, 2018
  * - Added features parameter to \ref NvMediaOFSTInitializeParams
+ *
+ * <b> Version 1.5 </b/> Dec 14, 2018
+ * - Fix MISRA violations 21.1 and 21.2
+ *
+ * <b> Version 1.6 </b> January 15, 2019
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 1.7 </b> Feb 7, 2019
+ * - Added opaque handle for ofst
+ *   internal usage into OFST object
+ * - Fix MISRA violations 11.3
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 1.8 </b> February 28, 2019
+ * - Added required header includes nvmedia_core.h and nvmedia_surface.h
+ *
+ * <b> Version 1.9 </b> March 14, 2019
+ * - Removed ExternalHints related parameters from
+ *   \ref NvMediaOFSTInitializeParams
+ * - Updated meExternalHints pointer type in
+ *   \ref NvMediaOFSTExternalHintParams
+ *
+ * <b> Version 1.10 </b> April 03, 2019
+ * - Added \ref NvMediaIOFSTGetVersion API
  */
 
 /** @} */
@@ -266,4 +280,4 @@ NvMediaIOFSTProcessFrame(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IOFST_H */
+#endif /* NVMEDIA_IOFST_H */

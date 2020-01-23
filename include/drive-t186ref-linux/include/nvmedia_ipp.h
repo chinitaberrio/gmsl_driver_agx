@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -25,7 +25,7 @@ extern "C" {
 #include "nvmedia_image.h"
 #include "nvmedia_icp.h"
 #include "nvmedia_isc.h"
-#include "nvmedia_isp.h"
+#include "nvmedia_isp_legacy.h"
 
 /**
  * \defgroup image_ipp_api Image Processing Pipeline (IPP)
@@ -53,7 +53,7 @@ extern "C" {
 /** \brief Major Version number. */
 #define NVMEDIA_IPP_VERSION_MAJOR   2u
 /** \brief Minor Version number. */
-#define NVMEDIA_IPP_VERSION_MINOR   16u
+#define NVMEDIA_IPP_VERSION_MINOR   18u
 /** Version information. */
 #define NVMEDIA_IPP_VERSION_INFO    (((uint8_t)'N' << 24) | ((uint8_t)'V' << 16) | (NVMEDIA_IPP_VERSION_MAJOR << 8) | NVMEDIA_IPP_VERSION_MINOR)
 
@@ -64,15 +64,15 @@ typedef void NvMediaIPPManager;
 
 /**
  * \hideinitializer
- * \brief Maximum number of IPP pipelines in IPP manager.
+ * \brief Maximum number of IPP components in IPP pipeline.
  */
 #define NVMEDIA_MAX_COMPONENTS_PER_PIPELINE 32
 
 /**
  * \hideinitializer
- * \brief Maximum number of IPP components in IPP pipeline.
+ * \brief Maximum number of IPP pipelines in IPP manager.
  */
-#define NVMEDIA_MAX_PIPELINES_PER_MANAGER   12
+#define NVMEDIA_MAX_PIPELINES_PER_MANAGER   16
 
 /**
  * \brief A handle representing IPP pipeline object.
@@ -137,6 +137,40 @@ typedef struct {
      frame counter. */
     uint32_t frameSequenceNumber;
 } NvMediaIPPImageInformation;
+
+/**
+ * \brief Pixel order in a raw image.
+ */
+typedef enum {
+    /*! RGGB order. */
+    NVMEDIA_RAW_PIXEL_ORDER_RGGB = 0,
+    /*! BGGR order. */
+    NVMEDIA_RAW_PIXEL_ORDER_BGGR,
+    /*! GRBG order. */
+    NVMEDIA_RAW_PIXEL_ORDER_GRBG,
+    /*! GBRG order. */
+    NVMEDIA_RAW_PIXEL_ORDER_GBRG,
+    /*! RCCB order. */
+    NVMEDIA_RAW_PIXEL_ORDER_RCCB,
+    /*! BCCR order. */
+    NVMEDIA_RAW_PIXEL_ORDER_BCCR,
+    /*! CRBC order. */
+    NVMEDIA_RAW_PIXEL_ORDER_CRBC,
+    /*! CBRC order. */
+    NVMEDIA_RAW_PIXEL_ORDER_CBRC,
+    /*! RCCC order. */
+    NVMEDIA_RAW_PIXEL_ORDER_RCCC,
+    /*! CCCR order. */
+    NVMEDIA_RAW_PIXEL_ORDER_CCCR,
+    /*! CRCC order. */
+    NVMEDIA_RAW_PIXEL_ORDER_CRCC,
+    /*! CCRC order. */
+    NVMEDIA_RAW_PIXEL_ORDER_CCRC,
+    /*! CCCC order. */
+    NVMEDIA_RAW_PIXEL_ORDER_CCCC,
+    /*! Number of pixel orders. */
+    NVMEDIA_RAW_PIXEL_ORDER_COUNT
+} NvMediaRawPixelOrder;
 
 /*@} <!-- Ends image_ipp_types Basic IPP types --> */
 
@@ -1170,6 +1204,9 @@ typedef struct {
     void *clientContext;
     /*! Holds an ISC sensor device handle used to get sensor properties. */
     NvMediaISCDevice *iscSensorDevice;
+    /*! Holds a pointer to config overrides.
+     Must be set to NULL for generic usage. */
+    const char* configOverride;
 } NvMediaIPPControlAlgorithmComponentConfig;
 
 /**
@@ -1759,6 +1796,14 @@ NvMediaIPPComponentDestroy(
  *
  * <b> Version 2.16 </b> January 19, 2018
  * - Added frameCaptureTSC for TSC value in \ref NvMediaIPPImageinformation
+ *
+ * <b> Version 2.17 </b> November 2, 2018
+ * - Updated Maximum number of IPP Pipelines in IPP pipeline manager from 12 to 16.
+ * - Fix comments associated with NVMEDIA_MAX_PIPELINES_PER_MANAGER
+ *   & NVMEDIA_MAX_COMPONENTS_PER_PIPELINE
+ *
+ * <b> Version 2.18 </b> April 4, 2019
+ * - Add \ref NvMediaRawPixelOrder
  */
 /*@}*/
 

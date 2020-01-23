@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2013 NVIDIA Corporation.  All rights reserved.
+ * Copyright (c) 2007-2018 NVIDIA Corporation.  All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -66,62 +66,23 @@ typedef struct NvRmDeviceRec *NvRmDeviceHandle;
 
 typedef NvU32 NvRmPhysAddr;
 
-/**
- * Opens the Resource Manager (RM).
- *
- * Can be called multiple times. Subsequent calls will not necessarily
- * return the same handle. Each call to NvRmOpen must be paired with a
- * corresponding call to NvRmClose.
- *
- * This call is not intended to perform any significant hardware
- * initialization of the device; rather, its primary purpose is to
- * initialize RM's internal data structures that are involved in
- * managing the device.
- *
- * XXX This API should probably be renamed back to NvRmOpen.
- *
- * @param pHandle A pointer to the RM handle.
- *
- * @retval NvSuccess Indicates that RM was successfully opened.
- * @retval NvError_InsufficientMemory Indicates that RM was unable to allocate
- *     memory for its internal data structures.
+/** Macro to detect presence of NvRmOpenNew/NvRmClose API definition in
+ * the header itself.
  */
-NvError NvRmOpenNew(NvRmDeviceHandle *pHandle);
+#define NVRM_OPEN_CLOSE_DEFINED
 
 /**
- * Called by the platform/OS code to initialize the RM. Usage and
- * implementation of this API is platform-specific.
- *
- * This API should not be called by the normal clients of the RM.
- *
- * This APIs is guaranteed to succeed on the supported platforms.
- *
- * @param pHandle A pointer to the RM handle.
+ * Deprecated API.
  */
-
- void NvRmInit(
-    NvRmDeviceHandle * pHandle );
+static NvError NV_UNUSED NvRmOpenNew(NvRmDeviceHandle *pHandle) {
+	*pHandle = (NvRmDeviceHandle)1;
+	return NvSuccess;
+}
 
 /**
- * Closes the Resource Manager (RM) for a given device.
- *
- * Each call to NvRmOpen() must be paired with a corresponding call
- * to \c NvRmClose.
- *
- * @param hDevice The RM handle. If \a hDevice is NULL, this API has no effect.
+ * Deprecated API.
  */
-
- void NvRmClose(
-    NvRmDeviceHandle hDevice );
-
-/**
- * Shutdown the Resource Manager (RM).
- *
- * @param hDevice The RM handle. If \a hDevice is NULL, this API has no effect.
- */
-
- void NvRmShutdown(
-    void  );
+static void NV_UNUSED NvRmClose(NvRmDeviceHandle NV_UNUSED hDevice) { }
 
 /** @} */
 

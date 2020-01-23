@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -12,14 +12,16 @@
  * This file contains the \ref encoder_api "Video Encode Processing API".
  */
 
-#ifndef _NVMEDIA_VEP_H
-#define _NVMEDIA_VEP_H
+#ifndef NVMEDIA_VEP_H
+#define NVMEDIA_VEP_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
+#include "nvmedia_surface.h"
 #include "nvmedia_video.h"
 
 /**
@@ -34,7 +36,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VEP_VERSION_MAJOR   2
 /** \brief Minor Version number */
-#define NVMEDIA_VEP_VERSION_MINOR   1
+#define NVMEDIA_VEP_VERSION_MINOR   5
 
 /**
  * \brief Video encoder codec type
@@ -59,6 +61,8 @@ typedef struct {
     NvMediaSurfaceType inputFormat;
     /** Instance ID */
     NvMediaEncoderInstanceId instanceId;
+    /** An Opaque pointer for internal use */
+    struct NvMediaVideoEncoderPriv_ *encPriv;
 } NvMediaVideoEncoder;
 
 
@@ -116,7 +120,7 @@ NvMediaVideoEncoderGetVersion(
  */
 NvMediaVideoEncoder *
 NvMediaVideoEncoderCreate(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaVideoEncodeType codec,
     void *initParams,
     NvMediaSurfaceType inputFormat,
@@ -129,7 +133,7 @@ NvMediaVideoEncoderCreate(
  * \brief Destroys an NvMediaEncoder object.
  * \param[in] encoder A pointer to the encoder to destroy.
  */
-void NvMediaVideoEncoderDestroy(NvMediaVideoEncoder *encoder);
+void NvMediaVideoEncoderDestroy(const NvMediaVideoEncoder *encoder);
 
 /**
  * \brief Encodes the specified "frame".  NvMediaVideoEncoderFeedFrame
@@ -163,9 +167,9 @@ void NvMediaVideoEncoderDestroy(NvMediaVideoEncoder *encoder);
  */
 NvMediaStatus
 NvMediaVideoEncoderFeedFrame(
-    NvMediaVideoEncoder *encoder,
-    NvMediaVideoSurface *frame,
-    NvMediaRect *sourceRect,
+    const NvMediaVideoEncoder *encoder,
+    const NvMediaVideoSurface *frame,
+    const NvMediaRect *sourceRect,
     void *picParams,
     NvMediaEncoderInstanceId instanceId
 );
@@ -183,7 +187,7 @@ NvMediaVideoEncoderFeedFrame(
  */
 NvMediaStatus
 NvMediaVideoEncoderSetConfiguration(
-    NvMediaVideoEncoder *encoder,
+    const NvMediaVideoEncoder *encoder,
     void *configuration
 );
 
@@ -209,7 +213,7 @@ NvMediaVideoEncoderSetConfiguration(
  */
 NvMediaStatus
 NvMediaVideoEncoderGetBits(
-    NvMediaVideoEncoder *encoder,
+    const NvMediaVideoEncoder *encoder,
     uint32_t *numBytes,
     void *buffer
 );
@@ -254,7 +258,7 @@ NvMediaVideoEncoderGetBits(
  */
 NvMediaStatus
 NvMediaVideoEncoderBitsAvailable(
-    NvMediaVideoEncoder *encoder,
+    const NvMediaVideoEncoder *encoder,
     uint32_t *numBytesAvailable,
     NvMediaBlockingType blockingType,
     uint32_t millisecondTimeout
@@ -286,10 +290,26 @@ NvMediaVideoEncoderBitsAvailable(
  *
  * <b> Version 2.1 </b> Sept 1, 2017
  * - Added NVMEDIA_VIDEO_ENCODE_CODEC_VP8 in \ref NvMediaVideoEncodeType enum
+ *
+ * <b> Version 2.2 </b> Dec 14, 2018
+ * - Fix MISRA violationis 21.1 and 21.2
+ *
+ * <b> Version 2.3 </b> January 15, 2019
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 2.4 </b> Feb 7, 2019
+ * - Added opaque handle for encoder
+ *   internal usage into Video encoder object
+ * - Fix MISRA violations 11.3
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 2.5 </b> Feb 28, 2019
+ * - Added required header includes nvmedia_core.h and nvmedia_surface.h
+ *
  */
 
 #ifdef __cplusplus
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_VEP_H */
+#endif /* NVMEDIA_VEP_H */

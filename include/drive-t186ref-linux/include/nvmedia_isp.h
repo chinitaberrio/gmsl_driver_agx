@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2018-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -7,24 +7,26 @@
 
 /**
  * \file
- * \brief <b> NVIDIA Media Interface: Image Signal Processing</b>
+ * \brief <b> NVIDIA Media Interface: Image Signal Processing (ISP)</b>
  *
- * @b Description: This file contains the \ref image_isp_api "Image Signal Processing API".
+ * This file contains the Image Signal Processing API.
  */
 
-#ifndef _NVMEDIA_ISP_H
-#define _NVMEDIA_ISP_H
+#ifndef NVMEDIA_ISP_H
+#define NVMEDIA_ISP_H
+
+#include <stdint.h>
+
+#include "nvmedia_core.h"
+#include "nvmedia_image.h"
+#include "nvmedia_isp_stat.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "nvmedia_core.h"
-#include "nvmedia_image.h"
-
 /**
- * \defgroup image_isp_api Image Signal Processing
- * \ingroup nvmedia_video_top
+ * \defgroup nvmedia_isp_api Image Signal Processing (ISP)
  *
  * The Image Signal Processing API encompasses all NvMedia image processing
  * functions that are necessary to produce a processed image from image data
@@ -34,1149 +36,1364 @@ extern "C" {
  * @{
  */
 
+/** \brief Major version number. */
+#define NVM_ISP_VERSION_MAJOR   1
 
-/** \brief Major Version number */
-#define NVMEDIA_ISP_VERSION_MAJOR   1
-/** \brief Minor Version number */
-#define NVMEDIA_ISP_VERSION_MINOR   7
+/** \brief Minor version number. */
+#define NVM_ISP_VERSION_MINOR   5
 
 /**
- * \defgroup image_isp_types Basic ISP Types
- * The Image Signal Processing API provides common ISP processing functions.
- * @ingroup basic_api_top
- *
- * @{
+ * \brief Maximum supported simultaneous outputs.
  */
+#define NVM_ISP_MAX_OUTPUTS                 (3U)
 
 /**
- * \brief Specifies which ISP to use.
+ * \brief Maximum number of queued requests.
  */
-typedef enum {
-    /** \brief Selects ISP A */
-    NVMEDIA_ISP_SELECT_ISP_A,
-    /** \brief Selects ISP B */
-    NVMEDIA_ISP_SELECT_ISP_B
-} NvMediaISPSelect;
-
-enum {
-    /** Number of color components */
-    NVMEDIA_ISP_COLOR_COMPONENT_NUM = 4
-};
-
-enum {
-    NVMEDIA_ISP_COLOR_COMPONENT_0 = 0
-};
-enum {
-    NVMEDIA_ISP_COLOR_COMPONENT_1 = 1
-};
-enum {
-    NVMEDIA_ISP_COLOR_COMPONENT_2 = 2
-};
-enum {
-    NVMEDIA_ISP_COLOR_COMPONENT_3 = 3
-};
-enum {
-    NVMEDIA_ISP_COLOR_COMPONENT_MAX = 4
-};
+#define NVM_ISP_MAX_QUEUED_REQUESTS         (32U)
 
 /**
- * Specifies color components positions.
+ * \brief Maximum number of linearization knee points.
  */
-enum {
-    /** Specifies the top-left pixel position. */
-    NVMEDIA_ISP_COLOR_COMPONENT_TL = NVMEDIA_ISP_COLOR_COMPONENT_0,
-    /** Specifies the top-rigth pixel position. */
-    NVMEDIA_ISP_COLOR_COMPONENT_TR = NVMEDIA_ISP_COLOR_COMPONENT_1,
-    /** Specifies the bottom-left pixel position. */
-    NVMEDIA_ISP_COLOR_COMPONENT_BL = NVMEDIA_ISP_COLOR_COMPONENT_2,
-    /** Specifies the bottom-rigth pixel position. */
-    NVMEDIA_ISP_COLOR_COMPONENT_BR = NVMEDIA_ISP_COLOR_COMPONENT_3
-};
-
-enum {
-    /** Specifies the number of color components in a triplet. */
-    NVMEDIA_ISP_COLOR_COMPONENT_TRIPLET_NUM = 3
-};
-
-
-enum {
-    NVMEDIA_ISP_HDR_SAMPLE_MAP_NUM = 16
-};
-
-enum {
-    NVMEDIA_ISP_HIST_RANGE_CFG_NUM = 8
-};
-enum {
-    NVMEDIA_ISP_LAC_ROI_NUM = 4
-};
-enum {
-    NVMEDIA_ISP_AFM_ROI_NUM = 8
-};
-enum {
-    NVMEDIA_ISP_AFM_FILTER_COEFF_NUM = 6
-};
+#define NVM_ISP_MAX_LIN_KNEE_POINTS         (10U)
 
 /**
-  * Defines the ISP color channels.
-  */
-typedef enum
-{
-    NVMEDIA_ISP_COLORCHANNEL_TL_R_V = NVMEDIA_ISP_COLOR_COMPONENT_0,
-    NVMEDIA_ISP_COLORCHANNEL_TR_G_Y,
-    NVMEDIA_ISP_COLORCHANNEL_BL_B_U,
-    NVMEDIA_ISP_COLORCHANNEL_BR,
-    NVMEDIA_ISP_COLORCHANNEL_LUMINANCE,
-
-    NVMEDIA_ISP_COLORCHANNEL_FORCE32 = 0x7FFFFFFF
-} NvMediaISPColorChannel;
+ * \brief Number of transfer function control points for level adjusted
+ * saturation block.
+ */
+#define NVM_ISP_LAS_TF_POINTS               (9U)
 
 /**
- * Defines the ISP pixel format types.
+ * \brief Number of transfer function control points for global tone map.
+ */
+#define NVM_ISP_GTM_TF_POINTS               (18U)
+
+/**
+ * \brief Local tone map soft key width.
+ */
+#define NVM_ISP_LTM_SOFT_KEY_WIDTH          (8U)
+
+/**
+ * \brief Local tone map soft key height.
+ */
+#define NVM_ISP_LTM_SOFT_KEY_HEIGHT         (8U)
+
+/**
+ * \brief Local tone map gain points.
+ */
+#define NVM_ISP_LTM_GAIN_POINTS             (9U)
+
+/**
+ * \brief Maximum number of windows for local average & clip in a region of
+ * interest.
+ */
+#define NVM_ISP_MAX_FB_BANDS                (256U)
+
+/**
+ * \brief A handle representing ISP object.
+ */
+typedef struct _NvMediaISP NvMediaISP;
+
+/**
+ * \brief A handle representing ISP stats surface object.
+ */
+typedef struct _NvMediaISPStatsSurface NvMediaISPStatsSurface;
+
+/**
+ * \brief A handle representing ISP settings object.
+ */
+typedef struct _NvMediaISPSettings NvMediaISPSettings;
+
+/**
+ * \brief Defines supported ISP pipelines.
  */
 typedef enum {
-    /** RGB pixel format */
-    NVMEDIA_ISP_PIXELFORMAT_RGB = 0x1,
-    /** YUV pixel format */
-    NVMEDIA_ISP_PIXELFORMAT_YUV,
-    /** Quad pixel format */
-    NVMEDIA_ISP_PIXELFORMAT_QUAD
-} NvMediaISPPixelFormat;
+    /**
+     * \brief Xavier ISP pipeline.
+     */
+    NVM_ISP_PIPELINE_X1 = (('X' << 24) | 0x01),
+} NvMediaISPPipelineEnum;
 
 /**
- * Defines the HDR mode types.
+ * \brief Gives the version information for the NvMedia ISP library.
+ * \param[in,out] version \ref NvMediaVersion structure which will be populated.
+ * \return  NVMEDIA_STATUS_OK if successful, or NVMEDIA_STATUS_BAD_PARAMETER
+ *  if @a version was invalid.
  */
-typedef enum
-{
-    /** Specifies that samples are not distinguished and all are used as short exposure pixels */
-    NVMEDIA_ISP_HDR_MODE_NORMAL = 0x1,
-    /** Specifies to determine the short exposure pixels */
-    NVMEDIA_ISP_HDR_MODE_SHORT,
-    /** Specifies to determine the long exposure pixels */
-    NVMEDIA_ISP_HDR_MODE_LONG,
-    /** Specifies the HDR contains both short and long exposure pixels */
-    NVMEDIA_ISP_HDR_MODE_BOTH,
-    /** <b>Applies to</b>: code-name Parker: Specifies to separately handle long and short exposure pixels */
-    NVMEDIA_ISP_HDR_MODE_SEPARATE,
-
-    NVMEDIA_ISP_HDR_MODE_FORCE32 = 0x7FFFFFFF
-} NvMediaISPHdrMode;
+NvMediaStatus
+NvMediaISPGetVersion(
+    NvMediaVersion *version
+);
 
 /**
- * Holds an integer range.
+ * \brief Allocates an Image Signal Processing object.
+ * \param[in] instanceId ISP instance ID. Valid values: 0
+ * \param[in] pipelineEnum ISP pipeline configuration.
+ * \param[in] maxQueuedRequests
+        Determines number of processing requests can be pending for an ISP
+        instance at a time.
+        Supported values: [1, NVM_ISP_MAX_QUEUED_REQUESTS]
+ * \return  An NvMediaISP handle to the specified ISP engine instance if
+ *  successful, or NULL otherwise.
  */
-typedef struct
-{
-    /**  Lower limit for the range. */
-    int low;
-    /**  Upper limit for the range. */
-    int high;
-} NvMediaISPRange;
+NvMediaISP *
+NvMediaISPCreate(
+    uint32_t instanceId,
+    NvMediaISPPipelineEnum pipelineEnum,
+    uint32_t maxQueuedRequests
+);
 
 /**
- * Holds a float range.
+ * \brief Stops the image processing.
+ * \param[in] isp ISP object to destroy.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a isp was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /**  Lower limit for the range. */
-    float low;
-    /**  Upper limit for the range. */
-    float high;
-} NvMediaISPRangeFloat;
+NvMediaStatus
+NvMediaISPStop(
+    NvMediaISP *isp
+);
 
 /**
- * Defines a 2-dimensional surface where the surface is
- * determined by the surface height and width in pixels.
+ * \brief Destroys an Image Signal Processing object.
+ * \param[in] isp ISP object.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a isp was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /** Holds the width of the surface in pixels. */
-    int width;
-    /** Holds the height of the surface in pixels. */
-    int height;
-} NvMediaISPSize;
+NvMediaStatus
+NvMediaISPDestroy(
+    NvMediaISP *isp
+);
 
 /**
- * Defines a location on a 2-dimensional object,
- * where the coordinate (0,0) is located at the top-left of the object.  The
- * values of x and y are in pixels.
+ * \brief Allocates an ISP statistics surface object.
+ * \param[in] isp ISP object.
+ * \return  A handle to the ISP statistics surface if successful, or NULL
+ *  otherwise.
  */
-typedef struct
-{
-    /** Holds the horizontal location of the point. */
-    int x;
-    /** Holds the vertical location of the point. */
-    int y;
-} NvMediaISPPoint;
+NvMediaISPStatsSurface *
+NvMediaISPStatsSurfaceCreate(
+    NvMediaISP *isp
+);
 
 /**
- * Defines a location on a 2-dimensional object,
- * where the coordinate (0,0) is located at the top-left of the object.  The
- * values of x and y are in pixels.
+ * \brief Destroys an ISP statistics surface object.
+ * \param[in] statsSurface ISP statistics surface object to destroy.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a statsSurface was
+ *  invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /** Holds the horizontal location of the point. */
-    float x;
-    /** Holds the vertical location of the point. */
-    float y;
-} NvMediaISPFloatPoint;
-/** @} <!-- Ends image_isp_types Basic ISP Types --> */
+NvMediaStatus
+NvMediaISPStatsSurfaceDestroy(
+    NvMediaISPStatsSurface *statsSurface
+);
 
 /**
- * \defgroup isp_frame_stats ISP Statistics
- * Defines ISP statistics types, settngs, and functions.
- * @{
+ * \brief Allocates an ISP settings object.
+ * \param[in] isp ISP object.
+ * \param[in] pipelineEnum
+ *      ISP pipeline configuration, reserved for future extension.
+        For now this must be same as value given in \ref NvMediaISPCreate
+ * \return  A handle to the ISP settings object if successful, or NULL
+ *  otherwise.
  */
+NvMediaISPSettings *
+NvMediaISPSettingsCreate(
+    NvMediaISP *isp,
+    NvMediaISPPipelineEnum pipelineEnum
+);
 
 /**
- * Defines the ISP statistics selector types.
+ * \brief Loads konb data from binary blob in memory.
+ * \param[in] settings ISP settings object.
+ * \param[in] blob Pointer to the binary blob.
+ * \param[in] blobSize Size of binary blob memory.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef enum
-{
-    /** Histogram statistics */
-    NVMEDIA_ISP_STATS_HISTOGRAM = 1,
-    /** Location and clipped statistics */
-    NVMEDIA_ISP_STATS_LAC,
-    /** Flicker band statistics */
-    NVMEDIA_ISP_STATS_FLICKER_BAND,
-    /** Focus metric statistics */
-    NVMEDIA_ISP_STATS_FOCUS_METRIC,
-    /** Histogram statistics for ISP version 4 */
-    NVMEDIA_ISP_STATS_HISTOGRAM_V4,
-    /** Location and clipped statistics for ISP version 4 */
-    NVMEDIA_ISP_STATS_LAC_V4,
-    /** Flicker band statistics for ISP version 4 */
-    NVMEDIA_ISP_STATS_FLICKER_BAND_V4,
-    /** Focus metric statistics_V4 for ISP version 4 */
-    NVMEDIA_ISP_STATS_FOCUS_METRIC_V4,
-    /** Histogram statistics for ISP version 5 */
-    NVMEDIA_ISP_STATS_HISTOGRAM_V5,
-    /** Location and clipped statistics for ISP version 5 */
-    NVMEDIA_ISP_STATS_LAC_V5,
-    /** Flicker band statistics for ISP version 5 */
-    NVMEDIA_ISP_STATS_FLICKER_BAND_V5,
-    /** Local tone map statistics for ISP version 5 */
-    NVMEDIA_ISP_STATS_LTM_V5,
-    /** Outlier rejection statistics for ISP version 5 */
-    NVMEDIA_ISP_STATS_OR_V5
-} NvMediaISPStats;
+NvMediaStatus
+NvMediaISPSettingsLoadConfig(
+    NvMediaISPSettings* settings,
+    const uint8_t* blob,
+    size_t blobSize
+);
 
 /**
- * Holds the settings for the histogram statistics of ISP version 4.
+ * \brief Destroys an ISP settings object.
+ * \param[in] settings ISP settings object to destroy.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameter
+ *  was invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /** Holds a Boolean that enables historgram statistics. */
+NvMediaStatus
+NvMediaISPSettingsDestroy(
+    NvMediaISPSettings *settings
+);
+
+/**
+ * \brief Holds controls for ISP linearization (LIN) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable linearization block.
+     */
     NvMediaBool enable;
-
-    /** Holds the pixel format on which a client wants this instance to operate. */
-    NvMediaISPPixelFormat pixelFormat;
-
     /**
-     * Range of the pixel values to be considered for each zone. The whole pixel range
-     * is divided in to 8 zones.
-     * Value 0-2 and 13-15 should not be used. The valid values and the correponding log 2
-     * range is specified below.
-     * @code
-     * 3 : Range = 8
-     * 4 : Range = 16
-     * 5 : Range = 32
-     * 6 : Range = 64
-     * 7 : Range = 128
-     * 8 : Range = 256
-     * 9 : Range = 512
-     * 10 : Range = 1024
-     * 11 : Range = 2048
-     * 12 : Range = 4096
-     * @endcode
+     * Holds count of piecewise linear transfer function.
+     * @li Supported values: [1, NVM_ISP_MAX_INPUT_PLANES]
      */
-    unsigned char range[NVMEDIA_ISP_HIST_RANGE_CFG_NUM];
-
+    uint32_t numPlanes;
     /**
-     * This is the co-effcients for the curve that defines the mapping of input pixel range to
-     * the bins. The curve between two knee points are linearly interpolated.
-     * Knee[-1] = 0 and Knee[7] = 255(The total number of bins - 1).
+     * Holds count of knee points for each plane.
+     * @li Supported values: [2, NVM_ISP_MAX_LIN_KNEE_POINTS]
      */
-    unsigned char knee[NVMEDIA_ISP_HIST_RANGE_CFG_NUM];
-
+    uint32_t numKneePoints[NVM_ISP_MAX_INPUT_PLANES];
     /**
-     * Offset to be applied to the input data prior to performing the bin mapping operation.
+     * Holds knee points for piecewise linear transfer function for each plane.
+     * @li Supported values for X coordinate of knee point: [0.0, 1.0]
+     * @li Supported values for Y coordinate of knee point: [0.0, 1.0]
+     * @li Constrains: Either X or Y coordinate of the 1st knee point must be 0.0
+     * @li Constrains: Knee points must be monotonically non-decreasing
      */
-    float offset;
-
-    /** Window to construct the histogram. */
-    NvMediaRect window;
-
-    /**
-     * HDR interleave pattern
-     * Example:
-     * @code
-     * 1 1 1 1      1 1 0 0     1 1 0 0
-     * 1 1 1 1  OR  1 1 0 0 OR  1 1 0 0
-     * 0 0 0 0      1 1 0 0     0 0 1 1
-     * 0 0 0 0      1 1 0 0     0 0 1 1
-     * @endcode
-     */
-    unsigned char  hdrSampleMap[NVMEDIA_ISP_HDR_SAMPLE_MAP_NUM];
-
-    /**
-     * HDR mode
-     */
-    NvMediaISPHdrMode   hdrMode;
-} NvMediaISPStatsHistogramSettingsV4;
+    NvMediaPointDouble kneePoints[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_LIN_KNEE_POINTS];
+} NvMediaISPLinearization;
 
 /**
- * Defines the histogram statistics measurement.
+ * \brief Programs linearizartion block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a linearization
+ *                      block.
+ * \param[in] size      Size of the linearization block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /**
-     * Holds the number of bins that the histogram of each color component includes.
-     * Each color component must have the same number of bins.
-     */
-    unsigned int numBins;
-
-    /**
-     * Holds an array of pointers to the histogram data for different color components.
-     * Use the indices based on the color space on which the histogram is
-     * gathered.
-     * For Bayer, use NVMEDIA_ISP_COLOR_COMPONENT_[TL|TR|BL|BR].
-     * For YUV, use NVMEDIA_ISP_COLOR_COMPONENT_[Y|U|V].
-     * For RGB, use NVMEDIA_ISP_COLOR_COMPONENT_[R|G|B].
-     */
-    unsigned int *data[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-} NvMediaISPStatsHistogramMeasurement;
+NvMediaStatus
+NvMediaISPSetLinearization(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPLinearization *controls,
+    size_t size
+);
 
 /**
- * Defines the windows used in ISP stats calculations.
- *
- * \code
- *      -------------------------------------------------------------------
- *      |                                                                 |
- *      |      StartOffset                                                |
- *      |     /                                                           |
- *      |     ********        ********        ********  -                 |
- *      |     *      *        *      *        *      *  |                 |
- *      |     *      *        *      *        *      *  |                 |
- *      |     *      *        *      *        *      *  |                 |
- *      |     ********        ********        ********  |                 |
- *      |     |---------------|                         |   \             |
- *      |      HorizontalInterval   VerticalInterval--->|     VerticalNum |
- *      |                                               |   /             |
- *      |     ******** -      ********        ********  -                 |
- *      |     *      * |      *      *        *      *                    |
- *      |     *      * |      *      *        *      *                    |
- *      |     *      * |      *      *        *      *                    |
- *      |     ******** -      ********        ********                    |
- *      |     |------| \                                                  |
- *      |               Size                                              |
- *      |                                                                 |
- *      |                   \     |     /                                 |
- *      |                   HorizontalNum                                 |
- *      |                                                                 |
- *      -------------------------------------------------------------------
- * \endcode
+ * \brief Holds controls for ISP black level correction (BLC) block.
  */
-typedef struct
-{
-    /** Size of each window */
-    NvMediaISPSize size;
-
+typedef struct {
     /**
-     * Number of windows horizontally.
+     * Holds boolean to enable black level correction block.
      */
-    unsigned int horizontalNum;
-    /** Number of windows vertically */
-    unsigned int verticalNum;
-
-    /** Distance between the left edges of one window and a horizontally
-     *  adjacent window.
-     */
-    unsigned int horizontalInterval;
-
-    /** Distance between the top edges of one window and a vertically
-     *  adjacent window.
-     */
-    unsigned int verticalInterval;
-
-    /** Position of the top-left pixel in the top-left window. */
-    NvMediaISPPoint startOffset;
-} NvMediaISPStatsWindows;
-
-/**
- * Defines the settings to use for LAC statistics for ISP version 4.
- *
- */
-typedef struct
-{
-    /** Holds a Boolean that enables LAC statistics. */
     NvMediaBool enable;
-
-    /** Enables each ROI region */
-    NvMediaBool ROIEnable[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /** Indicates if pixels are in Bayer format or triplets (YUV / RGB+Y) */
-    NvMediaISPPixelFormat pixelFormat;
-
-    /** Use NVMEDIA_ISP_COLOR_COMPONENT_[R|G|B] for the indices.
-     * This will be used to convert RGB to Y when LAC is gathered on RGB.
-     * Y = sum of (X + rgbToYOffset[X]) * rgbToYGain[X]) over X = {R, G, B}
-     * \n rgbToYOffset range [-1.0, 1.0)
-     */
-    float rgbToYOffset[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /** rgbToYGain range [0, 1.0) */
-    float rgbToYGain[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
     /**
-     * The range of each color component to be used in the calculation
-     * of the average.  Range [-0.5, 1.5) for RGBY, [-1.0, 1.0) for UV
+     * Holds black level correction values in RGGB/RCCB/RCCC component order
+     * for each plane & each color component.
+     * @li Supported values: [0.0, 1.0]
      */
-    NvMediaISPRangeFloat range[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /**
-     * Windows for LAC calculation for each ROI.
-     */
-    NvMediaISPStatsWindows windows[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * HDR interleave pattern
-     * Example:
-     * 1 1 1 1      1 1 0 0     1 1 0 0
-     * 1 1 1 1  OR  1 1 0 0 OR  1 1 0 0
-     * 0 0 0 0      1 1 0 0     0 0 1 1
-     * 0 0 0 0      1 1 0 0     0 0 1 1
-     */
-    unsigned char  hdrSampleMap[NVMEDIA_ISP_HDR_SAMPLE_MAP_NUM];
-
-    /**
-     * HDR mode for each ROI. If ROI is not enabled just
-     * use the first value in the array and ignore others.
-     */
-    NvMediaISPHdrMode   hdrMode[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * Used to determine the long exposure pixels.
-     */
-    float   hdrShort;
-
-    /**
-     * Used to determine the long exposure pixels.
-     */
-    float   hdrLong;
-} NvMediaISPStatsLacSettingsV4;
+    double_t pedestal[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_COLOR_COMPONENT];
+} NvMediaISPBlackLevelCorrection;
 
 /**
- * Holds the LAC statistics measurement for ISP version 4.
+ * \brief Programs black level correction block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a black level
+ *                      correction block.
+ * \param[in] size      Size of the black level correction block control
+ *                      structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /**
-     * Holds a Boolean that specifies to ignore the stats value
-     * if a ROI is not enabled.
-     * If using the values for disabled ROI, it will cause undefined behavior.
-     */
-    NvMediaBool ROIEnable[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * Holds the position of the top-left pixel in the top-left window.
-     */
-    NvMediaISPPoint startOffset[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * Holds the size of each window.
-     */
-    NvMediaISPSize windowSize[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * Holds the number of windows in LAC stats.
-     *
-     * When the client calls NvIspGetStats(), NumWindows is the size of each
-     * array that the pAverage[ROI_ID][COLOR_COMPONENT] and pNumPixels[ROI_ID][COLOR_COMPONENT]
-     * pointers point to. It must be >= (NumWindowsH * NumWindowsV) in NvIspStatsLacSettings
-     * used to setup LAC. If a particular ROI is disabled ignore the measurement values
-     * corresponding to that particlar ROI. Reading values for disabled ROI will give you
-     * undefined stats values.
-     *
-     * The LAC data will be stored in row-major order.
-     */
-    unsigned int numWindows[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /** Holds the number of windows in the horizontal direction. */
-    unsigned int numWindowsH[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /** Holds the number of windows in the vertical direction. */
-    unsigned int numWindowsV[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * For Bayer, use NVMEDIA_ISP_COLOR_COMPONENT_[TL|TR|BL|BR] for the indices.
-     * For YUV, use NVMEDIA_ISP_COLOR_COMPONENT_[Y|U|V].
-     * For RGB, use NVMEDIA_ISP_COLOR_COMPONENT_[R|G|B].
-     * Data could be negative
-     */
-    float *average[NVMEDIA_ISP_LAC_ROI_NUM][NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /** Holds the number of pixels per ROI per component. */
-    unsigned int *numPixels[NVMEDIA_ISP_LAC_ROI_NUM][NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-} NvMediaISPStatsLacMeasurementV4;
+NvMediaStatus
+NvMediaISPSetBlackLevelCorrection(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPBlackLevelCorrection *controls,
+    size_t size
+);
 
 /**
- * Holds the flicker band settings for ISP version 4.
- *
- * The flicker band module computes the average brightness of a number of
- * samples of the image.
+ * \brief Holds controls for ISP white balance correction (WBC) block.
  */
-typedef struct
-{
-    /** Holds a Boolean that enables flicker band statistics. */
+typedef struct {
+    /**
+     * Holds boolean to enable white balance correction block.
+     */
     NvMediaBool enable;
-
     /**
-     * Holds the Windows for the flicker band calculation.
-     * The number of horizontal windows must be 1. The height of each window
-     * may be rounded due to HW limitation.
+     * Holds white balance gains in RGGB/RCCB/RCCC component order for each
+     * plane & each color component.
+     * @li Supported values: [0.0, 8.0]
      */
-    NvMediaISPStatsWindows windows;
-
-    /**
-     * Holds the color channel used for flicker band calculation.
-     * For the YUV color format, selecting Channel Y or Luminance does the same thing in the hardware.
-     */
-    NvMediaISPColorChannel colorChannel;
-
-    /**
-     * Holds the HDR interleave pattern
-     * For example:
-     * @code
-     * 1 1 1 1      1 1 0 0     1 1 0 0
-     * 1 1 1 1  OR  1 1 0 0 OR  1 1 0 0
-     * 0 0 0 0      1 1 0 0     0 0 1 1
-     * 0 0 0 0      1 1 0 0     0 0 1 1
-     * @endcode
-     */
-    unsigned char hdrSampleMap[NVMEDIA_ISP_HDR_SAMPLE_MAP_NUM];
-
-    /**
-     * Holds the HDR mode.
-     */
-    NvMediaISPHdrMode   hdrMode;
-} NvMediaISPStatsFlickerBandSettingsV4;
+    float_t wbGain[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_COLOR_COMPONENT];
+} NvMediaISPWhiteBalanceCorrection;
 
 /**
- * Holds the flicker band statistics measurement.
+ * \brief Programs white balance correction block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a white balance
+ *                      correction block.
+ * \param[in] size      Size of the white balance correction block control
+ *                      structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /**
-     * Holds the number of flicker band windows.
-     *
-     * numWindows is the size of the array that luminance points to.
-     */
-    unsigned int numWindows;
-
-    /** Holds a pointer to the array of the average luminance value of the samples.
-     *  Data could be negative
-     */
-    int *luminance;
-} NvMediaISPStatsFlickerBandMeasurement;
+NvMediaStatus
+NvMediaISPSetWhiteBalanceCorrection(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPWhiteBalanceCorrection *controls,
+    size_t size
+);
 
 /**
- * Holds the focus metric statistics settings.
- *
- * It calculates the focus metric in each focus window. The stats can only be
- * generated on Bayer data.
- */
-typedef struct
-{
-    /** Enable focus metric statistics */
-    NvMediaBool enable;
-
-    /** Whether to enable noise compensate when calculating focus metrics */
-    NvMediaBool noiseCompensation;
-
-    /**
-     * Application of the noise compensation when noise compensation is
-     * enabled. This value will be rounded to the nearest value that the
-     * hardware supports.
-     */
-    float noiseCompensationGain;
-
-    /**
-     * Gain applied to the accumulated focus metric. This value will be
-     * rounded to the nearest value that the hardware supports.
-     * Example of valid values are 1, 0.5, 0.25.
-     */
-    float metricGain;
-
-    /**
-     * Number of the coefficients for each color component.
-     */
-    unsigned int numCoefficients;
-
-    /**
-     * Coefficients of the filter to compute the focus metric for each color
-     * component. An example of 9-tap filter: (-1, -2, -1, 2, 4, 2, -1, -2, -1)
-     */
-    float *coefficient[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /** Focus metric values lower than this limit will be clamped to zero. */
-    float metricLowerLimit;
-
-    /**
-     * Maximum value of the input pixels to be used in the calculation of the
-     * focus metric.
-     */
-    float inputThreshold;
-
-    /** Windows for focus metric calculation. */
-    NvMediaISPStatsWindows windows;
-} NvMediaISPStatsFocusMetricSettings;
-
-/**
- * Holds the focus metric statistics measurement.
- */
-typedef struct
-{
-    /** Holds the position of the top-left pixel in the top-left window. */
-    NvMediaISPPoint startOffset;
-
-    /** Holds the size of each window. */
-    NvMediaISPSize windowSize;
-
-    /**
-     * Holds the size of the array to which pMetric points.
-     */
-    unsigned int numWindows;
-
-    /** Holds a pointer to the array of the focus metrics of the windows. */
-    unsigned int *metric[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-} NvMediaISPStatsFocusMetricMeasurement;
-
-/**
- * Start of statistics defines for ISP version 5
- */
-
-#define NVMEDIA_ISP5_RADTF_CP_COUNT             6
-#define NVMEDIA_ISP5_FB_WINDOWS                 256
-#define NVMEDIA_ISP5_HIST_TF_KNEE_POINT_COUNT   8
-#define NVMEDIA_ISP5_HIST_BIN_COUNT             256
-#define NVMEDIA_ISP_LAC_ROI_WIN_NUM             (32 * 32)
-#define NVMEDIA_ISP5_LTM_HIST_BIN_COUNT         128
-#define NVMEDIA_ISP5_LTM_AVG_WIN_COUNT          8
-
-/**
- * Defines multi-exposure lane selection.
- */
-typedef enum
-{
-    NVMEDIA_ISP_MULTI_EXP_LANE_RV = 0,
-    NVMEDIA_ISP_MULTI_EXP_LANE_GY = 1,
-    NVMEDIA_ISP_MULTI_EXP_LANE_BU = 2,
-} NvMediaIsp5MultiExpLane;
-
-/**
- * Defines radial mask.
- */
-typedef struct
-{
-    /** X coordinate of the center of ellipse in pixels */
-    double_t x;
-    /** Y coordinate of the center of ellipse in pixels */
-    double_t y;
-    /** Ellipse matrix transformation coefficients */
-    double_t kxx;
-    double_t kxy;
-    double_t kyx;
-    double_t kyy;
-} NvMediaIsp5RadialMask;
-
-/**
- * Defines rectangular mask for local tone mapping.
- */
-typedef struct
-{
-    uint16_t top;
-    uint16_t bottom;
-    uint16_t left;
-    uint16_t right;
-} NvMediaIsp5RectMask;
-
-/**
- * Defines control point for Cubic Hermite spline. Cubic spline is used
- * in many ISP blocks to interpolate functions.
- *
- * A spline is defined with an array of control points; number of points
- * varies between units.
- */
-typedef struct
-{
-    /** X coordinate of the control point */
-    float_t x;
-    /** Y coordinate of the control point */
-    float_t y;
-    /** Slope (tangent) of the interpolated curve at the control point */
-    double_t slope;
-} NvMediaISP5CubicSplineCtrlPoint;
-
-/**
- * Defines radial transfer function.
- */
-typedef struct
-{
-    NvMediaIsp5RadialMask ellipse;
-    NvMediaISP5CubicSplineCtrlPoint tf[NVMEDIA_ISP5_RADTF_CP_COUNT];
-} NvMediaIsp5RadialTf;
-
-/**
- * Defines channel selections for histogram for ISP version 5.
- */
-typedef enum
-{
-    NVMEDIA_ISP_HIST_CH_R_V = 0,
-    NVMEDIA_ISP_HIST_CH_G_Y = 1,
-    NVMEDIA_ISP_HIST_CH_B_U = 2,
-    NVMEDIA_ISP_HIST_CH_Y   = 3,
-} NvMediaIsp5HistChannel;
-
-/**
- * Defines channel selections for 4th channel histogram for ISP version 5.
+ * \brief Defines supported exposure fusion modes.
  */
 typedef enum {
-    NVMEDIA_ISP_HIST_CH_MAXORY_MAX = 0,
-    NVMEDIA_ISP_HIST_CH_MAXORY_Y   = 3,
-} NvMediaIsp5HistChannelMaxOrY;
+    /**
+     * Specifies use plane 0.
+     */
+    NVM_ISP_EXP_FUSION_USE_0 = 0,
+    /**
+     * Specifies use plane 1.
+     */
+    NVM_ISP_EXP_FUSION_USE_1 = 1,
+    /**
+     * Specifies use plane 2.
+     */
+    NVM_ISP_EXP_FUSION_USE_2 = 2,
+    /**
+     * Specifies blend plane 0 & 1.
+     */
+    NVM_ISP_EXP_FUSION_BLEND_01 = 3,
+    /**
+     * Specifies blend all planes.
+     */
+    NVM_ISP_EXP_FUSION_BLEND_ALL = 4,
+} NvMediaISPExposureFusionMode;
 
 /**
- * Defines the flicker band settings for ISP version 5.
- *
- * The flicker band module computes the average brightness of a number of
- * samples of the image.
+ * \brief Holds controls for ISP exposure fusion (Fusion) block.
  */
-typedef struct
-{
+typedef struct {
     /**
-     * Enable the flicker band stats unit.
+     * Holds boolean to enable exposure fusion block.
      */
     NvMediaBool enable;
-
     /**
-     * Select the channel that is used for calculating the stats
-     * The "Luminance" channel is calculated as follows
-     * - In case of CFA input data, it is set to average of pixels in
-     *   a single CFA block, so the value will be 0.25*R + 0.5*G + 0.25*B
-     * - In case of RGB data it is set to 0.25*R + 0.625*G + 0.125*B
-     * - In case of YUV data, the Y channel is used directly
+     * Holds ratio of shortest exposure gain vs exposure gain for each plane.
+     * Index 0 & 2 are for longest & shortest exposure respectively.
+     * @li Supported values: [0.0, 1.0]
      */
-
-    NvMediaISPColorChannel chSelect;
-
+    float_t scaleFactors[NVM_ISP_MAX_INPUT_PLANES];
     /**
-     * Enable the elliptical mask for disabling pixels outside area of interest
+     * Holds exposure fusion mode.
      */
-    NvMediaBool radialMaskEnable;
-
-    /**
-     * Count of flicker band samples to collect per frame
-     */
-    uint8_t bandCount;
-
-    /**
-     * Offset of the first band top line (and first pixel in a line for all bands)
-     */
-    NvMediaISPPoint offset;
-
-    /**
-     * Size of a single band. This must be chosen so that
-     * - Both width and height are even and >= 2
-     * - Total number of accumulated pixels must be <= 2^18
-     */
-    NvMediaISPSize bandSize;
-
-    /**
-     * Select the range of pixel values to include when calculating the FB statistics
-     * In merged multi-exposure HDR image each exposure might have different
-     * characteristics (exposure time and timing) that affect FB stats; by setting
-     * these limits so that only pixels fro a single exposure are included
-     * accuracy of FB stats can be significantly improved.
-     */
-
-    NvMediaISPRangeFloat range;
-    NvMediaISPRangeFloat chromaRange;
-
-    /**
-     * Elliptical mask for selecting pixels included if radialMaskEnable is set to true
-     */
-    NvMediaIsp5RadialMask radialMask;
-
-} NvMediaISPStatsFlickerBandSettingsV5;
+    NvMediaISPExposureFusionMode fusionMode;
+} NvMediaISPExposureFusion;
 
 /**
- * Holds the flicker band statistics measurement for isp version 5.
+ * \brief Programs exposure fusion block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for an exposure
+ *                      fusion block.
+ * \param[in] size      Size of the exposure fusion block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
+NvMediaStatus
+NvMediaISPSetExposureFusion(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPExposureFusion *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP bad pixel correction (BPC) block.
+ */
+typedef struct {
     /**
-     * Holds the number of flicker band windows.
+     * Holds boolean to enable bad pixel correction block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds strength of bad pixel correction.
+     * @li Supported values: [0.0, 1.0],
+     * 0.0 & 1.0 means minimum & maximum strength respectively
+     */
+    float_t strength;
+    /**
+     * Holds boolean to enable noise estimation.
+     */
+    NvMediaBool noiseProfileEnable;
+    /**
+     * Holds noise profile nunber.
+     * @li Supported values: [0, 31]
+     * \note Actual supported value depends on binary blob file.
+     */
+    uint32_t profileNum;
+    /**
+     * Holds gain affecting noise profile.
+     * @li Supported values: [0.0, 10000.0]
+     */
+    float_t gain;
+} NvMediaISPBadPixelCorrection;
+
+/**
+ * \brief Programs bad pixel correction block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      control structure for a bad pixel correction block.
+ * \param[in] size      Size of the bad pixel correction block control
+ *                      structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetBadPixelCorrection(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPBadPixelCorrection *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP lens shading correction (LSC) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable CCT based lens shading correction.
+     */
+    NvMediaBool cctBasedLSCEnable;
+    /**
+     * Holds color correlated temperature.
+     * @li Supported values: [1000.0, 20000.0]
+     */
+    float_t cct;
+    /**
+     * Holds ratio between corner & center lens shading correction.
+     * @li Supported values: [0.0, 1.0]
+     */
+    float_t fallOff;
+    /**
+     * Holds boolean to enable adjustment of shading profile for compressed data.
+     */
+    NvMediaBool applyAlpha;
+    /**
+     * Holds compression factor from N to 20-bit depth, where N >= 20.
+     * @li Supported values: [0.75, 1.0]
+     * \note Recommened alpha = 20 / (sensor-caputred data bit N).
+     */
+    float_t alpha;
+} NvMediaISPLensShadingCorrection;
+
+/**
+ * \brief Programs lens shading correction block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a lens shading
+ *                      correction block.
+ * \param[in] size      Size of the lens shading correction block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetLensShadingCorrection(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPLensShadingCorrection *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP demosaic (DM) block.
+ */
+typedef struct {
+    /**
+     * Holds strength of demosaicing.
+     * @li Supported values: [0.0, 1.0],
+     * 0.0 & 1.0 means minimum & maximum strength respectively
+     */
+    float_t strength;
+} NvMediaISPDemosaic;
+
+/**
+ * \brief Programs demosaic block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a demosaic block.
+ * \param[in] size      Size of the demosaic block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetDemosaic(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPDemosaic *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP level adjusted saturation (LAS) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable level adjusted saturation block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds spline control points for transfer function.
+     * @li Supported values for X coordinate of spline control point : [0.0, 2.0]
+     * @li Supported values for Y coordinate of spline control point : [0.0, 2.0]
+     * @li Supported values for slope of spline control point : \f$[-2^{16}, 2^{16}]\f$
+     */
+    NvMediaISPSplineControlPoint controlPoints[NVM_ISP_LAS_TF_POINTS];
+} NvMediaISPLevelAdjSat;
+
+/**
+ * \brief Programs level adjusted saturation block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a level
+ *                      adjusted saturation block.
+ * \param[in] size      Size of the level adjusted saturation block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetLevelAdjSat(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPLevelAdjSat *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP noise reduction (NR) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable noise reduction block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds strength of noise reduction.
+     * @li Supported values: [0.0, 1.0],
+     * 0.0 & 1.0 means minimum & maximum strength respectively
+     */
+    float_t strength;
+    /**
+     * Holds boolean to enable noise estimation.
+     */
+    NvMediaBool noiseProfileEnable;
+    /**
+     * Holds noise profile number.
+     * @li Supported values: [0, 31],
+     * \note Actual supported value depends on binary blob file.
+     */
+    uint32_t profileNum;
+    /**
+     * Holds gain affecting noise profile.
+     * @li Supported values: [0.0, 10000.0]
+     */
+    float_t gain;
+    /**
+     * Holds normalized white balance gain affecting noise profile.
+     * @li Supported values: [0.0, 128.0]
+     */
+    float_t wbGain[NVM_ISP_MAX_COLOR_COMPONENT];
+    /**
+     * Holds boolean to enable radial transform.
+     */
+    NvMediaBool radialTFEnable;
+    /**
+     * Holds a radial transfer function.
      *
-     * numWindows is the size of the array that luminance points to.
+	 * Supported values are described in the declaration of
+	 * \ref NvMediaISPRadialTF.
      */
-    uint32_t numWindows;
-
-    /** Holds a pointer to the array of the average luminance value of the samples.
-     *  Data could be negative
-     */
-    float_t luminance[NVMEDIA_ISP5_FB_WINDOWS];
-} NvMediaISPStatsFlickerBandMeasurementV5;
+    NvMediaISPRadialTF radialTF;
+} NvMediaISPNoiseReduction;
 
 /**
- * Defines the settings for the histogram statistics of ISP version 5.
+ * \brief Programs noise reduction block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      noise reduction block.
+ * \param[in] size      Size of the noise reduction block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /** Enable the histogram unit  */
+NvMediaStatus
+NvMediaISPSetNoiseReduction(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPNoiseReduction *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP color correction matrix (CCM) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable color correction matrix block.
+     */
     NvMediaBool enable;
-
     /**
-     * Enable a mask for excluding pixels outside specified elliptical area
+     * Holds color correction matrix.
+     * @li Supported values: [-8.0, 8.0]
      */
-    NvMediaBool radialMaskEnable;
-
-    /**
-     * Enable radial weighting of pixels based on their spatial location. This can be
-     * used to e.g. compensate for lens shading if Hist is measured before LS correction,
-     * or different area covered by pixels.
-     */
-    NvMediaBool radialWeigthEnable;
-
-    /**
-     * If input is a multi-exposure image, select the exposure used for histogram.
-     * Valid values are 0..2
-     */
-    NvMediaIsp5MultiExpLane laneSelect;
-
-    /**
-     * Rectangle used for the histogram
-     */
-    NvMediaRect window;
-
-    /**
-     * Data used for the 4 histogram channels. For channels 0-2, valid values are any of
-     * the color channels(R/V, G/Y, B/U) or Y calculated from RGB pixel values.
-     * For channel 3 the valid values are either maximum of R,G,B (or U,V in case of YUV
-     * input) or calculated Y.
-     */
-    NvMediaIsp5HistChannel channel0;
-    NvMediaIsp5HistChannel channel1;
-    NvMediaIsp5HistChannel channel2;
-    NvMediaIsp5HistChannelMaxOrY channel3;
-
-    /**
-     * Conversion from RGB to Y for calculating the Y channel
-     */
-    float_t R2YGain;
-    float_t G2YGain;
-    float_t B2YGain;
-    float_t R2YOffset;
-    float_t G2YOffset;
-    float_t B2YOffset;
-
-    /**
-     * Offset to be applied to the input data prior to performing the bin
-     * mapping operation
-     */
-    float_t offset;
-
-    /**
-     * Offset to be applied to chroma channels of the input data prior to performing
-     * the bin mapping operation
-     */
-    float_t chromaOffset;
-
-    /**
-     * Log2 width of the histogram mapping zones
-     */
-    uint8_t kneePoints[NVMEDIA_ISP5_HIST_TF_KNEE_POINT_COUNT];
-
-    /**
-     * Log2 ranges of the histogram mapping zones
-     */
-    uint8_t ranges[NVMEDIA_ISP5_HIST_TF_KNEE_POINT_COUNT];
-
-    /**
-     * Log2 width of the histogram mapping zones
-     */
-    uint8_t chromaKneePoints[NVMEDIA_ISP5_HIST_TF_KNEE_POINT_COUNT];
-
-    /**
-     * Log2 ranges of the histogram mapping zones
-     */
-    uint8_t chromaRanges[NVMEDIA_ISP5_HIST_TF_KNEE_POINT_COUNT];
-
-    /**
-     * Elliptical mask for selecting pixels included if radialMaskEnable is set to true
-     */
-    NvMediaIsp5RadialMask radialMask;
-
-    /**
-     * Radial transfer function if radialWeigthEnable is set to true
-     */
-    NvMediaIsp5RadialTf radialWeightTf;
-
-} NvMediaISPStatsHistogramSettingsV5;
+    float_t matrix[NVM_ISP_MAX_COLORMATRIX_DIM][NVM_ISP_MAX_COLORMATRIX_DIM];
+} NvMediaISPColorCorrectionMatrix;
 
 /**
- * Holds the histogram statistics measurement for ISP version 5.
+ * \brief Programs color correction matrix block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      color correction matrix block.
+ * \param[in] size      Size of the color correction matrix block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /**
-     * Array of the histogram data for different color components.
-     * Use the indices based on the color space on which the histogram is
-     * gathered.
-     * For Bayer, use NV_ISP_COLOR_COMPONENT_[TL|TR|BL|BR].
-     * For YUV, use NV_ISP_COLOR_COMPONENT_[Y|U|V].
-     * For RGB, use NV_ISP_COLOR_COMPONENT_[R|G|B].
-     */
-    uint32_t histData[NVMEDIA_ISP5_HIST_BIN_COUNT][NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /** The pixel count for excluded pixels for each color components */
-    uint32_t excludedCount[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-} NvMediaISPStatsHistogramMeasurementV5;
+NvMediaStatus
+NvMediaISPSetColorCorrectionMatrix(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPColorCorrectionMatrix *controls,
+    size_t size
+);
 
 /**
- * Defines the settings to use for LAC statistics for ISP version 5.
- *
+ * \brief Holds controls for ISP global tone map (GTM) block.
  */
-typedef struct
-{
-    /** Enable the LAC statistics unit */
+typedef struct {
+    /**
+     * Holds boolean to enable global tone map block.
+     */
     NvMediaBool enable;
-
-    /** Enable the individual ROIs */
-    NvMediaBool ROIEnable[NVMEDIA_ISP_LAC_ROI_NUM];
-
     /**
-     * Enable a mask for excluding pixels outside specified elliptical area in each ROI
+     * Holds spline control points for global tone map transfer function.
+     * @li Supported values for X coordinate of spline control point: [0.0, 1.0]
+     * @li Supported values for Y coordinate of spline control point: [0.0, 1.0]
+     * @li Supported values for slope of spline control point: \f$[0.0, 2^{16}]\f$
      */
-    NvMediaBool radialMaskEnable[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * If input is a multi-exposure image, select the exposure used for LAC statistics.
-     * Valid values are
-     * 0..2
-     */
-    NvMediaIsp5MultiExpLane laneSelect;
-
-    /**
-     * Conversion from RGB to Y for calculating the Y channel if input is RGB/YUV image
-     */
-    float_t R2YGain;
-    float_t G2YGain;
-    float_t B2YGain;
-    float_t R2YOffset;
-    float_t G2YOffset;
-    float_t B2YOffset;
-
-    /**
-     * Minimum & maximum value of pixels for TL/R/V, TR/G/Y, BL/B/U and BR/Y channels
-     * respectively
-     */
-    NvMediaISPRangeFloat range[NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /**
-     * Definition of the LAC windows for each ROI
-     */
-    NvMediaISPStatsWindows windows[NVMEDIA_ISP_LAC_ROI_NUM];
-
-    /**
-     * Elliptical mask for selecting pixels included if radialMaskEnable is set to true
-     */
-    NvMediaIsp5RadialMask radialMask;
-
-} NvMediaISPStatsLacSettingsV5;
+    NvMediaISPSplineControlPoint controlPoints[NVM_ISP_GTM_TF_POINTS];
+} NvMediaISPGlobalToneMap;
 
 /**
- * Holds the LAC statistics measurement for ISP version 5.
+ * \brief Programs global tone map block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      global tone map block.
+ * \param[in] size      Size of the global tone map block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /** Holds the number of windows in one LAC ROI stats. */
-    uint32_t numWindows;
+NvMediaStatus
+NvMediaISPSetGlobalToneMap(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPGlobalToneMap *controls,
+    size_t size
+);
 
-    /** Holds the number of windows in the horizontal direction. */
-    uint32_t numWindowsH;
-
-    /** Holds the number of windows in the vertical direction. */
-    uint32_t numWindowsV;
-
+/**
+ * \brief Holds controls for ISP local tone map (LTM) block.
+ */
+typedef struct {
     /**
-     * For Bayer, use NVMEDIA_ISP_COLOR_COMPONENT_[TL|TR|BL|BR] for the indices.
-     * For YUV, use NVMEDIA_ISP_COLOR_COMPONENT_[Y|U|V].
-     * For RGB, use NVMEDIA_ISP_COLOR_COMPONENT_[R|G|B].
-     * Data could be negative
+     * Holds boolean to enable local tone map block.
      */
-    float_t average[NVMEDIA_ISP_LAC_ROI_WIN_NUM][NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /** Holds the number of pixels removed by the elliptical mask per window per component. */
-    uint32_t maskedOffCnt[NVMEDIA_ISP_LAC_ROI_WIN_NUM][NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-    /** Holds the number of clipped pixel count per window per component. */
-    uint32_t clippedCnt[NVMEDIA_ISP_LAC_ROI_WIN_NUM][NVMEDIA_ISP_COLOR_COMPONENT_NUM];
-
-} NvMediaISPStatsLacROIDataV5;
-
-typedef struct
-{
+    NvMediaBool enable;
     /**
-     * Holds a Boolean that specifies to ignore the stats value
-     * if a ROI is not enabled.
-     * If using the values for disabled ROI, it will cause undefined behavior.
+     * Holds boolean to enable soft key based local contrast enhancement.
      */
-    NvMediaBool ROIEnable[NVMEDIA_ISP_LAC_ROI_NUM];
-
+    NvMediaBool softKeyEnable;
     /**
-     * Holds the size of each window.
+     * Holds strength of local tone map.
+     * @li Supported values: [0.0, 1.0],
+     * 0.0 & 1.0 means minimum & maximum strength respectively
      */
-    NvMediaISPSize windowSize[NVMEDIA_ISP_LAC_ROI_NUM];
-
+    float_t strength;
     /**
-     * Holds the data for each ROI in LAC stats.
+     * Holds piecewise linear transfer function to adjust saturation based on
+     * tone value.
+     * @li Supported values: [-1.0, 1.0]
+     */
+    float_t saturation[NVM_ISP_LTM_GAIN_POINTS];
+    /**
+     * Holds softkey signal. Softkey signal is a low resolution estimate of the
+     * image used to determine the local average tone.
+     * @li Supported values: [0.0, 1.0]
+     */
+    float_t softKey[NVM_ISP_LTM_SOFT_KEY_HEIGHT][NVM_ISP_LTM_SOFT_KEY_WIDTH];
+} NvMediaISPLocalToneMap;
+
+/**
+ * \brief Programs local tone map block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      local tone map block.
+ * \param[in] size      Size of the local tone map block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetLocalToneMap(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPLocalToneMap *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP color space conversion (CSC) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable color space conversion block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds color space conversion matrix.
+     * @li Supported values: [-8.0, 8.0]
+     */
+    float_t matrix[NVM_ISP_MAX_COLORMATRIX_DIM][NVM_ISP_MAX_COLORMATRIX_DIM];
+} NvMediaISPColorSpaceConversion;
+
+/**
+ * \brief Programs color space conversion block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      color space conversion block.
+ * \param[in] size      Size of the color space conversion block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetColorSpaceConversion(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPColorSpaceConversion *controls,
+    size_t size
+);
+
+/**
+ * \brief Programs inverse color space conversion block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for an
+ *                      inverse color space conversion block.
+ * \param[in] size      Size of the inverse color space conversion block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetInvColorSpaceConversion(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPColorSpaceConversion *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP saturation (SAT) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable saturation block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds saturation value.
+     * @li Supported values: [-1.0, 1.0],
+     * -1.0, 0.0 & 1.0 means 0%, 100% & 200% saturation respectively
+     */
+    float_t saturation;
+} NvMediaISPSaturation;
+
+/**
+ * \brief Programs saturation block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a saturation block.
+ * \param[in] size      Size of the saturation block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetSaturation(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPSaturation *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP sharpness (Sharp) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable sharpness block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds strength of sharpness.
+     * @li Supported values: [0.0, 1.0],
+     * 0.0 & 1.0 means minimum & maximum strength respectively
+     */
+    float_t strength;
+} NvMediaISPSharpness;
+
+/**
+ * \brief Programs sharpness block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a sharpness block.
+ * \param[in] size      Size of the sharpness block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetSharpness(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPSharpness *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP downscale (DS) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable downscale block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds image width after downscaling.
+     * @li Supported values: [ceil(input width / 32.0), input width]
+     */
+    uint32_t downscaledWidth;
+    /**
+     * Holds image height after downscaling.
+     * @li Supported values: [ceil(input height / 32.0), input height]
+     */
+    uint32_t downscaledHeight;
+} NvMediaISPDownscale;
+
+/**
+ * \brief Programs downscale block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a downscale block.
+ * \param[in] size      Size of the downscale block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetDownscale(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPDownscale *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP clip (Clip) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable clip block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds minimum clip value for each color component, component order is
+     * RGGB/RCCB/RCCC for bayer data & RGB/YUV for RGB/YUV data.
+     * @li Supported values for non-chroma data: [-0.125, 2.0]
+     * @li Supported values for chroma data: [-0.5, 0.5]
+     */
+    float_t min[NVM_ISP_MAX_COLOR_COMPONENT];
+    /**
+     * Holds minimum clip value for each color component, component order is
+     * RGGB/RCCB/RCCC for bayer data & RGB/YUV for RGB/YUV data.
+     * @li Supported values for non-chroma data: [-0.125, 2.0], max >= min
+     * @li Supported values for chroma data: [-0.5, 0.5], max >= min
+     */
+    float_t max[NVM_ISP_MAX_COLOR_COMPONENT];
+} NvMediaISPClip;
+
+/**
+ * \brief Programs clip block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a clip block.
+ * \param[in] size      Size of the clip block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetClip(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPClip *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP offset (Offset) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable offset block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds offset value for each color component.
+     * @li Supported values: [-2.0, 2.0]
+     */
+    float_t offset[NVM_ISP_MAX_COLOR_COMPONENT];
+} NvMediaISPOffset;
+
+/**
+ * \brief Programs offset block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for an offset block.
+ * \param[in] size      Size of the offset block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetOffset(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPOffset *controls,
+    size_t size
+);
+
+/**
+ * \brief Holds controls for ISP digital gain (DG) block.
+ */
+typedef struct {
+    /**
+     * Holds boolean to enable digital gain block.
+     */
+    NvMediaBool enable;
+    /**
+     * Holds digital gain value.
+     * @li Supported values: [0.0, 8.0]
+     */
+    float_t digitalGain;
+} NvMediaISPDigitalGain;
+
+/**
+ * \brief Programs digital gain block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      digital gain block.
+ * \param[in] size      Size of the digital gain block control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetDigitalGain(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPDigitalGain *controls,
+    size_t size
+);
+
+/**
+ * \brief Programs histogram statistics block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      histogram statistics block.
+ * \param[in] size      Size of the histogram statistics block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetHistogramStats(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPHistogramStats *controls,
+    size_t size
+);
+
+/**
+ * \brief Programs local average and clip statistics block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      local average and clip statistics block.
+ * \param[in] size      Size of the local average and clip statistics block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetLocalAvgClipStats(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPLocalAvgClipStats *controls,
+    size_t size
+);
+
+/**
+ * \brief Programs bad pixel statistics block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      control structure for a bad pixel statistics block.
+ * \param[in] size      Size of the bad pixel statistics block control
+ *                      structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetBadPixelStats(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPBadPixelStats *controls,
+    size_t size
+);
+
+/**
+ * \brief Programs local tone map statistics block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      local tone map statistics block.
+ * \param[in] size      Size of the local tone map statistics block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetLocalToneMapStats(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPLocalToneMapStats *controls,
+    size_t size
+);
+
+/**
+ * \brief Programs flicker band statistics block controls.
+ * \param[in] settings  Handle representing the ISP settings object.
+ * \param[in] instance  Instance of the block to be programmed.
+ * \param[in] controls  A pointer to a control structure for a
+ *                      flicker band statistics block.
+ * \param[in] size      Size of the flicker band statistics block
+ *                      control structure.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
+ *  parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPSetFlickerBandStats(
+    NvMediaISPSettings *settings,
+    uint32_t instance,
+    const NvMediaISPFlickerBandStats *controls,
+    size_t size
+);
+
+/**
+ * \brief Registers an image group as input to isp engine
+ * \param[in] isp ISP object.
+ * \param[in] imageGrp Image group to be registered to isp engine
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPRegisterInputImageGroup(
+    NvMediaISP *isp,
+    NvMediaImageGroup *imageGrp
+);
+
+/**
+ * \brief Unregisters an image group from input to isp engine
+ * \param[in] isp ISP object.
+ * \param[in] imageGrp Image group to be unregistered from isp engine
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPUnregisterInputImageGroup(
+    NvMediaISP *isp,
+    NvMediaImageGroup *imageGrp
+);
+
+/**
+ * \brief Registers an image as output to isp engine
+ * \param[in] isp ISP object.
+ * \param[in] image Image to be registered to isp engine
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPRegisterOutputImage(
+    NvMediaISP *isp,
+    NvMediaImage *image
+);
+
+/**
+ * \brief Unregisters an image from output to isp engine
+ * \param[in] isp ISP object.
+ * \param[in] image Image to be unregistered from isp engine
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPUnregisterOutputImage(
+    NvMediaISP *isp,
+    NvMediaImage *image
+);
+
+/**
+ * \brief Holds ISP processing parameters.
+ */
+typedef struct {
+    /**
+     * Holds input image(s).
+     */
+    NvMediaImageGroup input;
+    /**
+     * Holds cropping rectangle for input image.
      *
-     * The LAC data will be stored in row-major order.
-     */
-    NvMediaISPStatsLacROIDataV5 ROIData[NVMEDIA_ISP_LAC_ROI_NUM];
-
-} NvMediaISPStatsLacMeasurementV5;
-
-/**
- * Defines the settings to use for Local tone mapping statistics for ISP version 5
- *
- * Local tone mapping parameters depend on statistics gathered from previous frames
- * by the LTM sub block. It provides a global tone histogram with 128 bins and local
- * average statistics for configurable 8x8 windows. Both of these support rectangular
- * and elliptical masks to block certain image areas from statistics gathering.
- */
-typedef struct
-{
-    /** Enable local tonemapping stats */
-    NvMediaBool enable;
-
-    /** Enable rectangular mask to restrict image area used for statistics */
-    NvMediaBool rectMaskEnable;
-
-    /** Rectangular mask used to restrict statistics calculation */
-    NvMediaIsp5RectMask rectMask;
-
-    /** Enable radial mask to restrict image area used for statistics */
-    NvMediaBool radialMaskEnable;
-
-    /** Radial mask used to restrict statistics calculation */
-    NvMediaIsp5RadialMask radialMask;
-
-    /**
-     * Width of local average statistics window in pixels. Value must be even.
-     * Value should be selected so that the 8x8 grid of windows covers whole active
-     * image area, i.e. that 8 x StatsLocalAvgWndWidth >= image width.
-     * Also, the window should be roughly rectangular.
-     */
-    uint16_t localAvgWndWidth;
-
-    /**
-     * Height of local average statistics window in pixels. Value must be even.
-     * See LocalAvgWidth documentation for recommendations on selecting value
-     */
-    uint16_t localAvgWndHeight;
-
-} NvMediaISPStatsLTMSettingsV5;
-
-/**
- * Holds the LTM statistics measurement for ISP version 5.
- */
-typedef struct
-{
-    /**
-     * Count of pixels with tone falling into each histogram bin.
-     */
-    uint32_t histogram[NVMEDIA_ISP5_LTM_HIST_BIN_COUNT];
-
-    /**
-     * Average tone in local average window. The tone values are computed
-     * by converting YUV input to tone, taking logarithm from the value and normalizing
-     * it so that dynamic range is mapped to range [0.0 .. 1.0].
-     * See NvMediaISPStatsLocalToneMapV5 for parameters that control this process.
+     * Coordinates of image top-left & bottom-right points are (0, 0) &
+     * (width, height) respectively. Either memset the rectangle to 0 or set it
+     * to include full image for no cropping.
      *
-     * If no pixels contributed to a windows (either because the windows was out of image
-     * boundaries, or it was completely excluded by rectangular or elliptical masks)
-     * this value is set to zero.
+     * Input crop only supports cropping in vertical direction, meaning
+     * left & bottom cordinated must be 0 & input width respectively.
      */
-    float_t localAverageTone[NVMEDIA_ISP5_LTM_AVG_WIN_COUNT][NVMEDIA_ISP5_LTM_AVG_WIN_COUNT];
-
+    NvMediaRect inputCropRect;
     /**
-     * Number of pixels in each local average window that contributed to statistics
+     * Holds output image for each ISP output.
+     * output \#i is enabled if @c output[i] is a valid pointer, and disabled
+     * if it is NULL.
      */
-    uint32_t nonMaskedPixelCount[NVMEDIA_ISP5_LTM_AVG_WIN_COUNT][NVMEDIA_ISP5_LTM_AVG_WIN_COUNT];
-
-} NvMediaISPStatsLTMMeasurementV5;
+    NvMediaImage *output[NVM_ISP_MAX_OUTPUTS];
+    /**
+     * Holds cropping rectangle for each output image.
+     *
+     * Coordinates of image top-left & bottom-right points are (0, 0) &
+     * (width, height) respectively. Either memset the rectangle to 0 or set it
+     * to include full image for no cropping.
+     *
+     * Rectangle must be within input image or downscaled image if downscaling
+     * is enabled. Cropped width & height must be same as output width & height
+     * respectively and cropped width must be even.
+     *
+     */
+    NvMediaRect outputCropRect[NVM_ISP_MAX_OUTPUTS];
+    /**
+     * Holds output statistics surface.
+     * Must not be NULL, if any of the statistics blocks are enabled.
+     */
+    NvMediaISPStatsSurface *statsSurface;
+    /**
+     * Holds ISP settings.
+     */
+    const NvMediaISPSettings *settings;
+} NvMediaISPProcessParams;
 
 /**
- * Holds the OR statistics measurement for ISP version 5.
+ * \brief ISP processing function.
+ * \param[in] isp ISP object.
+ * \param[in] params  ISP processing parameters.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-typedef struct
-{
-    /** Bad pixel count for pixels corrected upwards within the window */
-    uint32_t highInWin;
-    /** Bad pixel count for pixels corrected downwards within the window */
-    uint32_t lowInWin;
-    /** Accumulatd pixel adjustment for pixels corrected upwards within the window */
-    uint32_t highMagInWin;
-    /** Accumulatd pixel adjustment for pixels corrected downwards within the window */
-    uint32_t lowMagInWin;
-    /** Bad pixel count for pixels corrected upwards outside the window */
-    uint32_t highOutWin;
-    /** Bad pixel count for pixels corrected downwards outside the window */
-    uint32_t lowOutWin;
-    /** Accumulatd pixel adjustment for pixels corrected upwards outside the window */
-    uint32_t highMagOutWin;
-    /** Accumulatd pixel adjustment for pixels corrected downwards outside the window */
-    uint32_t lowMagOutWin;
-} NvMediaISPStatsORMeasurementV5;
+NvMediaStatus
+NvMediaISPProcess(
+    NvMediaISP *isp,
+    const NvMediaISPProcessParams *params
+);
 
-/** @} <!-- ends isp_frame_stats --> */
-
-/*
- * \defgroup history_isp History
- * Provides change history for the NvMedia ISP API.
- *
- * \section history_isp Version History
- *
- * <b> Version 1.0 </b> July 8, 2014
- * - Initial release
- *
- * <b> Version 1.1 </b> March 13, 2015
- * - Added ISP version 3 support
- *
- * <b> Version 1.2 </b> November 17, 2015
- * - Added ISP version 4 support
- *
- * <b> Version 1.3 </b> March 31, 2017
- * - Removed ISP version 3 support
- *
- * <b> Version 1.4 </b> August 15, 2017
- * - Added ISP version 5 support
- *
- * <b> Version 1.5 </b> December 1, 2017
- * - Added windowSize to NvMediaISPStatsLacMeasurementV5 for ISP version 5
- *
- * <b> Version 1.6 </b> Febuary 22, 2018
- * - Renamed unClippedCnt to maskedOffCnt
- *
- * <b> Version 1.7 </b> April 10, 2018
- * - Change slope to double point in NvMediaISP5CubicSplineCtrlPoint
+/**
+ * \brief Gets the histogram statistics data.
+ * \param[in] isp           ISP object.
+ * \param[in] statsSurface  Statistics surface.
+ * \param[in] instance      Instance of the block to get statistics.
+ * \param[in,out] statsData A pointer to histogram statistics data.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
-/** @} */
+NvMediaStatus
+NvMediaISPGetHistogramStatsData(
+    NvMediaISP *isp,
+    NvMediaISPStatsSurface *statsSurface,
+    uint32_t instance,
+    NvMediaISPHistogramStatsData *statsData
+);
+
+/**
+ * \brief Gets the local average & clip statistics data.
+ * \param[in] isp           ISP object.
+ * \param[in] statsSurface  A pointer to a statistics surface.
+ * \param[in] instance      Instance of the block to get statistics.
+ * \param[in,out] statsData A pointer to local average & clip statistics data.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPGetLocalAvgClipStatsData(
+    NvMediaISP *isp,
+    NvMediaISPStatsSurface *statsSurface,
+    uint32_t instance,
+    NvMediaISPLocalAvgClipStatsData *statsData
+);
+
+/**
+ * \brief Gets the local tone map statistics data.
+ * \param[in] isp           ISP object.
+ * \param[in] statsSurface  A pointer to a statistics surface.
+ * \param[in] instance      Instance of the block to get statistics.
+ * \param[in,out] statsData A pointer to local tone map statistics data.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPGetLocalToneMapStatsData(
+    NvMediaISP *isp,
+    NvMediaISPStatsSurface *statsSurface,
+    uint32_t instance,
+    NvMediaISPLocalToneMapStatsData *statsData
+);
+
+/**
+ * \brief Gets the bad pixel statistics data.
+ * \param[in] isp           ISP object.
+ * \param[in] statsSurface  A pointer to a statistics surface.
+ * \param[in] instance      Instance of the block to get statistics.
+ * \param[in,out] statsData A pointer to bad pixel statistics data.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ */
+NvMediaStatus
+NvMediaISPGetBadPixelStatsData(
+    NvMediaISP *isp,
+    NvMediaISPStatsSurface *statsSurface,
+    uint32_t instance,
+    NvMediaISPBadPixelStatsData *statsData
+);
+
+/**
+ * \brief Gets the flicker band statistics data.
+ * \param[in] isp           ISP object.
+ * \param[in] statsSurface  A pointer to a statistics surface.
+ * \param[in] instance      Instance of the block to get statistics.
+ * \param[in,out] statsData A pointer to flicker band statistics data.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that there was some other error.
+ */
+NvMediaStatus
+NvMediaISPGetFlickerBandStatsData(
+    NvMediaISP *isp,
+    NvMediaISPStatsSurface *statsSurface,
+    uint32_t instance,
+    NvMediaISPFlickerBandStatsData *statsData
+);
+
+/*@} <!-- Ends nvmedia_isp_api Image Signal Processing --> */
+
 #ifdef __cplusplus
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_ISP_H */
+#endif /* NVMEDIA_ISP_H */

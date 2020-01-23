@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-#include "nvcommon.h"
 #include "nvmedia_core.h"
 #include "nvmedia_surface.h"
 #include "nvmedia_image.h"
@@ -21,7 +20,7 @@ extern "C" {
 /* Major Version number */
 #define EXTIMGDEV_VERSION_MAJOR   1
 /* Minor Version number */
-#define EXTIMGDEV_VERSION_MINOR   14
+#define EXTIMGDEV_VERSION_MINOR   15
 
 #define MAX_AGGREGATE_IMAGES 4
 
@@ -45,6 +44,41 @@ extern "C" {
 
 typedef void ExtImgDevDriver;
 
+/**
+ * \brief Pixel order in a raw image.
+ */
+typedef enum {
+    /*! RGGB order. */
+    RAW_PIXEL_ORDER_RGGB = 0,
+    /*! BGGR order. */
+    RAW_PIXEL_ORDER_BGGR,
+    /*! GRBG order. */
+    RAW_PIXEL_ORDER_GRBG,
+    /*! GBRG order. */
+    RAW_PIXEL_ORDER_GBRG,
+    /*! RCCB order. */
+    RAW_PIXEL_ORDER_RCCB,
+    /*! BCCR order. */
+    RAW_PIXEL_ORDER_BCCR,
+    /*! CRBC order. */
+    RAW_PIXEL_ORDER_CRBC,
+    /*! CBRC order. */
+    RAW_PIXEL_ORDER_CBRC,
+    /*! RCCC order. */
+    RAW_PIXEL_ORDER_RCCC,
+    /*! CCCR order. */
+    RAW_PIXEL_ORDER_CCCR,
+    /*! CRCC order. */
+    RAW_PIXEL_ORDER_CRCC,
+    /*! CCRC order. */
+    RAW_PIXEL_ORDER_CCRC,
+    /*! CCCC order. */
+    RAW_PIXEL_ORDER_CCCC,
+    /*! Number of pixel orders. */
+    RAW_PIXEL_ORDER_COUNT
+} RawPixelOrder;
+
+
 typedef struct {
     /* Major version */
     uint8_t major;
@@ -63,15 +97,15 @@ typedef struct {
     char                       *resolution;
     char                       *inputFormat;
     char                       *interface;
-    NvU32                       i2cDevice;
-    NvU32                       desAddr;
-    NvU32                       brdcstSerAddr;
-    NvU32                       serAddr[MAX_AGGREGATE_IMAGES];
-    NvU32                       brdcstSensorAddr;
-    NvU32                       sensorAddr[MAX_AGGREGATE_IMAGES];
-    NvU32                       e2pPhysicalAddr;
-    NvU32                       e2pAddr[MAX_AGGREGATE_IMAGES];
-    NvU32                       sensorsNum;
+    uint32_t                    i2cDevice;
+    uint32_t                    desAddr;
+    uint32_t                    brdcstSerAddr;
+    uint32_t                    serAddr[MAX_AGGREGATE_IMAGES];
+    uint32_t                    brdcstSensorAddr;
+    uint32_t                    sensorAddr[MAX_AGGREGATE_IMAGES];
+    uint32_t                    e2pPhysicalAddr;
+    uint32_t                    e2pAddr[MAX_AGGREGATE_IMAGES];
+    uint32_t                    sensorsNum;
     NvMediaBool                 enableEmbLines; /* TBD : this flag will be optional for
                                                  * on chip ISP in the sensor
                                                  * such as OV10635,
@@ -88,7 +122,7 @@ typedef struct {
                                                   * without actual device. */
     ExtImgDevMapInfo           *camMap;
     NvMediaBool                 enableVirtualChannels;
-    NvU32                       reqFrameRate; /* Optional
+    uint32_t                    reqFrameRate; /* Optional
                                                * default frame rate will be 30fps. */
     NvMediaBool                 selfTestFlag; /* Optional
                                                * sensor self safety test flag
@@ -108,7 +142,7 @@ typedef struct {
                                           1 : EMB coming in CSI packet with different data type */
     NvMediaICPInputFormatType   inputFormatType;
     NvMediaBitsPerPixel         bitsPerPixel;
-    NvMediaRawPixelOrder        pixelOrder;
+    uint32_t                    pixelOrder;
     NvMediaICPInterfaceType     interface;
     NvMediaICPCsiPhyMode        phyMode;
     NvMediaBool                 doubledPixel; /* for raw11x2 or raw16 */
@@ -134,8 +168,8 @@ typedef struct {
     NvMediaISCDevice           *iscBroadcastSerializer;
     NvMediaISCDevice           *iscBroadcastSensor;
     NvMediaISCDevice           *iscEeprom[MAX_AGGREGATE_IMAGES];
-    NvU32                       sensorsNum;
-    NvU32                       remapIdx[MAX_AGGREGATE_IMAGES];
+    uint32_t                    sensorsNum;
+    uint32_t                    remapIdx[MAX_AGGREGATE_IMAGES];
     NvMediaBool                 simulator;
 } ExtImgDevice;
 
@@ -154,15 +188,23 @@ ExtImgDevStop(ExtImgDevice *device);
 NvMediaStatus
 ExtImgDevGetError(
     ExtImgDevice *device,
-    NvU32 *link,
+    uint32_t *link,
     ExtImgDevFailureType *errorType);
 
 NvMediaStatus
 ExtImgDevRegisterCallback(
     ExtImgDevice *device,
-    NvU32 sigNum,
+    uint32_t sigNum,
     void (*cb)(void *),
     void *context);
+
+NvMediaStatus
+ExtImgDevWaitForError(
+    ExtImgDevice *device);
+
+NvMediaStatus
+ExtImgDevAbortWaitForError(
+    ExtImgDevice *device);
 
 /*
  * Possible values are:
@@ -228,6 +270,9 @@ ExtImgDevCheckVersion(
  *
  * <b> Version 1.14 </b> July 26, 2018
  * - Added sensorIdentifier in \ref ExtImgDevProperty to set string identifier for the image sensor
+ *
+ * <b> Version 1.15 </b> Dec 20, 2018
+ * - Added \ref ExtImgDevWaitForError and \ref ExtImgDevAbortWaitForError
  */
 
 #ifdef __cplusplus

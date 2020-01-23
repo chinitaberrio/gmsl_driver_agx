@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -19,8 +19,10 @@
 extern "C" {
 #endif
 
+#include "nvmedia_2d.h"
 #include "nvmedia_core.h"
 #include "nvmedia_common.h"
+#include "nvmedia_surface.h"
 #include "nvmedia_video.h"
 #include "nvmedia_vop.h"
 
@@ -38,7 +40,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VMP_VERSION_MAJOR   2
 /** \brief Minor Version number */
-#define NVMEDIA_VMP_VERSION_MINOR   2
+#define NVMEDIA_VMP_VERSION_MINOR   5
 
 /**
  * \defgroup mixer_features Mixer Features
@@ -226,6 +228,25 @@ typedef enum {
 /** \hideinitializer \brief The picture is a frame, and hence is the entire surface. */
     NVMEDIA_PICTURE_STRUCTURE_FRAME = 0x3
 } NvMediaPictureStructure;
+
+/**
+ * \brief Holds a constant RGBA color.
+ *
+ * @note the components are stored as float_t values in the
+ * range 0.0...1.0 rather than format-specific integer values.
+ * This allows NvMediaColor values to be independent from the exact
+ * surface format(s) in use.
+ */
+typedef struct {
+    /*! Red color component */
+    float_t red;
+    /*! Green color component */
+    float_t green;
+    /*! Blue color component */
+    float_t blue;
+    /*! Alpha color component */
+    float_t alpha;
+} NvMediaColor;
 
 /**
  * \brief Returns the version information for the Video Mixer library.
@@ -563,6 +584,15 @@ NvMediaVideoMixerRenderSurfaceWithAlpha(
  *
  * <b> Version 2.2 </b> March 16, 2018
  * - Move \ref NvMediaNoiseReductionAlgorithm structure definition to nvmedia_common.h header file
+ *
+ * <b> Version 2.3 </b> January 21, 2019
+ * - Added header include nvmedia_2d.h
+ *
+ * <b> Version 2.4 </b> February 4, 2019
+ * - Moved \ref NvMediaColor from nvmedia_core.h to this header
+ *
+ * <b> Version 2.5 </b> February 6, 2019
+ * - Added required header include nvmedia_surface.h
  */
 
 

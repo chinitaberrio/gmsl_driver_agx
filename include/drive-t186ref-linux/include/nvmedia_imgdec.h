@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2016-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -12,14 +12,15 @@
  * This file contains the \ref image_decoder_api "Image Decode Processing API".
  */
 
-#ifndef _NVMEDIA_IMGDEC_H
-#define _NVMEDIA_IMGDEC_H
+#ifndef NVMEDIA_IMGDEC_H
+#define NVMEDIA_IMGDEC_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
 #include "nvmedia_image.h"
 
 /**
@@ -42,7 +43,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_IMAGEDEC_VERSION_MAJOR   2
 /** \brief Minor Version number */
-#define NVMEDIA_IMAGEDEC_VERSION_MINOR   0
+#define NVMEDIA_IMAGEDEC_VERSION_MINOR   4
 
 /**
  * \brief Image codec type
@@ -68,6 +69,8 @@ typedef struct {
     uint16_t maxReferences;
     /** \brief Instance ID of the decoder */
     NvMediaDecoderInstanceId instanceId;
+    /** An Opaque pointer for internal use */
+    struct NvMediaImageDecoderPriv_ *decoderPriv;
 } NvMediaImageDecoder;
 
 /**
@@ -80,21 +83,21 @@ typedef struct {
  * \hideinitializer
  * \brief Progressive sequence
  */
-#define NVMEDIA_IMAGE_DECODER_ATTRIBUTE_PROGRESSIVE_SEQUENCE       (1<<0)
+#define NVMEDIA_IMAGE_DECODER_ATTRIBUTE_PROGRESSIVE_SEQUENCE       (1U<<0)
 
 /**
  * \hideinitializer
  * \brief Defines 10-bit decode.
  */
 
-#define NVMEDIA_IMAGE_DECODER_10BIT_DECODE                         (1<<1)
+#define NVMEDIA_IMAGE_DECODER_10BIT_DECODE                         (1U<<1)
 
 /**
  * \hideinitializer
  * \brief Rec_2020 color format for the decoded surface
  */
 
-#define NVMEDIA_IMAGE_DECODER_PIXEL_REC_2020                       (1<<2)
+#define NVMEDIA_IMAGE_DECODER_PIXEL_REC_2020                       (1U<<2)
 /*@} <!-- Ends decoder_create_flag sub-group --> */
 
 /**
@@ -150,7 +153,7 @@ NvMediaImageDecoderGetVersion(
 
 NvMediaImageDecoder *
 NvMediaImageDecoderCreate(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaImageCodec codec,
     uint16_t width,
     uint16_t height,
@@ -167,7 +170,7 @@ NvMediaImageDecoderCreate(
  */
 void
 NvMediaImageDecoderDestroy(
-   NvMediaImageDecoder *decoder
+   const NvMediaImageDecoder *decoder
 );
 
 /**
@@ -196,9 +199,9 @@ NvMediaImageDecoderDestroy(
  */
 NvMediaStatus
 NvMediaImageDecoderRender(
-    NvMediaImageDecoder *decoder,
+    const NvMediaImageDecoder *decoder,
     NvMediaImage        *target,
-    NvMediaPictureInfo *pictureInfo,
+    const NvMediaPictureInfo *pictureInfo,
     uint32_t numBitstreamBuffers,
     const NvMediaBitstreamBuffer *bitstreams,
     NvMediaDecoderInstanceId instanceId
@@ -223,6 +226,23 @@ NvMediaImageDecoderRender(
  * - NvMediaImageDecoderCheckVersion is now deprecated.
  *   Use NvMediaImageDecoderGetVersion() instead.
  * - All NvMedia data types are moved to standard data types
+ *
+ * <b> Version 2.1 </b> Dec 14, 2018
+ * - Defined Macro constants as unsigned to fix MISRA issues
+ * - Fix MISRA violations 21.1 and 21.2
+ *
+ * <b> Version 2.2 </b> January 15, 2019
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 2.3 </b> Feb 7, 2019
+ * - Added opaque handle for decoder
+ *   internal usage into Image decoder object
+ * - Fix MISRA violations 11.3
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 2.4 </b> February 28, 2019
+ * - Added required header include nvmedia_core.h
+ *
  */
 /*@} <!-- Ends decoder_api Image Decoder --> */
 
@@ -230,4 +250,4 @@ NvMediaImageDecoderRender(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IMGDEC_H */
+#endif /* NVMEDIA_IMGDEC_H */

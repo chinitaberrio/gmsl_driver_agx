@@ -1,17 +1,20 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
  */
 
 
-#ifndef _NVMEDIA_DRM_H
-#define _NVMEDIA_DRM_H
+#ifndef NVMEDIA_DRM_H
+#define NVMEDIA_DRM_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "nvmedia_common.h"
+#include "nvmedia_core.h"
 
 /**
  * \file
@@ -198,7 +201,7 @@ NvMediaVideoDecrypterCreate (
  */
 void
 NvMediaVideoDecrypterDestroy(
-    NvMediaVideoDecrypter *pDecrypter
+    const NvMediaVideoDecrypter *pDecrypter
 );
 
 
@@ -222,8 +225,8 @@ NvMediaVideoDecrypterDestroy(
 
 NvMediaStatus
 NvMediaVideoDecryptHeader(
-    NvMediaVideoDecrypter *pDecrypter,
-    void *pictureData,
+    const NvMediaVideoDecrypter *pDecrypter,
+    const void *pictureData,
     const NvMediaBitstreamBuffer *pBitstream,
     NvMediaDecoderInstanceId instanceId
 );
@@ -255,4 +258,4 @@ NvMediaVideoGetClearHeader(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_DRM_H */
+#endif /* NVMEDIA_DRM_H */

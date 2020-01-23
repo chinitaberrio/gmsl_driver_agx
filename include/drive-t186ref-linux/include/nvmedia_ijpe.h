@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -12,14 +12,17 @@
  * @b Description: This file contains the \ref image_jpeg_encode_api "Image JPEG Encode Processing API".
  */
 
-#ifndef _NVMEDIA_IJPE_H
-#define _NVMEDIA_IJPE_H
+#ifndef NVMEDIA_IJPE_H
+#define NVMEDIA_IJPE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
+#include "nvmedia_image.h"
+#include "nvmedia_surface.h"
 
 /**
  * \defgroup image_jpeg_encode_api Image JPEG Encoder
@@ -34,7 +37,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_IJPE_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_IJPE_VERSION_MINOR   3
+#define NVMEDIA_IJPE_VERSION_MINOR   6
 
 /**
  * \hideinitializer
@@ -141,6 +144,8 @@ typedef struct {
 typedef struct {
     /** Input Image surface type. */
     NvMediaSurfaceType inputFormat;
+    /** An Opaque pointer for internal use */
+    struct NvMediaIJPEPriv_ *jpegEncPriv;
 } NvMediaIJPE;
 
 /**
@@ -182,7 +187,7 @@ NvMediaIJPEGetVersion(
  */
 NvMediaIJPE *
 NvMediaIJPECreate(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaSurfaceType inputFormat,
     uint8_t maxOutputBuffering,
     uint32_t  maxBitstreamBytes
@@ -215,7 +220,7 @@ void NvMediaIJPEDestroy(NvMediaIJPE *encoder);
  */
 NvMediaStatus
 NvMediaIJPEFeedFrame(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     NvMediaImage *frame,
     uint8_t quality
 );
@@ -241,7 +246,7 @@ NvMediaIJPEFeedFrame(
  */
 NvMediaStatus
 NvMediaIJPEFeedFrameQuant(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     NvMediaImage *frame,
     uint8_t *lumaQuant,
     uint8_t *chromaQuant
@@ -271,7 +276,7 @@ NvMediaIJPEFeedFrameQuant(
  */
 NvMediaStatus
 NvMediaIJPEFeedFrameRateControl(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     NvMediaImage *frame,
     uint8_t *lumaQuant,
     uint8_t *chromaQuant,
@@ -293,9 +298,9 @@ NvMediaIJPEFeedFrameRateControl(
  */
 NvMediaStatus
 NvMediaIJPESetAttributes(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     uint32_t attributeMask,
-    void *attributes
+    const void *attributes
 );
 
 /**
@@ -331,7 +336,7 @@ NvMediaIJPESetAttributes(
  */
 NvMediaStatus
 NvMediaIJPEGetBits(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     uint32_t *numBytes,
     void *buffer,
     uint32_t flags
@@ -363,7 +368,7 @@ NvMediaIJPEGetBits(
  */
 NvMediaStatus
 NvMediaIJPEGetBitsEx(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     uint32_t *numBytes,
     uint32_t numBitstreamBuffers,
     const NvMediaBitstreamBuffer *bitstreams,
@@ -416,7 +421,7 @@ NvMediaIJPEGetBitsEx(
  */
 NvMediaStatus
 NvMediaIJPEBitsAvailable(
-    NvMediaIJPE *encoder,
+    const NvMediaIJPE *encoder,
     uint32_t *numBytesAvailable,
     NvMediaBlockingType blockingType,
     uint32_t millisecondTimeout
@@ -441,6 +446,17 @@ NvMediaIJPEBitsAvailable(
  * - Added \ref NvMediaIJPEGetVersion API to get the version of NvMedia IJPE library
  * - NvMediaIJPECheckVersion is deprecated. Use NvMediaIJPEGetVersion() instead
  * - All NvMedia data types are moved to standard data types
+ *
+ * <b> Version 1.4 </b> January 15, 2019
+ * - Fix MISRA violations 8.13, 21.1 and 21.2
+ *
+ * <b> Version 1.5 </b> Feb 20, 2019
+ * - Added opaque pointer for jpeg encoder
+ *   internal usage into jpeg encoder object
+ * - Fix MISRA violations 11.3
+ *
+ * <b> Version 1.6 </b> February 28, 2019
+ * - Add dependent header includes nvmedia_core.h, nvmedia_image.h and nvmedia_surface.h
  */
 
 /** @} */
@@ -449,4 +465,4 @@ NvMediaIJPEBitsAvailable(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IJPE_H */
+#endif /* NVMEDIA_IJPE_H */

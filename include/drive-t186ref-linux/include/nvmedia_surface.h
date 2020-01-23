@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -13,8 +13,8 @@
  *                 \ref surface_handling_api "NvMedia Surface Handling API".
  */
 
-#ifndef _NVMEDIA_SURFACE_H
-#define _NVMEDIA_SURFACE_H
+#ifndef NVMEDIA_SURFACE_H
+#define NVMEDIA_SURFACE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,9 +43,9 @@ extern "C" {
  */
 
 /** \brief Major Version number */
-#define NVMEDIA_SURFACE_VERSION_MAJOR   1
+#define NVMEDIA_SURFACE_VERSION_MAJOR   (1u)
 /** \brief Minor Version number */
-#define NVMEDIA_SURFACE_VERSION_MINOR   8
+#define NVMEDIA_SURFACE_VERSION_MINOR   (12u)
 
 
 /**
@@ -71,139 +71,139 @@ typedef enum {
 
 /** \brief NVM_SURF_ATTR_SURF_TYPE flags */
 /** YUV surface type flag */
-#define NVM_SURF_ATTR_SURF_TYPE_YUV                       0x00000001
+#define NVM_SURF_ATTR_SURF_TYPE_YUV                       (0x00000001u)
 /** RGBA surface type flag */
-#define NVM_SURF_ATTR_SURF_TYPE_RGBA                      0x00000002
+#define NVM_SURF_ATTR_SURF_TYPE_RGBA                      (0x00000002u)
 /** RAW surface type flag */
-#define NVM_SURF_ATTR_SURF_TYPE_RAW                       0x00000003
+#define NVM_SURF_ATTR_SURF_TYPE_RAW                       (0x00000003u)
 
 /** \brief NVM_SURF_ATTR_LAYOUT flags */
 /** Block Linear (BL) surface layout flag */
-#define NVM_SURF_ATTR_LAYOUT_BL                           0x00000001
+#define NVM_SURF_ATTR_LAYOUT_BL                           (0x00000001u)
 /** Pitch Linear (PL) surface layout flag */
-#define NVM_SURF_ATTR_LAYOUT_PL                           0x00000002
+#define NVM_SURF_ATTR_LAYOUT_PL                           (0x00000002u)
 
 /** \brief NVM_SURF_ATTR_DATA_TYPE flags */
 /** Unsigned Integer surface data type flag */
-#define NVM_SURF_ATTR_DATA_TYPE_UINT                      0x00000001
+#define NVM_SURF_ATTR_DATA_TYPE_UINT                      (0x00000001u)
 /** Integer surface data type flag */
-#define NVM_SURF_ATTR_DATA_TYPE_INT                       0x00000002
+#define NVM_SURF_ATTR_DATA_TYPE_INT                       (0x00000002u)
 /** Float surface data type flag */
-#define NVM_SURF_ATTR_DATA_TYPE_FLOAT                     0x00000003
+#define NVM_SURF_ATTR_DATA_TYPE_FLOAT                     (0x00000003u)
 /** FloatISP surface data type flag */
-#define NVM_SURF_ATTR_DATA_TYPE_FLOATISP                  0x00000004
+#define NVM_SURF_ATTR_DATA_TYPE_FLOATISP                  (0x00000004u)
 
 /** \brief NVM_SURF_ATTR_MEMORY flags */
 /** Planar surface memory type flag */
-#define NVM_SURF_ATTR_MEMORY_PLANAR                       0x00000001
+#define NVM_SURF_ATTR_MEMORY_PLANAR                       (0x00000001u)
 /** Semi-Planar surface memory type flag */
-#define NVM_SURF_ATTR_MEMORY_SEMI_PLANAR                  0x00000002
+#define NVM_SURF_ATTR_MEMORY_SEMI_PLANAR                  (0x00000002u)
 /** Packed surface memory type flag */
-#define NVM_SURF_ATTR_MEMORY_PACKED                       0x00000003
+#define NVM_SURF_ATTR_MEMORY_PACKED                       (0x00000003u)
 
 /** \brief NVM_SURF_ATTR_SUB_SAMPLING_TYPE flags for YUV surface types
   * "R" indicates a transpose
   */
 /** 4:2:0 sub-sampling type flag */
-#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_420               0x00000001
+#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_420               (0x00000001u)
 /** 4:2:2 sub-sampling type flag */
-#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_422               0x00000002
+#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_422               (0x00000002u)
 /** 4:4:4 sub-sampling type flag */
-#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_444               0x00000003
+#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_444               (0x00000003u)
 /** 4:2:2 transposed sub-sampling type flag */
-#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_422R              0x00000004
+#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_422R              (0x00000004u)
 /** sub-sampling type not applicable flag*/
-#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_NONE              0x00000000
+#define NVM_SURF_ATTR_SUB_SAMPLING_TYPE_NONE              (0x00000000u)
 
 /** \brief NVM_SURF_ATTR_BITS_PER_COMPONENT flags
   * If a layout is not specified, it is a uniform layout across components
   */
 /** 8-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_8                 0x00000001
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_8                 (0x00000001u)
 /** 10-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_10                0x00000002
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_10                (0x00000002u)
 /** 12-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_12                0x00000003
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_12                (0x00000003u)
 /** 14-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_14                0x00000004
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_14                (0x00000004u)
 /** 16-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_16                0x00000005
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_16                (0x00000005u)
 /** 32-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_32                0x00000006
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_32                (0x00000006u)
 
 /** 16:8:8 bits per component layout flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_LAYOUT_16_8_8     0x00000007
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_LAYOUT_16_8_8     (0x00000007u)
 /** 10:8:8 bits per component layout flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_LAYOUT_10_8_8     0x00000008
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_LAYOUT_10_8_8     (0x00000008u)
 /** 2:10:10:10 bits per component layout flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_LAYOUT_2_10_10_10 0x00000009
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_LAYOUT_2_10_10_10 (0x00000009u)
 /** 20-bit per component flag*/
-#define NVM_SURF_ATTR_BITS_PER_COMPONENT_20                0x0000000A
+#define NVM_SURF_ATTR_BITS_PER_COMPONENT_20                (0x0000000Au)
 
 /** \brief NVM_SURF_ATTR_COMPONENT_ORDER flags for YUV surface type */
 /** Luma component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_LUMA                0x00000001
+#define NVM_SURF_ATTR_COMPONENT_ORDER_LUMA                (0x00000001u)
 /** YUV component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_YUV                 0x00000002
+#define NVM_SURF_ATTR_COMPONENT_ORDER_YUV                 (0x00000002u)
 /** YVU component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_YVU                 0x00000003
+#define NVM_SURF_ATTR_COMPONENT_ORDER_YVU                 (0x00000003u)
 /** YUYV component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_YUYV                0x00000004
+#define NVM_SURF_ATTR_COMPONENT_ORDER_YUYV                (0x00000004u)
 /** YVYU component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_YVYU                0x00000005
+#define NVM_SURF_ATTR_COMPONENT_ORDER_YVYU                (0x00000005u)
 /** VYUY component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_VYUY                0x00000006
+#define NVM_SURF_ATTR_COMPONENT_ORDER_VYUY                (0x00000006u)
 /** UYVY component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_UYVY                0x00000007
+#define NVM_SURF_ATTR_COMPONENT_ORDER_UYVY                (0x00000007u)
 /** XUYV component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_XUYV                0x00000008
+#define NVM_SURF_ATTR_COMPONENT_ORDER_XUYV                (0x00000008u)
 /** XYUV component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_XYUV                0x00000009
+#define NVM_SURF_ATTR_COMPONENT_ORDER_XYUV                (0x00000009u)
 /** VUYX component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_VUYX                0x0000000A
+#define NVM_SURF_ATTR_COMPONENT_ORDER_VUYX                (0x0000000Au)
 
 /** \brief NVM_SURF_ATTR_PIXEL_ORDER flags for RGBA surface type */
 /** Alpha component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_ALPHA               0x00000011
+#define NVM_SURF_ATTR_COMPONENT_ORDER_ALPHA               (0x00000011u)
 /** RGBA component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_RGBA                0x00000012
+#define NVM_SURF_ATTR_COMPONENT_ORDER_RGBA                (0x00000012u)
 /** ARGB component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_ARGB                0x00000013
+#define NVM_SURF_ATTR_COMPONENT_ORDER_ARGB                (0x00000013u)
 /** BGRA component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_BGRA                0x00000014
+#define NVM_SURF_ATTR_COMPONENT_ORDER_BGRA                (0x00000014u)
 /** RG component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_RG                  0x00000015
+#define NVM_SURF_ATTR_COMPONENT_ORDER_RG                  (0x00000015u)
 
 /** \brief NVM_SURF_ATTR_PIXEL_ORDER flags for RAW surface type */
 /** RGGB component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_RGGB                0x00000021
+#define NVM_SURF_ATTR_COMPONENT_ORDER_RGGB                (0x00000021u)
 /** BGGR component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_BGGR                0x00000022
+#define NVM_SURF_ATTR_COMPONENT_ORDER_BGGR                (0x00000022u)
 /** GRBG component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_GRBG                0x00000023
+#define NVM_SURF_ATTR_COMPONENT_ORDER_GRBG                (0x00000023u)
 /** GBRG component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_GBRG                0x00000024
+#define NVM_SURF_ATTR_COMPONENT_ORDER_GBRG                (0x00000024u)
 
 /** RCCB component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_RCCB                0x00000025
+#define NVM_SURF_ATTR_COMPONENT_ORDER_RCCB                (0x00000025u)
 /** BCCR component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_BCCR                0x00000026
+#define NVM_SURF_ATTR_COMPONENT_ORDER_BCCR                (0x00000026u)
 /** CRBC component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_CRBC                0x00000027
+#define NVM_SURF_ATTR_COMPONENT_ORDER_CRBC                (0x00000027u)
 /** CBRC component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_CBRC                0x00000028
+#define NVM_SURF_ATTR_COMPONENT_ORDER_CBRC                (0x00000028u)
 
 /** RCCC component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_RCCC                0x00000029
+#define NVM_SURF_ATTR_COMPONENT_ORDER_RCCC                (0x00000029u)
 /** CCCR component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_CCCR                0x0000002A
+#define NVM_SURF_ATTR_COMPONENT_ORDER_CCCR                (0x0000002Au)
 /** CRCC component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_CRCC                0x0000002B
+#define NVM_SURF_ATTR_COMPONENT_ORDER_CRCC                (0x0000002Bu)
 /** CCRC component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_CCRC                0x0000002C
+#define NVM_SURF_ATTR_COMPONENT_ORDER_CCRC                (0x0000002Cu)
 
 /** CCCC component order flag*/
-#define NVM_SURF_ATTR_COMPONENT_ORDER_CCCC                0x0000002D
+#define NVM_SURF_ATTR_COMPONENT_ORDER_CCCC                (0x0000002Du)
 
 /**
  * \brief Holds NvMedia Surface format attributes.
@@ -368,78 +368,78 @@ typedef enum {
 /** \brief NVM_SURF_ATTR_CPU_ACCESS flags
   */
 /** Uncached (mapped) access type flag */
-#define NVM_SURF_ATTR_CPU_ACCESS_UNCACHED                 0x00000001
+#define NVM_SURF_ATTR_CPU_ACCESS_UNCACHED                 (0x00000001u)
 /** Cached (mapped) access type flag */
-#define NVM_SURF_ATTR_CPU_ACCESS_CACHED                   0x00000002
+#define NVM_SURF_ATTR_CPU_ACCESS_CACHED                   (0x00000002u)
 /** Unmapped access type flag */
-#define NVM_SURF_ATTR_CPU_ACCESS_UNMAPPED                 0x00000003
+#define NVM_SURF_ATTR_CPU_ACCESS_UNMAPPED                 (0x00000003u)
 
 /** \brief NVM_SURF_ATTR_ALLOC_TYPE flags
   */
 /** Isochronous buffer allocation flag */
-#define NVM_SURF_ATTR_ALLOC_ISOCHRONOUS                   0x00000001
+#define NVM_SURF_ATTR_ALLOC_ISOCHRONOUS                   (0x00000001u)
 /** Secured buffer allocation flag */
-#define NVM_SURF_ATTR_ALLOC_SECURED                       0x00000002
+#define NVM_SURF_ATTR_ALLOC_SECURED                       (0x00000002u)
 
 /** \brief NVM_SURF_ATTR_SCAN_TYPE flags
   */
 /** Progressive surface scan type flag */
-#define NVM_SURF_ATTR_SCAN_PROGRESSIVE                    0x00000001
+#define NVM_SURF_ATTR_SCAN_PROGRESSIVE                    (0x00000001u)
 /** Interlaced surface scan type flag */
-#define NVM_SURF_ATTR_SCAN_INTERLACED                     0x00000002
+#define NVM_SURF_ATTR_SCAN_INTERLACED                     (0x00000002u)
 
 /** \brief NVM_SURF_ATTR_COLOR_STD_TYPE flags
   */
 /** sRGB Color Std flag
   * Range [RGB:0-255]
   */
-#define NVM_SURF_ATTR_COLOR_STD_SRGB                      0x00000001
+#define NVM_SURF_ATTR_COLOR_STD_SRGB                      (0x00000001u)
 /** YCbCr Rec.601 (Studio Range) Color Std flag
   * Range [Y:16-235 CbCr:16-240]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC601_SR                 0x00000002
+#define NVM_SURF_ATTR_COLOR_STD_REC601_SR                 (0x00000002u)
 /** YCbCr Rec.601 (Extended Range) Color Std flag
   * Range [YCbCr:0-255]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC601_ER                 0x00000003
+#define NVM_SURF_ATTR_COLOR_STD_REC601_ER                 (0x00000003u)
 /** YCbCr Rec.709 (Studio Range) Color Std flag
   * Range [Y:16-235 CbCr:16-240]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC709_SR                 0x00000004
+#define NVM_SURF_ATTR_COLOR_STD_REC709_SR                 (0x00000004u)
 /** YCbCr Rec.709 (Extended Range) Color Std flag
   * Range [YCbCr:0-255]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC709_ER                 0x00000005
+#define NVM_SURF_ATTR_COLOR_STD_REC709_ER                 (0x00000005u)
 /** RGB Rec.2020 Color Std flag
   * Range [RGB:0-1023 (10-bit),
   *            0-4095 (12-bit),
   *            0-65535(16-bit)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC2020_RGB               0x00000006
+#define NVM_SURF_ATTR_COLOR_STD_REC2020_RGB               (0x00000006u)
 /** YCbCr Rec.2020 (Studio Range) Color Std flag
   * Range [Y:64-940     CbCr:64-960    (10-bit),
   *        Y:256-3760   CbCr:256-3840  (12-bit),
   *        Y:1024-60160 CbCr:1024-61440(16-bit)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC2020_SR                0x00000007
+#define NVM_SURF_ATTR_COLOR_STD_REC2020_SR                (0x00000007u)
 /** YCbCr Rec.2020 (Extended Range) Color Std flag
   * Range [YCbCr:0-1023 (10-bit),
   *              0-4095 (12-bit),
   *              0-65535(16-bit)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC2020_ER                0x00000008
+#define NVM_SURF_ATTR_COLOR_STD_REC2020_ER                (0x00000008u)
 /** YcCbcCrc Rec.2020 (Studio Range) Color Std flag
   * Range [Y:64-940     CbCr:64-960    (10-bit),
   *        Y:256-3760   CbCr:256-3840  (12-bit),
   *        Y:1024-60160 CbCr:1024-61440(16-bit)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_YcCbcCrc_SR               0x00000009
+#define NVM_SURF_ATTR_COLOR_STD_YcCbcCrc_SR               (0x00000009u)
 /** YcCbcCrc Rec.2020 (Extended Range) Color Std flag
   * Range [YCbCr:0-1023 (10-bit),
   *              0-4095 (12-bit),
   *              0-65535(16-bit)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_YcCbcCrc_ER               0x0000000A
+#define NVM_SURF_ATTR_COLOR_STD_YcCbcCrc_ER               (0x0000000Au)
 
 /** Sensor RGBA Color Std flag
   * This color std flag is used to represent
@@ -447,12 +447,12 @@ typedef enum {
   * data in linear space.
   * Range [RGBA: 0.0 -1.0 (16-bit float)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_SENSOR_RGBA               0x0000000B
+#define NVM_SURF_ATTR_COLOR_STD_SENSOR_RGBA               (0x0000000Bu)
 
 /** YCbCr Rec.2020PQ (Extended Range) Color Std flag
   * Range [YCbCr:0-65535 (16-bit)]
   */
-#define NVM_SURF_ATTR_COLOR_STD_REC2020PQ_ER              0x0000000C
+#define NVM_SURF_ATTR_COLOR_STD_REC2020PQ_ER              (0x0000000Cu)
 
 /**
  * \brief Holds NvMedia Surface allocation attributes.
@@ -467,64 +467,71 @@ typedef struct {
 /**
  * \brief Defines the set of NvMedia surface types.
  */
-#define NvMediaSurfaceType    unsigned int
+#define NvMediaSurfaceType    uint32_t
 
-/** Video surface for 4:2:0 format video decoders.
+
+/**
+ * NOTE: The following surface type macros value are deprecated and
+ * they are going to be removed. Hence the user is expected to not use
+ * these macros and get the surface type using the
+ * NvMediaSurfaceFormatGetType api
+ */
+/** Obsolete Video surface for 4:2:0 format video decoders.
   The actual physical surface format is selected based
   on the chip architecture. */
-#define NvMediaSurfaceType_Video_420                                  1000
-#define NvMediaSurfaceType_Video_420_10bit                            1001
-#define NvMediaSurfaceType_Video_420_12bit                            1002
-/** Video surface for 4:2:2 format video decoders.
+#define NvMediaSurfaceType_Video_420                                  (1000u)
+#define NvMediaSurfaceType_Video_420_10bit                            (1001u)
+#define NvMediaSurfaceType_Video_420_12bit                            (1002u)
+/** Obsolete Video surface for 4:2:2 format video decoders.
   The actual physical surface format is selected based
   on the chip architecture. */
-#define NvMediaSurfaceType_Video_422                                  1003
-#define NvMediaSurfaceType_Video_422_10bit                            1004
-#define NvMediaSurfaceType_Video_422_12bit                            1005
-/** Video surface for 4:4:4 format video decoders.
+#define NvMediaSurfaceType_Video_422                                  (1003u)
+#define NvMediaSurfaceType_Video_422_10bit                            (1004u)
+#define NvMediaSurfaceType_Video_422_12bit                            (1005u)
+/** Obsolete Video surface for 4:4:4 format video decoders.
   The actual physical surface format is selected based
   on the chip architecture. */
-#define NvMediaSurfaceType_Video_444                                  1006
-#define NvMediaSurfaceType_Video_444_10bit                            1007
-#define NvMediaSurfaceType_Video_444_12bit                            1008
-/** Video capture surface for 4:2:2 format. */
-#define NvMediaSurfaceType_VideoCapture_422                           1009
-/** Video capture surface for YUYV format. */
-#define NvMediaSurfaceType_VideoCapture_YUYV_422                      1010
-/** R8G8B8A8 surface type. */
-#define NvMediaSurfaceType_R8G8B8A8                                   1011
-/** R8G8B8A8 surface type used for video rendering.
+#define NvMediaSurfaceType_Video_444                                  (1006u)
+#define NvMediaSurfaceType_Video_444_10bit                            (1007u)
+#define NvMediaSurfaceType_Video_444_12bit                            (1008u)
+/** Obsolete Video capture surface for 4:2:2 format. */
+#define NvMediaSurfaceType_VideoCapture_422                           (1009u)
+/** Obsolete Video capture surface for YUYV format. */
+#define NvMediaSurfaceType_VideoCapture_YUYV_422                      (1010u)
+/** Obsolete R8G8B8A8 surface type. */
+#define NvMediaSurfaceType_R8G8B8A8                                   (1011u)
+/** Obsolete R8G8B8A8 surface type used for video rendering.
     Surfaces that are interacting with EGL Stream
     functions must be in this format. */
-#define NvMediaSurfaceType_R8G8B8A8_BottomOrigin                      1012
-/** Monochrome image. */
-#define NvMediaSurfaceType_Image_Monochrome                           1013
-/** 4:2:0 format image. */
-#define NvMediaSurfaceType_Image_YUV_420                              1014
-/** 4:2:2 format image. */
-#define NvMediaSurfaceType_Image_YUV_422                              1015
-/** 4:4:4 format image. */
-#define NvMediaSurfaceType_Image_YUV_444                              1016
-/** 4:2:2 format packed image with YUYV component order. */
-#define NvMediaSurfaceType_Image_YUYV_422                             1017
-/** RGBA image type */
-#define NvMediaSurfaceType_Image_RGBA                                 1018
-/** RAW image type */
-#define NvMediaSurfaceType_Image_RAW                                  1019
-/** 4:4:4:4 format packed image with VYUX component order. */
-#define NvMediaSurfaceType_Image_V16Y16U16X16                         1020
-/** 16-bit Y data image. */
-#define NvMediaSurfaceType_Image_Y16                                  1021
-/** 4:4:4:4 format packed image with XUYV component order. */
-#define NvMediaSurfaceType_Image_X2U10Y10V10                          1022
-/** 4:2:0 semi-planar YUV */
-#define NvMediaSurfaceType_Image_Y10U8V8_420                          1023
-/** 10-bit Y data image. */
-#define NvMediaSurfaceType_Image_Y10                                  1024
-/** A8 alpha surface */
-#define NvMediaSurfaceType_A8                                         1025
+#define NvMediaSurfaceType_R8G8B8A8_BottomOrigin                      (1012u)
+/** Obsolete Monochrome image. */
+#define NvMediaSurfaceType_Image_Monochrome                           (1013u)
+/** Obsolete 4:2:0 format image. */
+#define NvMediaSurfaceType_Image_YUV_420                              (1014u)
+/** Obsolete 4:2:2 format image. */
+#define NvMediaSurfaceType_Image_YUV_422                              (1015u)
+/** Obsolete 4:4:4 format image. */
+#define NvMediaSurfaceType_Image_YUV_444                              (1016u)
+/** Obsolete 4:2:2 format packed image with YUYV component order. */
+#define NvMediaSurfaceType_Image_YUYV_422                             (1017u)
+/** Obsolete RGBA image type */
+#define NvMediaSurfaceType_Image_RGBA                                 (1018u)
+/** Obsolete RAW image type */
+#define NvMediaSurfaceType_Image_RAW                                  (1019u)
+/** Obsolete 4:4:4:4 format packed image with VYUX component order. */
+#define NvMediaSurfaceType_Image_V16Y16U16X16                         (1020u)
+/** Obsolete 16-bit Y data image. */
+#define NvMediaSurfaceType_Image_Y16                                  (1021u)
+/** Obsolete 4:4:4:4 format packed image with XUYV component order. */
+#define NvMediaSurfaceType_Image_X2U10Y10V10                          (1022u)
+/** Obsolete 4:2:0 semi-planar YUV */
+#define NvMediaSurfaceType_Image_Y10U8V8_420                          (1023u)
+/** Obsolete 10-bit Y data image. */
+#define NvMediaSurfaceType_Image_Y10                                  (1024u)
+/** Obsolete A8 alpha surface */
+#define NvMediaSurfaceType_A8                                         (1025u)
 /** Unsupported types */
-#define NvMediaSurfaceType_Unsupported                                99999
+#define NvMediaSurfaceType_Unsupported                                (99999u)
 
 /** Obsolete 4:2:0 video surface type */
 #define NvMediaSurfaceType_YV12 NvMediaSurfaceType_Video_420
@@ -543,7 +550,7 @@ typedef struct {
  */
 NvMediaSurfaceType
 NvMediaSurfaceFormatGetType(
-    NvMediaSurfFormatAttr *attrs,
+    const NvMediaSurfFormatAttr *attrs,
     unsigned int numAttrs
 );
 
@@ -568,6 +575,17 @@ NvMediaSurfaceFormatGetAttrs(
     unsigned int numAttrs
 );
 
+/**
+ * \brief Returns the version information for the NvMediaSurface component
+ * \param[in] version A pointer to an \ref NvMediaVersion structure
+ *                    to be filled by the NvMediaSurface component.
+ * \return  NVMEDIA_STATUS_OK if the operation was successful, or
+ *  NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
+ */
+NvMediaStatus
+NvMediaSurfaceGetVersion(
+    NvMediaVersion *version
+);
 
 /*
  * \defgroup history_nvmedia_surface History
@@ -606,6 +624,20 @@ NvMediaSurfaceFormatGetAttrs(
  *
  * <b> Version 1.8 </b> June 04, 2018
  * - Added NVM_SURF_ATTR_COMPONENT_ORDER_CCCC component order
+ *
+ * <b> Version 1.9 </b> July 10, 2018
+ * - Added NvMediaSurfaceGetVersion API
+ *
+ * <b> Version 1.10 </b> December 11, 2018
+ * - Fixed MISRA-C rule 10.4, 20.7 and 21.1 violations
+ *   resulting from this header.
+ *
+ * <b> Version 1.11 </b> December 03, 2019
+ * - Updated the comments to deprecate old NvMediaSurfaceType_ macros
+ *
+ * <b> Version 1.12 </b> March 22, 2019
+ * - Fixed MISRA-C rule 8.13 violations
+ *   resulting from this header.
  */
 /*@}*/
 
@@ -613,4 +645,4 @@ NvMediaSurfaceFormatGetAttrs(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_SURFACE_H */
+#endif /* NVMEDIA_SURFACE_H */

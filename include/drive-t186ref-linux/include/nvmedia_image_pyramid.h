@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2018 - 2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -10,7 +10,7 @@
  * \brief <b> NVIDIA Media Interface: Image Pyramid Processing </b>
  *
  * @b Description: This file contains the
- *                 \ref nvmedia_image_pyramid_top "Image Pyramid Processing API".
+ *    \ref nvmedia_image_pyramid_top "Image Pyramid Processing API."
  */
 
 #ifndef _NVMEDIA_IMAGE_PYRAMID_H
@@ -20,42 +20,48 @@
 extern "C" {
 #endif
 
+#include "nvmedia_core.h"
 #include "nvmedia_image.h"
+#include "nvmedia_surface.h"
 
 /**
  * \defgroup nvmedia_image_pyramid_top Image Pyramid Handling API
  *
- * The Image Pyramid Processing API encompasses all NvMedia related functionality
- * for handling pyramids of \ref NvMediaImage
+ * The Image Pyramid Processing API encompasses all NvMedia-related
+ * functionality for handling pyramids of \ref NvMediaImage objects.
  *
  * @ingroup nvmedia_top
  * @{
  */
 
-/** \brief Major Version number */
+/** \brief Major version number. */
 #define NVMEDIA_IMAGE_PYRAMID_VERSION_MAJOR   1
-/** \brief Minor Version number */
-#define NVMEDIA_IMAGE_PYRAMID_VERSION_MINOR   0
+/** \brief Minor version number. */
+#define NVMEDIA_IMAGE_PYRAMID_VERSION_MINOR   1
 
-/** \brief Max allowed levels in a pyramid */
+/** \brief Maximum number of levels allowed in a pyramid. */
 #define MAX_PYRAMID_LEVELS (10)
 
 /**
- * \brief A handle representing image pyramid objects.
+ * \brief A handle representing an image pyramid object.
  */
 typedef struct NvMediaImagePyramid NvMediaImagePyramid;
 
 /**
  * \brief Allocates an image pyramid.
- * \param[in] device The \ref NvMediaDevice.
- * \param[in] type Surface format type obtained from \ref NvMediaSurfaceFormatGetType API.
- * \param[in] attrs An array of surface alloc attributes for surface creation.
- *                  Resolution is for the base level of the pyramid.
+ *
+ * \param[in] device    A handle representing the associated \ref NvMediaDevice.
+ * \param[in] type      Surface format type, obtained by calling
+ *                       NvMediaSurfaceFormatGetType().
+ * \param[in] attrs     A pointer to an array of surface alloc attributes for
+ *                       surface creation. Resolution is for the base level of
+ *                       the pyramid.
  * \param[in] numLevels Number of levels in the pyramid.
- * \param[in] scale Scale factor for the pyramid.
- * \param[in] numAttrs Number of attributes in the array.
- * \param[in] flags Flags for module hint (used in future).
- * \return \ref NvMediaImagePyramid The new image pyramid's handle or NULL if unsuccessful.
+ * \param[in] scale     Scale factor for the pyramid. Must be in the range
+ *                       (0.0, 1.0].
+ * \param[in] numAttrs  Number of attributes in @a attrs.
+ * \param[in] flags     Flags for module hints (reserved for future use).
+ * \return  The new image pyramid's handle if successful, or NULL otherwise.
  */
 NvMediaImagePyramid *
 NvMediaImagePyramidCreate(
@@ -69,9 +75,8 @@ NvMediaImagePyramidCreate(
 );
 
 /**
- * \brief Destroys an image pyramid that NvMediaImagePyramidCreate() created.
- * \param[in] pyramid The image pyramid to destroy.
- * \return void
+ * \brief Destroys an image pyramid created by NvMediaImagePyramidCreate().
+ * \param[in] pyramid A handle to the image pyramid to be destroyed.
  */
 void
 NvMediaImagePyramidDestroy(
@@ -80,21 +85,20 @@ NvMediaImagePyramidDestroy(
 
 /**
  * Locks an image pyramid and returns the associated mapped pointers
- * pointing to the image pyramid surface data. Only images created without the
- * \ref NVM_SURF_ATTR_CPU_ACCESS_UNMAPPED attribute can be accessed by CPU.
- * If an image is being used by an internal engine this function waits until
- * the completion of this operation.
- * \param[in] pyramid Image pyramid object
+ * to the image pyramid surface data. The CPU can only access images created
+ * without the \ref NVM_SURF_ATTR_CPU_ACCESS_UNMAPPED attribute.
+ * If an image is being used by an internal engine. this function waits until
+ * the operation is completed.
+ *
+ * \param[in] pyramid A handle to the image pyramid object
  * \param[in] lockAccessType Determines the access type.
- * The following access types are supported and may be OR'd together:
- * \n \ref NVMEDIA_IMAGE_ACCESS_READ Read access
- * \n \ref NVMEDIA_IMAGE_ACCESS_WRITE Write access
- * \n \ref NVMEDIA_IMAGE_ACCESS_READ_WRITE Read/Write access
- * \param[out] surfaceMap Array of Surface descriptors per level.
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_ERROR
+ * The following access types are supported, and may be OR'd together:
+ * - \ref NVMEDIA_IMAGE_ACCESS_READ for read access.
+ * - \ref NVMEDIA_IMAGE_ACCESS_WRITE for write access.
+ * - \ref NVMEDIA_IMAGE_ACCESS_READ_WRITE for read/write access.
+ * \param[out] surfaceMap Pointer to an array of surface descriptors per level.
+ * \return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful,
+ *  or \ref NVMEDIA_STATUS_ERROR otherwise.
  * \ingroup lock_unlock
  */
 NvMediaStatus
@@ -107,8 +111,8 @@ NvMediaImagePyramidLock(
 /**
  * Unlocks an image pyramid. Internal engines cannot use a surface
  * until it is locked.
- * \param[in] pyramid Pyramid object to unlock
- * \return void
+ *
+ * \param[in] pyramid A handle to the pyramid object to be unlocked.
  * \ingroup lock_unlock
  */
 void
@@ -117,19 +121,20 @@ NvMediaImagePyramidUnlock(
 );
 
 /**
- * \brief Gets status of the current/last operation for the image pyramid,
-          and optionally waits for operation to complete/timeout.
- * \param[in] pyramid A pointer to the image.
- * \param[in] millisecondWait Time  in milliseconds to wait for operation to
-              complete before getting status.
-              \ref NVMEDIA_IMAGE_TIMEOUT_INFINITE means wait till operation is completed
-              and then get status.
- * \param[out] status Status of the operation.
- * \return \ref NvMediaStatus The status of the function call.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_ERROR
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER
+ * \brief Gets the status of the current or most recent operation for the image
+ *  pyramid; optionally waits for the current operation to complete or time out.
+ *
+ * \param[in]  pyramid  A pointer to the image.
+ * \param[in]  millisecondWait
+ *                      Time in milliseconds to wait for the current operation
+ *                      to complete before getting status.
+ *                      \ref NVMEDIA_IMAGE_TIMEOUT_INFINITE means wait
+ *                      indefinitely.
+ * \param[out] status   A pointer to the status of the operation.
+ * \retval  NVMEDIA_STATUS_OK indates that the operation is successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a pyramid or
+ *           @a status is NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates another error.
  */
 NvMediaStatus
 NvMediaImagePyramidGetStatus(
@@ -139,10 +144,10 @@ NvMediaImagePyramidGetStatus(
 );
 
 /**
- * \brief Returns \ref NvMediaImage pointer of image for a level.
- * \param[in] pyramid The image pyramid handle.
- * \param[in] level The level for which to obtain image pointer.
- * \return \ref NvMediaImage pointer. NULL in case of error.
+ * \brief Gets a pointer to the image for a level.
+ * \param[in] pyramid A handle to the image pyramid.
+ * \param[in] level The level for which to obtain an image pointer.
+ * \return A pointer to the image if successful, or NULL otherwise.
  */
 NvMediaImage *
 NvMediaImagePyramidGetImageForLevel(
@@ -151,9 +156,9 @@ NvMediaImagePyramidGetImageForLevel(
 );
 
 /**
- * \brief Returns number of levels in the pyramid.
- * \param[in] pyramid The image pyramid handle.
- * \return Number of levels. 0 in case of error.
+ * \brief Returns the number of levels in a pyramid.
+ * \param[in] pyramid A handle to the image pyramid.
+ * \return The number of levels in the pyramid if successful, or 0 otherwise.
  */
 uint32_t
 NvMediaImagePyramidGetNumLevels(
@@ -161,9 +166,9 @@ NvMediaImagePyramidGetNumLevels(
 );
 
 /**
- * \brief Returns scale factor of the pyramid.
- * \param[in] pyramid The image pyramid handle.
- * \return Scale factor. 0 in case of error.
+ * \brief Returns the scale factor of a pyramid.
+ * \param[in] pyramid A handle to the image pyramid.
+ * \return The scale factor if successful, or 0 otherwise.
  */
 float
 NvMediaImagePyramidGetScale(
@@ -178,6 +183,9 @@ NvMediaImagePyramidGetScale(
  *
  * <b> Version 1.0 </b> December 4, 2017
  * - Initial Release.
+ *
+ * <b> Version 1.1 </b> February 6, 2019
+ * - Added required header includes nvmedia_core.h and nvmedia_surface.h
  *
  */
 

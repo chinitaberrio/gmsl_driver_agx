@@ -66,7 +66,7 @@
         #error "Unsupported value of CUDA_FORCE_API_VERSION"
     #endif
 #else
-    #define __CUDA_API_VERSION 10000
+    #define __CUDA_API_VERSION 10020
 #endif /* CUDA_FORCE_API_VERSION */
 
 #ifdef __cplusplus
@@ -377,6 +377,7 @@ CUresult CUDAAPI cuEGLStreamConsumerDisconnect(CUeglStreamConnection *conn);
  * \return
  * ::CUDA_SUCCESS,
  * ::CUDA_ERROR_INVALID_HANDLE,
+ * ::CUDA_ERROR_LAUNCH_TIMEOUT,
  *
  * \sa ::cuEGLStreamConsumerConnect, ::cuEGLStreamConsumerDisconnect,
  * ::cuEGLStreamConsumerAcquireFrame, ::cuEGLStreamConsumerReleaseFrame,
@@ -480,10 +481,10 @@ CUresult CUDAAPI cuEGLStreamProducerDisconnect(CUeglStreamConnection *conn);
  * } CUeglFrame;
  * \endcode
  *
- * For ::CUeglFrame frame of type ::CU_EGL_FRAME_TYPE_PITCH, the pitched pointer passed in ::CUeglFrame
- * must point to the start address of the memory allocated through ::cuMemAlloc or acquired from another
- * producer through EGLStream pipeline.
- *
+ * For ::CUeglFrame of type ::CU_EGL_FRAME_TYPE_PITCH, the application may present sub-region of a memory
+ * allocation. In that case, the pitched pointer will specify the start address of the sub-region in
+ * the allocation and corresponding ::CUeglFrame fields will specify the dimensions of the sub-region.
+ * 
  * \param conn            - Connection on which to present the CUDA array
  * \param eglframe        - CUDA Eglstream Proucer Frame handle to be sent to the consumer over EglStream.
  * \param pStream         - CUDA stream on which to present the frame.
@@ -574,13 +575,16 @@ CUresult CUDAAPI cuGraphicsResourceGetMappedEglFrame(CUeglFrame* eglFrame, CUgra
 /**
  * \brief Creates an event from EGLSync object
  *
- * Creates an event *phEvent from an EGLSyncKHR eglSync with the flages specified
+ * Creates an event *phEvent from an EGLSyncKHR eglSync with the flags specified
  * via \p flags. Valid flags include:
  * - ::CU_EVENT_DEFAULT: Default event creation flag.
  * - ::CU_EVENT_BLOCKING_SYNC: Specifies that the created event should use blocking
  * synchronization.  A CPU thread that uses ::cuEventSynchronize() to wait on
  * an event created with this flag will block until the event has actually
  * been completed.
+ *
+ * Once the \p eglSync gets destroyed, ::cuEventDestroy is the only API
+ * that can be invoked on the event.
  *
  * ::cuEventRecord and TimingData are not supported for events created from EGLSync.
  *

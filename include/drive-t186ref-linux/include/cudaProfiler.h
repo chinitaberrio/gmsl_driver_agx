@@ -50,6 +50,8 @@
 #ifndef cuda_profiler_H
 #define cuda_profiler_H
 
+#include <cuda.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

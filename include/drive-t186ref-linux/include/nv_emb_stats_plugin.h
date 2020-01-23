@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2016-2018, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -12,7 +12,6 @@
 #define _NV_EMB_STATS_PLUGIN_H_
 
 #include "nvmedia_ipp.h"
-#include "nvcommon.h"
 
 #ifdef __cplusplus
 extern "C" {

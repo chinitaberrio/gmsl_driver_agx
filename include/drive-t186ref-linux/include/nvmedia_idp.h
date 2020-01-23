@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -33,7 +33,7 @@ extern "C" {
  */
 
 /** \brief Major Version number */
-#define NVMEDIA_IDP_VERSION_MAJOR   2
+#define NVMEDIA_IDP_VERSION_MAJOR   3
 /** \brief Minor Version number */
 #define NVMEDIA_IDP_VERSION_MINOR   0
 
@@ -132,12 +132,6 @@ NvMediaIDPDestroy(
  * \param[in] idp Image display object
  * \param[in] attributeMask Determines which attributes are set. The value
  *       can be any combination of the binary OR of the following attributes:
- * \n \ref NVMEDIA_DISP_ATTR_BRIGHTNESS
- * \n \ref NVMEDIA_DISP_ATTR_CONTRAST
- * \n \ref NVMEDIA_DISP_ATTR_SATURATION
- * \n \ref NVMEDIA_DISP_ATTR_HUE
- * \n \ref NVMEDIA_DISP_ATTR_COLOR_STANDARD
- * \n \ref NVMEDIA_DISP_ATTR_LIMITED_RGB
  * \n \ref NVMEDIA_DISP_ATTR_COMPOSITION
  * \n \ref NVMEDIA_DISP_ATTR_SET_DEPTH
  * \param[in] attributes A pointer to a structure that holds all the
@@ -231,6 +225,11 @@ NvMediaIDPFlip(
  * - Deprecated NvMediaIDPSetDepth, use NvMediaIDPSetAttributes with
  *   NVMEDIA_DISP_ATTR_SET_DEPTH instead
  * - All NvMedia data types are moved to standard data types
+ *
+ * <b> Version 3.0 </b> February 6, 2019
+ * - Deprecated brightness, hue, saturation, contrast, limitedRGB and
+ *   colorStandard support from \ref NvMediaIDPSetAttributes.
+ *
  */
 /** @} */
 

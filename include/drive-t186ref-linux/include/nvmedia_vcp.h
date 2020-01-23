@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+#include "nvmedia_core.h"
+#include "nvmedia_surface.h"
 #include "nvmedia_video.h"
 
 /**
@@ -39,13 +41,19 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VCP_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_VCP_VERSION_MINOR   3
+#define NVMEDIA_VCP_VERSION_MINOR   5
 
 /**
  * \hideinitializer
  * \brief Infinite time-out for \ref NvMediaVideoCaptureGetFrameEx
  */
 #define NVMEDIA_VIDEO_CAPTURE_TIMEOUT_INFINITE  0xFFFFFFFF
+
+/**
+ * \hideinitializer
+ * \brief Maximum number of capture buffers
+ */
+#define NVMEDIA_MAX_VCP_FRAME_BUFFERS   32u
 
 /**
  * \brief Determines the video capture interface type for CSI interface
@@ -258,7 +266,7 @@ NvMediaVideoCaptureReleaseFrame(
 
 /**
  * \brief Return extra lines data stored in a captured surface.
- *        Currently only NvMediaSurfaceType_R8G8B8A8 surface type
+ *        Currently only NVM_SURF_ATTR_SURF_TYPE_RGBA surface type
  *        is supported.
  * \param[in] capture The video capture to be used.
  * \param[in] surface Surface to get the extra lines from.
@@ -315,6 +323,12 @@ NvMediaVideoCaptureGetExtraLines(
  *
  * <b> Version 1.3 </b> November 18, 2017
  * Added CSI interfaces G & H
+ *
+ * <b> Version 1.4 </b> October 04, 2018
+ * Updated the comments in the header to use new NvMediaSurfaceType values
+ *
+ * <b> Version 1.5 </b> February 06, 2019
+ * Added required header includes nvmedia_core.h and nvmedia_surface.h
  *
  */
 

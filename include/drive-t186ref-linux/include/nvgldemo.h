@@ -1,13 +1,25 @@
 /*
  * nvgldemo.h
  *
- * Copyright (c) 2007-2017, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2007-2019, NVIDIA CORPORATION. All rights reserved.
  *
- * NVIDIA CORPORATION and its licensors retain all intellectual property
- * and proprietary rights in and to this software, related documentation
- * and any modifications thereto.  Any use, reproduction, disclosure or
- * distribution of this software and related documentation without an express
- * license agreement from NVIDIA CORPORATION is strictly prohibited.
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  */
 
 #ifndef __NVGLDEMO_H
@@ -156,6 +168,22 @@ void
 NvGlDemoShutdown(void);
 
 // Window system specific functions
+
+// Open the drm FD and populate the drm device
+// Returns: 0 - successful
+//         -1 - failure
+#ifdef NVGLDEMO_HAS_DEVICE
+int
+NvGlDemoCreateDrmDevice(void);
+#endif
+
+// Get platform specific display attributes needed for
+// eglGetPlatformDisplay().
+// Returns : 0 when successful
+//         :-1 when error
+int
+NvGlDemoGetDisplayAttribs(EGLint**);
+
 int
 NvGlDemoDisplayInit(void);
 
@@ -186,9 +214,13 @@ NvGlDemoCreateCrossPartitionEGLStream(void);
 EGLBoolean
 NvGlDemoPrepareStreamToAttachProducer(void);
 
+// Returns 1: On success
+//         0: On failure
 int
 NvGlDemoInitConsumerProcess(void);
 
+// Returns 1: On success
+//         0: On failure
 int
 NvGlDemoInitProducerProcess(void);
 
@@ -278,6 +310,7 @@ typedef struct {
     float duration;                         // Demo duration in seconds
     float inactivityTime;                   // Interval for inactivity testing
     int isSmart;                            // can detect termination of cross-partition stream
+    int isDrmNvdcPermissive;                // Set drm-nvdc permissive
 } NvGlDemoOptions;
 
 // Values for displayBlend option
@@ -662,6 +695,13 @@ NvGlDemoPreSwapExec(void);
 
 void
 NvGlDemoPreSwapShutdown(void);
+
+
+// This function must be called after every swap buffers call
+// Returns 1: when successful
+//         0: when failed
+int
+NvGlDemoPostSwap(void);
 
 //
 // Inactivity interval functions

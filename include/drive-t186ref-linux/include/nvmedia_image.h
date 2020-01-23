@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2013-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -10,42 +10,42 @@
  * \brief <b> NVIDIA Media Interface: Image Processing </b>
  *
  * @b Description: This file contains the
- *                 \ref nvmedia_image_top "Image Processing API".
+ *                 \ref nvmedia_image_top "Image Processing API."
  */
 
-#ifndef _NVMEDIA_IMAGE_H
-#define _NVMEDIA_IMAGE_H
+#ifndef NVMEDIA_IMAGE_H
+#define NVMEDIA_IMAGE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_core.h"
-#include "nvmedia_video.h"
+#include "nvmedia_surface.h"
 
 /**
  * \defgroup nvmedia_image_top Image Handling API
  *
- * The Image Processing API encompasses all NvMedia image related functionality
+ * The Image Processing API encompasses all NvMedia image-related functionality.
  *
  * @ingroup nvmedia_top
  * @{
  */
 
-/** \brief Major Version number */
-#define NVMEDIA_IMAGE_VERSION_MAJOR   1
-/** \brief Minor Version number */
-#define NVMEDIA_IMAGE_VERSION_MINOR   11
+/** \brief Major version number. */
+#define NVMEDIA_IMAGE_VERSION_MAJOR   (1u)
+/** \brief Minor version number. */
+#define NVMEDIA_IMAGE_VERSION_MINOR   (21u)
 
 /**
  * \defgroup image_creation_api Image Creation
  *
  * Defines and manages image objects.
  *
- * \ref NvMediaImage "NvMediaImage"s are video RAM surfaces
+ * \ref NvMediaImage objects are video RAM surfaces
  * storing YUV, RGBA or RAW data. They can store one or more images depending
  * on the class.
- * \ref NvMediaImage "NvMediaImage"s are created with
+ * \ref NvMediaImage objects are created with
  * \ref NvMediaImageCreateNew() and destroyed with
  * \ref NvMediaImageDestroy().
  * @{
@@ -53,104 +53,69 @@ extern "C" {
 
 /**
  * \hideinitializer
- * \brief Maximum number of images in an aggregate image
+ * \brief Maximum number of images in an image group.
  */
-#define NVMEDIA_MAX_AGGREGATE_IMAGES   6
+#define NVMEDIA_MAX_IMAGE_GROUP_SIZE   (3u)
 
 /**
  * \hideinitializer
- * \brief Maximum number of images in an image group
+ * \brief Infinite timeout for NvMediaImageGetStatus().
  */
-#define NVMEDIA_MAX_IMAGE_GROUP_SIZE   3
+#define NVMEDIA_IMAGE_TIMEOUT_INFINITE  (0xFFFFFFFFu)
 
 /**
- * \hideinitializer
- * \brief Infinite time-out for \ref NvMediaImageGetStatus
- */
-#define NVMEDIA_IMAGE_TIMEOUT_INFINITE  0xFFFFFFFF
-
-/**
- * \brief A handle representing image objects.
+ * \brief Holds a handle representing image objects.
  */
 typedef struct {
-    /*! Image surface type. */
+    /*! Holds image surface type. */
     NvMediaSurfaceType type;
-    /*! Image width. */
+    /*! Holds image width. */
     uint32_t width;
-    /*! Image height. */
+    /*! Holds image height. */
     uint32_t height;
-    /*! Number of images stored in this image container. */
+    /*! Holds the number of images stored in this image container. */
     uint32_t imageCount;
-    /*! Size of top embedded data. */
+    /*! Holds the size of top embedded data. */
     uint32_t embeddedDataTopSize;
-    /*! Size of bottom embedded data */
+    /*! Holds the size of bottom embedded data. */
     uint32_t embeddedDataBottomSize;
-    /*! Image attributes */
+    /*! Holds image attributes. */
     uint32_t attributes;
-    /*! Tag that can be used by the application. NvMedia
+    /*! \deprecated  Holds a tag that can be used by the application. NvMedia
         does not change the value of this member. */
     void *tag;
-    /*! Image capture time-stamp. */
+    /*! Holds an image capture timestamp. */
     NvMediaTime captureTimeStamp;
-    /*! Image capture global timestamp in microseconds. */
+    /*! Holds an image capture global timestamp in microseconds. */
     NvMediaGlobalTime captureGlobalTimeStamp;
-    /*! Image color standard type */
+    /*! Holds an image color standard type. */
     uint32_t colorStd;
+    /** Holds an opaque pointer for internal use.*/
+    struct NvMediaImagePriv_ *imgPriv;
 } NvMediaImage;
 
 /**
- * \brief A handle representing an image group.
+ * \brief Holds a handle representing an image group.
  */
 typedef struct {
-    /*! List of NvMedia Images in the group. */
+    /*! Holds a list of NvMedia images in the group. */
     NvMediaImage *imageList[NVMEDIA_MAX_IMAGE_GROUP_SIZE];
-    /*! Number of NvMedia Images in the group. */
+    /*! Holds the number of NvMedia images in the group. */
     uint32_t numImages;
-    /*! Tag that can be used by the application. NvMedia
+    /*! Holds a tag for use by the application. NvMedia
         does not change the value of this member. */
     void *tag;
+    /*! Holds the VI engine capture timestamp associated with the NvMedia
+     images in the group. */
+    uint64_t captureTimeStamp[NVMEDIA_MAX_IMAGE_GROUP_SIZE];
 } NvMediaImageGroup;
 
 /**
- * \brief Bits per pixel.
- */
-typedef enum {
-    /*! 8 bits per pixel. */
-    NVMEDIA_BITS_PER_PIXEL_8 = 0,
-    /*! 10 bits per pixel. */
-    NVMEDIA_BITS_PER_PIXEL_10,
-    /*! 12 bits per pixel. */
-    NVMEDIA_BITS_PER_PIXEL_12,
-    /*! 14 bits per pixel. */
-    NVMEDIA_BITS_PER_PIXEL_14,
-    /*! 16 bits per pixel. */
-    NVMEDIA_BITS_PER_PIXEL_16,
-    /*! 20 bits per pixel. */
-    NVMEDIA_BITS_PER_PIXEL_20
-} NvMediaBitsPerPixel;
-
-/**
- * \brief Pixel order in a raw image.
- */
-typedef enum {
-    /*! RGGB order. */
-    NVMEDIA_RAW_PIXEL_ORDER_RGGB = 0,
-    /*! BGGR order. */
-    NVMEDIA_RAW_PIXEL_ORDER_BGGR,
-    /*! GRBG order. */
-    NVMEDIA_RAW_PIXEL_ORDER_GRBG,
-    /*! GBRG order. */
-    NVMEDIA_RAW_PIXEL_ORDER_GBRG
-} NvMediaRawPixelOrder;
-
-/**
- * \brief Gets the version for the NvMedia Image library.
- * \param[in] version A pointer to a \ref NvMediaVersion structure
- *                    of the client.
- * \return \ref NvMediaStatus The status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
+ * \brief Gets the version of the NvMedia Image library.
+ * \param[in] version A pointer to an \ref NvMediaVersion structure
+ *                    belonging to the client.
+ * \return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful,
+ *  or \ref NVMEDIA_STATUS_BAD_PARAMETER if @a version is an invalid pointer.
  */
 NvMediaStatus
 NvMediaImageGetVersion(
@@ -158,29 +123,29 @@ NvMediaImageGetVersion(
 );
 
 /**
- * \brief Allocates an image object. Upon creation, the contents are in an
- * undefined state.
+ * \brief Allocates an image object. Upon creation, the contents are undefined.
+ *
  * \param[in] device The \ref NvMediaDevice.
- * \param[in] type Surface format type obtained from \ref NvMediaSurfaceFormatGetType API.
+ * \param[in] type      Surface format type obtained by
+ *                       NvMediaSurfaceFormatGetType().
  * \param[in] attrs An array of surface alloc attributes for surface creation.
- * \param[in] numAttrs Number of attributes in the array.
- * \param[in] flags Flags for module hint (used in future).
- * \return \ref NvMediaImage The new image's handle or NULL if unsuccessful.
+ * \param[in] numAttrs Number of attributes in @a attrs.
+ * \param[in] flags Flags for module hints (reserved for future use).
+ * \return  The new image's handle if the call is successful, or NULL otherwise.
  */
-
 NvMediaImage *
 NvMediaImageCreateNew(
     NvMediaDevice *device,
     NvMediaSurfaceType type,
-    NvMediaSurfAllocAttr *attrs,
+    const NvMediaSurfAllocAttr *attrs,
     uint32_t numAttrs,
     uint32_t flags
 );
 
 /**
- * \brief Destroys an image object that was created by \ref NvMediaImageCreateNew
+ * \brief Destroys an image object created by NvMediaImageCreateNew().
+ *
  * \param[in] image The image to destroy.
- * \return void
  */
 void
 NvMediaImageDestroy(
@@ -191,91 +156,91 @@ NvMediaImageDestroy(
 
 /** \defgroup lock_unlock Image Locking and Unlocking
  *
- * Locking and unlocking provides acces to the image surfaces.
+ * Locking and unlocking controls access to the image surfaces.
  */
 
 /**
- * \brief Image lock access types.
+ * \brief Specifies image lock access types.
  * \ingroup lock_unlock
  */
 typedef enum {
-    /** Read access */
-    NVMEDIA_IMAGE_ACCESS_READ       = (1 << 0),
-    /** Write access */
-    NVMEDIA_IMAGE_ACCESS_WRITE      = (1 << 1),
-    /** Read/Write access */
+    /** Specifies read access. */
+    NVMEDIA_IMAGE_ACCESS_READ       = (1u << 0),
+    /** Specifies write access. */
+    NVMEDIA_IMAGE_ACCESS_WRITE      = (1u << 1),
+    /** Specifies read/write access. */
     NVMEDIA_IMAGE_ACCESS_READ_WRITE = (NVMEDIA_IMAGE_ACCESS_READ | NVMEDIA_IMAGE_ACCESS_WRITE),
 } NvMediaImageLockAccess;
 
 /**
- * \brief Image surface descriptor used by
- * \ref NvMediaImageLock.
+ * \brief Holds an image surface descriptor used by NvMediaImageLock().
  * \ingroup lock_unlock
  */
 typedef struct {
-    /*! Pitch of the surface. */
+    /*! Holds pitch of the surface. */
     uint32_t pitch;
-    /*! CPU accessible memory pointer of the surface. */
+    /*! Holds a CPU accessible memory pointer to the surface. */
     void *mapping;
 } NvMediaImageSurface;
 
 /**
- * \brief Image surface map descriptor used by
- * \ref NvMediaImageLock. This contains up to 6 surface descriptors
+ * \brief Holds an image surface map descriptor used by
+ * NvMediaImageLock(). It contains up to 6 surface descriptors,
  * depending on the image type.
  * \ingroup lock_unlock
  */
 typedef struct {
-    /*! Image surface type. */
+    /*! Holds image surface type. */
     NvMediaSurfaceType type;
-    /*! Image width. */
+    /*! Holds image width. */
     uint32_t width;
-    /*! Image height. */
+    /*! Holds image height. */
     uint32_t height;
-    /*! Number of surfaces in the image. */
+    /*! Holds the number of surfaces in the image. */
     uint32_t surfaces;
-    /*! Surface descriptors. Only surfaces count of elements are valid. */
+    /*! Holds surface descriptors. Only the first surface number of elements
+     is valid. */
     NvMediaImageSurface surface[6];
-    /*! Pointer to access metadata */
+    /*! Holds a pointer to metadata associated with the surface. */
     void *metaData;
 } NvMediaImageSurfaceMap;
 
 /**
- * Locks an image and returns the associated mapped pointers
- * pointing to the image surface data. Only images created without the
- * \ref NVM_SURF_ATTR_CPU_ACCESS_UNMAPPED attribute can be accessed by CPU.
- * If an image is being used by an internal engine this function waits until
- * the completion of this operation.
- * \param[in] image Image object
+ * \brief Locks an image and returns the associated mapped pointers
+ * to the image surface data.
+ *
+ * Only images created without the
+ * \ref NVM_SURF_ATTR_CPU_ACCESS_UNMAPPED attribute can be accessed by the CPU.
+ * If an image is being used by an internal engine, this function waits until
+ * the operation is completed.
+ *
+ * \param[in] image A pointer to the image object.
  * \param[in] lockAccessType Determines the access type.
- * The following access types are supported and may be OR'd together:
- * \n \ref NVMEDIA_IMAGE_ACCESS_READ Read access
- * \n \ref NVMEDIA_IMAGE_ACCESS_WRITE Write access
- * \n \ref NVMEDIA_IMAGE_ACCESS_READ_WRITE Read/Write access
- * \param[out] surfaceMap Surface descriptors
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_ERROR
+ * The following access types are supported, and may be OR'd together:
+ * - \ref NVMEDIA_IMAGE_ACCESS_READ specifies read access.
+ * - \ref NVMEDIA_IMAGE_ACCESS_WRITE Specifies write access.
+ * - \ref NVMEDIA_IMAGE_ACCESS_READ_WRITE specifies read/write access.
+ * \param[out] surfaceMap A pointer to surface descriptors.
+ * \return A status code; NVMEDIA_STATUS_OK if the call was successful,
+ *  or NVMEDIA_STATUS_ERROR otherwise.
  * \ingroup lock_unlock
  */
 NvMediaStatus
 NvMediaImageLock(
-    NvMediaImage *image,
-    uint32_t lockAccessType,
+    const NvMediaImage *image,
+    NvMediaImageLockAccess lockAccessType,
     NvMediaImageSurfaceMap *surfaceMap
 );
 
 /**
- * Unlocks an image. Internal engines cannot use a surface
+ * \brief  Unlocks an image. Internal engines cannot use a surface
  * until it is locked.
- * \param[in] image Image object to unlock
- * \return void
+ * \param[in] image A pointer to the image object to be unlocked.
  * \ingroup lock_unlock
  */
 void
 NvMediaImageUnlock(
-    NvMediaImage *image
+    const NvMediaImage *image
 );
 
 /** \defgroup image_get_put_bits Image Read and Write by Client
@@ -283,95 +248,207 @@ NvMediaImageUnlock(
  * Provides image surface read and write by the client application
  * for diagnostic purposes.
  *
- * \warning These functions are for diagnostics purposes only
- * and should not be used in production code.
+ * \warning These functions are for diagnostics purposes only. They
+ * are not for use in production code.
  */
 
 /**
- * \brief Reads a client memory buffer and
- *       writes the content into an NvMedia image surface.
+ * \brief Reads a client memory buffer and writes the content into an NvMedia
+ *  image surface.
+ *
+ * To use %NvMediaImagePutBits() while creating an NvMedia image, you must set
+ * \ref NvMediaSurfAllocAttrType in \ref NvMediaSurfAllocAttr to
+ * \ref NVM_SURF_ATTR_CPU_ACCESS_UNCACHED or
+ * \ref NVM_SURF_ATTR_CPU_ACCESS_CACHED.
+ *
  * \param[in] image
- *       The destination NvMediaImage type surface. The image must be locked using
- *       \ref NvMediaImageLock prior to calling this function.
+ *       A pointer to the destination \ref NvMediaImage type surface. You must
+ *       lock the image with NvMediaImageLock() before calling this function.
  * \param[in] dstRect
- *       Structure containing co-ordinates of the rectangle in the destination surface
- *       to which the client surface is to be copied. Setting dstRect to NULL implies
- *       rectangle of full surface size.
+ *    @parblock
+ *       A pointer to a structure containing co-ordinates of the rectangle in
+ *       the destination surface to which the client surface is to be copied.
+ *
+ *       Set @a dstRect to NULL to specify a rectangle of full surface size.
+ *       @a dstRect is supported only for an %NvMediaImage whose
+ *       \ref NvMediaSurfaceType was derived with the
+ *       \ref NVM_SURF_ATTR_SURF_TYPE attribute set to
+ *       \ref NVM_SURF_ATTR_SURF_TYPE_RGBA or \ref NVM_SURF_ATTR_SURF_TYPE_RAW.
+ *       For all other surface types, it is ignored.
+ *    @endparblock
  * \param[in] srcPntrs
- *       Array of pointers to the client surface planes
+ *    @parblock
+ *       A pointer to an array of pointers to the client surface planes.
+ *
+ *       For an %NvMediaImage whose %NvMediaSurfaceType was derived with
+ *       the %NVM_SURF_ATTR_SURF_TYPE attribute set to
+ *       %NVM_SURF_ATTR_SURF_TYPE_RGBA or %NVM_SURF_ATTR_SURF_TYPE_RAW,
+ *       %NvMediaImagePutBits() expects only one @a srcPntrs and one
+ *       @a srcPitches.
+ *
+ *       For %NvMediaImages whose %NvMediaSurfaceType was derived with
+ *       the %NVM_SURF_ATTR_SURF_TYPE attribute set to
+ *       \ref NVM_SURF_ATTR_SURF_TYPE_YUV and:
+ *          1. The \ref NVM_SURF_ATTR_COMPONENT_ORDER attribute set to
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_LUMA,
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_XUYV,
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_XYUV, or
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_VUYX,
+ *             %NvMediaImagePutBits() expects only one @a srcPntrs and one
+ *             @a srcPitches.
+ *          2. For all other YUV surface types, %NvMediaImagePutBits()
+ *             expects three @a srcPntrs and three @a srcPitches.
+ *
+ *             Example: For the %NvMediaSurfaceType derived with attribute
+ *             set using
+ *             NVM_SURF_FMT_SET_ATTR_YUV(attr, YUV, 420, SEMI_PLANAR, UINT, 8, PL),
+ *             %NvMediaImagePutBits() expects three @a srcPntrs and three
+ *             @a srcPitches corresponding respectively to the Y, U and V
+ *             planes.
+ *    @endparblock
  * \param[in] srcPitches
- *       Array of pitch values for the client surface planes
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameters is invalid.
- * \n \ref NVMEDIA_STATUS_ERROR if the image is not locked.
+ *      A pointer to an array of pitch values for the client surface planes.
+ *      The number of pitch values must be the same as the number of surface
+ *      planes on @a srcPntrs.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more input
+ *  parameters are invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the image is not locked.
  * \ingroup image_get_put_bits
  */
 NvMediaStatus
 NvMediaImagePutBits(
     NvMediaImage *image,
-    NvMediaRect *dstRect,
+    const NvMediaRect *dstRect,
     void **srcPntrs,
-    uint32_t *srcPitches
+    const uint32_t *srcPitches
 );
 
 /**
- * \brief NvMediaImageGetBits reads an NvMedia image and
+ * \brief Reads an NvMedia image and
  *        writes the content into a client memory buffer.
+ *       To use %NvMediaImageGetBits() while creating an NvMedia image,
+ *       \ref NvMediaSurfAllocAttrType must be set to
+ *       \ref NVM_SURF_ATTR_CPU_ACCESS_UNCACHED or
+ *       \ref NVM_SURF_ATTR_CPU_ACCESS_CACHED in \ref NvMediaSurfAllocAttr.
  * \param[in] image
- *       Source NvMediaImage type surface. The surface must be locked using
- *       \ref NvMediaImageLock prior to calling this function.
+ *       A pointer to the source \ref NvMediaImage type surface. You must lock
+ *       the surface with NvMediaImageLock() before calling this function.
  * \param[in] srcRect
- *       Structure containing co-ordinates of the rectangle in the source surface
- *       from which the client surface is to be copied. Setting srcRect to NULL
- *       implies rectangle of full surface size.
+ *    @parblock
+ *       A pointer to a structure containing coordinates of the rectangle
+ *       in the source surface from which the client surface is to be copied.
+ *
+ *       Set @a srcRect to NULL to specify a rectangle of full surface size.
+ *       @a srcRect is supported only for an %NvMediaImage whose
+ *       \ref NvMediaSurfaceType was derived with the
+ *       \ref NVM_SURF_ATTR_SURF_TYPE attribute set to
+ *       \ref NVM_SURF_ATTR_SURF_TYPE_RGBA or \ref NVM_SURF_ATTR_SURF_TYPE_RAW.
+ *       For all other surface types, it is ignored.
+ *    @endparblock
  * \param[out] dstPntrs
- *       Array of pointers to the destination surface planes
+ *    @parblock
+ *       A pointer to an array of pointers to the destination surface planes.
+ *
+ *       For an %NvMediaImage whose %NvMediaSurfaceType was derived with
+ *       NVM_SURF_ATTR_SURF_TYPE set to NVM_SURF_ATTR_SURF_TYPE_RGBA
+ *       or NVM_SURF_ATTR_SURF_TYPE_RAW, %NvMediaImageGetBits() expects
+ *       only one @a dstPntrs and one @a dstPitches.
+ *
+ *       For an NvMediaImage whose NvMediaSurfaceType was derived with
+ *       the NVM_SURF_ATTR_SURF_TYPE attribute set to
+ *       \ref NVM_SURF_ATTR_SURF_TYPE_YUV and:
+ *          1. The \ref NVM_SURF_ATTR_COMPONENT_ORDER attribute set to
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_LUMA,
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_XUYV,
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_XYUV, or
+ *             \ref NVM_SURF_ATTR_COMPONENT_ORDER_VUYX,
+ *             this API expects only one @a dstPntrs and one @a dstPitches.
+ *          2. For all other YUV surface types, %NvMediaImageGetBits()
+ *             expects three @a dstPntrs and three @a dstPitches.
+ *
+ *             Example: For the NvMediaSurfaceType derived with the
+ *             attribute set using
+ *             NVM_SURF_FMT_SET_ATTR_YUV(attr, YUV, 420, SEMI_PLANAR, UINT, 8, PL),
+ *             %NvMediaImageGetBits() expects three @a dstPntrs and three
+ *             @a dstPitches, corresponding respectively to the Y, U and V
+ *             planes.
+ *    @endparblock
  * \param[in] dstPitches
- *       Array of pitch values for the destination surface planes
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameters is invalid.
- * \n \ref NVMEDIA_STATUS_ERROR if the image is not locked.
+ *      A pointer to an array of pitch values for the destination surface
+ *      planes. There number of pitch values must be the same as the number of
+ *      surface planes.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
+ *  input parameters are invalid.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the image is not locked.
  * \ingroup image_get_put_bits
  */
 NvMediaStatus
 NvMediaImageGetBits(
-    NvMediaImage *image,
-    NvMediaRect *srcRect,
+    const NvMediaImage *image,
+    const NvMediaRect *srcRect,
     void **dstPntrs,
-    uint32_t *dstPitches
+    const uint32_t *dstPitches
 );
 
 /**
- * \brief Return embedded data stored in a captured image.
+ * \brief Returns embedded data stored in a captured image.
+ *
  * Embedded data can be added to the following image types.
- * This type must obtained by /ref NvMediaSurfaceFormatGetType with:
- * NVM_SURF_FMT_SET_ATTR_YUV(attr, YUYV, 422, PACKED, UINT, 8, PL)
- * NVM_SURF_FMT_SET_ATTR_RGBA (attr, RGBA, UINT, 8, [PL|BL])
- * NVM_SURF_FMT_SET_ATTR_RAW (attr, [RGGB/BGGR/GRBG/GBRG], INT, [8/10/12/16/20], PL)
- * NVM_SURF_FMT_SET_ATTR_RAW (attr, [RCCB/BCCR/CRBC/CBRC], INT, 12, PL)
- * NVM_SURF_FMT_SET_ATTR_RAW (attr, [RCCC/CCCR/CRCC/CCRC], INT, 12, PL)
- * \param[in] image Image to get the embedded data from.
- * \param[in] imageIndex Index of the sub-image in case of multi-image handle. For single image
- * this parameter is ignored. Index count starts from 0.
- * \param[in] embeddedBufTop The buffer where the top embedded data is stored.
- * \param[in] embeddedBufTopSize Pointer to top buffer size. The actual size of copied
- * data will be returned in this parameter.
- * \param[in] embeddedBufBottom The buffer where the bottom embedded data is stored.
- * \param[in] embeddedBufBottomSize Pointer to bottom buffer size. The actual size of copied
- * data will be returned in this parameter.
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER If any of the input parameter is NULL
- * \n \ref NVMEDIA_STATUS_ERROR If the surface type is not supported
+ * This type must obtained by a call to NvMediaSurfaceFormatGetType() with:
+ * - NVM_SURF_FMT_SET_ATTR_YUV(attr, YUYV, 422, PACKED, UINT, 8, PL)
+ * - NVM_SURF_FMT_SET_ATTR_RGBA(attr, RGBA, UINT, 8, [PL|BL])
+ * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RGGB/BGGR/GRBG/GBRG], [UINT/INT], [8/10/12/16/20], PL)
+ * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RCCB/BCCR/CRBC/CBRC], [UINT/INT], 12, PL)
+ * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RCCC/CCCR/CRCC/CCRC], [UINT/INT], 12, PL)
+ *
+ * Embedded data may contain 8-bit data or data encoded in the
+ * sensor pixel data type, depending on the camera sensor side specification.
+ *
+ * In case of RAW12 DataType, the bit layout may change without warning,
+ * depending on the surface data type specified.
+ *
+ * The VI hardware changes data layout to:
+ * - For RAW12 UINT case: [11][10][9][8][7][6][5][4][3][2][1][0][P][P][P][P]
+ * - For RAW12  INT case: [0][11][10][9][8][7][6][5][4][3][2][1][0][P][P][P]
+ *
+ * Each embedded data pixel has 16 bits. [P] represents a padding bit. Padding
+ * bits duplicate the most significant bits: [11][10][9][8] for UINT, or
+ * [11][10][9] for INT.
+ *
+ * Contact NVIDIA for more information on other DataTypes.
+ *
+ * \param[in] image A pointer to the image from which to get embedded data.
+ * \param[in] imageIndex Index of the sub-image in the case of a multi-image
+ *                      handle, counting from 0. For a single image handle
+ *                      @a imageIndex is ignored.
+ * \param[in] embeddedBufTop
+ *                      A pointer to a buffer allocated on the caller side to
+ *                      store top data.
+ * \param[in,out] embeddedBufTopSize
+ *                      A pointer to top buffer size (in). Actual size of
+ *                      copied data is returned at this location (out).
+ *                      Top buffer size is calculated from values like
+ *                      frame resolution and \ref NVM_SURF_ATTR_EMB_LINES_TOP.
+ * \param[in] embeddedBufBottom
+ *                      A pointer to a buffer allocated
+ *                      at caller side to store bottom data.
+ * \param[in,out] embeddedBufBottomSize
+ *                      A pointer to bottom buffer size (in).
+ *                      Actual size of copied data is returned at this location
+ *                      (out). Bottom buffer size is calculated from values like
+ *                      frame resolution and
+ *                      \ref NVM_SURF_ATTR_EMB_LINES_BOTTOM.
+ * \retval  NVMEDIA_STATUS_OK indicates that that call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
+ *  pointer parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the surface type is not
+ *  supported.
  */
 NvMediaStatus
 NvMediaImageGetEmbeddedData(
-    NvMediaImage *image,
+    const NvMediaImage *image,
     uint32_t imageIndex,
     void *embeddedBufTop,
     uint32_t *embeddedBufTopSize,
@@ -382,53 +459,93 @@ NvMediaImageGetEmbeddedData(
 /**
  * \brief Gets the capture timestamp of the image.
  * \param[in] image A pointer to the image for which to get the timestamp.
- * \param[in] timeStamp A pointer the capture timestamp of the image.
- * \return \ref NvMediaStatus The completion status of the operation.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK Success
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER If image or timeStamp is NULL
- * \n \ref NVMEDIA_STATUS_ERROR If any error occurred
+ * \param[out] timeStamp A pointer the capture timestamp of the image.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image or
+ *  @a timeStamp was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
  */
 NvMediaStatus
 NvMediaImageGetTimeStamp(
-    NvMediaImage *image,
+    const NvMediaImage *image,
     NvMediaTime *timeStamp
 );
 
 /**
- * \brief Gets the global capture time-stamp of the image.
- * The global time-stamp is set by the NvMedia IPP Capture component.
- * \param[in] image A pointer to the image for which to get the time-stamp.
- * \param[in] globalTimeStamp A pointer to the global capture timestamp of the image.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK Success
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER If image or timeStamp is NULL
- * \n \ref NVMEDIA_STATUS_ERROR If any error occurred
+ * \brief Gets the global capture timestamp of the image.
+ * The global timestamp is set by the NvMedia IPP Capture component.
+ * \param[in] image             A pointer to the image for which to get the
+ *                               timestamp.
+ * \param[out] globalTimeStamp  A pointer to the global capture timestamp
+ *                               of the image.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image
+ *  or @a timeStamp was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
  */
 NvMediaStatus
 NvMediaImageGetGlobalTimeStamp(
-    NvMediaImage *image,
+    const NvMediaImage *image,
     NvMediaGlobalTime *globalTimeStamp
 );
 
 /**
- * \brief Gets status of the current/last operation for the image,
-          and optionally waits for operation to complete/timeout.
+ * \brief Sets a tag for an \ref NvMediaImage.
+ *
+ * Associates a tag (an arbitrary pointer) with an NvMediaImage.
+ *
+ * \note  The @c NvMediaImage struct's @a tag member is deprecated, and
+ *  will be retired in a future release. Use %NvMediaImageSetTag() to set
+ *  a tag instead.
+ *
+ * \param[in] image A pointer to image for which a tag is to be set.
+ * \param[in] tag   A pointer to the tag.
+ * @return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful, or
+ *  \ref NVMEDIA_STATUS_BAD_PARAMETER if @a image was NULL.
+ */
+NvMediaStatus
+NvMediaImageSetTag(
+    NvMediaImage *image,
+    void *tag
+);
+
+/**
+ * \brief Gets the tag from an \ref NvMediaImage.
+ *
+ * \note  The \ref NvMediaImage struct's @a tag member is deprecated, and
+ *  will be retired in a future release. Use NvMediaImageSetTag() to set
+ * a tag and %NvMediaImageGetTag() to get a tag instead.
+ *
+ * \param[in]  image A pointer to image for which to get the tag.
+ * \param[out] tag   A pointer to a location where the function is to put
+ *                    a pointer to the tag.
+ * @return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful,
+ *  or \ref NVMEDIA_STATUS_BAD_PARAMETER if @a image or @a tag was NULL.
+ */
+NvMediaStatus
+NvMediaImageGetTag(
+    const NvMediaImage *image,
+    void **tag
+);
+
+/**
+ * \brief Gets status of the current or most recent operation for an image;
+ *        optionally waits for the current operation to complete or time out.
  * \param[in] image A pointer to the image.
- * \param[in] millisecondWait Time  in milliseconds to wait for operation to
-              complete before getting status.
-              \ref NVMEDIA_IMAGE_TIMEOUT_INFINITE means wait till operation is completed
-              and then get status.
- * \param[out] status Status of the operation.
- * \return \ref NvMediaStatus The status of the function call.
- * Possible values are:
- * \n \ref NVMEDIA_STATUS_OK
- * \n \ref NVMEDIA_STATUS_ERROR
- * \n \ref NVMEDIA_STATUS_BAD_PARAMETER
+ * \param[in] millisecondWait
+ *                  Time in milliseconds to wait for the current operation to
+ *                  complete before getting status.
+ *                  \ref NVMEDIA_IMAGE_TIMEOUT_INFINITE means wait indefinitely.
+ * \param[out] status
+ *                  A pointer to the status of the operation.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image or @a status
+ *  was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
  */
 NvMediaStatus
 NvMediaImageGetStatus(
-    NvMediaImage *image,
+    const NvMediaImage *image,
     uint32_t millisecondWait,
     NvMediaTaskStatus *status
 );
@@ -487,6 +604,43 @@ NvMediaImageGetStatus(
  *   \ref NvMediaVideoCreateImageSibling, \ref NvMediaImageSiblingDestroy,
  *   \ref NvMediaImageCreateVideoSibling, \ref NvMediaVideoSurfaceSiblingDestroy
  *
+ * <b> Version 1.12 </b> Dec 06, 2018
+ * - Fixed MISRA-C rule 10.4, 20.7 and 21.1 violations
+ *   resulting from this header.
+ *
+ * <b> Version 1.13 </b> January 16, 2019
+ * Updated desciption for \ref NvMediaImageGetBits and \ref NvMediaImagePutBits
+ *
+ * <b> Version 1.14 </b> March 13, 2019
+ * - Data type of lockAcessType in NvMediaImageLock Api
+     is changed from unit32_t to NvMediaImageLockAccess.
+ *
+ * <b> Version 1.15 </b> March 16, 2019
+ * - Add required header include nvmedia_surface.h
+ *
+ * <b> Version 1.16 </b> March 20, 2019
+ * - Added \ref NvMediaImageSetTag and \ref NvMediaImageGetTag APIs
+ * - Tag member of NvMedia Image will be deprecated in later release.
+ *
+ * <b> Version 1.17 </b> March 22, 2019
+ * - Added \ref NVMEDIA_RAW_PIXEL_ORDER_RCCB, \ref NVMEDIA_RAW_PIXEL_ORDER_BCCR,
+ *   \ref NVMEDIA_RAW_PIXEL_ORDER_CRBC, \ref NVMEDIA_RAW_PIXEL_ORDER_CBRC, and
+ *   \ref NVMEDIA_RAW_PIXEL_ORDER_COUNT
+ *   in \ref NvMediaRawPixelOrder
+ *
+ * <b> Version 1.18 </b> March 25, 2019
+ * - Added opaque pointer for image structure
+ * - Fixed MISRA-C rule 8.13 violations resulting from this header.
+ *
+ *<b> Version 1.19 </b> March 28, 2019
+ * - Unnecessary header include nvmedia_video.h has been removed
+ *
+ * <b> Version 1.20 </b> March 29, 2019
+ * - Added captureTimeStamp to \ref NvMediaImageGroup to hold timestamps
+ *
+ *<b> Version 1.21 </b> March 28, 2019
+ * - Move NvMediaBitsPerPixel and NVMEDIA_MAX_AGGREGATE_IMAGES to nvmedia_icp.h
+ * - Move NvMediaRawPixelOrder to nvmedia_ipp.h
  */
 /*@}*/
 
@@ -494,4 +648,4 @@ NvMediaImageGetStatus(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IMAGE_H */
+#endif /* NVMEDIA_IMAGE_H */

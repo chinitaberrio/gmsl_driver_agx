@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -12,14 +12,15 @@
  * This file contains the \ref video_decoder_api "Video Decode Processing API".
  */
 
-#ifndef _NVMEDIA_VIDDEC_H
-#define _NVMEDIA_VIDDEC_H
+#ifndef NVMEDIA_VIDDEC_H
+#define NVMEDIA_VIDDEC_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "nvmedia_common.h"
+#include "nvmedia_core.h"
 #include "nvmedia_video.h"
 
 /**
@@ -41,7 +42,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VIDEODEC_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_VIDEODEC_VERSION_MINOR   6
+#define NVMEDIA_VIDEODEC_VERSION_MINOR   10
 
 /**
  * \brief To Get the decoding status from HW decoder
@@ -177,6 +178,8 @@ typedef struct {
     uint16_t maxReferences;
     /** \brief Instance ID of the decoder */
     NvMediaDecoderInstanceId instanceId;
+    /** An Opaque pointer for internal use */
+    struct NvMediaVideoDecoderPriv_ *decoderPriv;
 } NvMediaVideoDecoder;
 
 
@@ -191,49 +194,49 @@ typedef struct {
  * \brief Defines 10-bit decode.
  */
 
-#define NVMEDIA_VIDEO_DECODER_10BIT_DECODE (1<<0)
+#define NVMEDIA_VIDEO_DECODER_10BIT_DECODE (1U<<0)
 
 /**
  * \hideinitializer
  * \brief Rec_2020 color format for the decoded surface
  */
 
-#define NVMEDIA_VIDEO_DECODER_PIXEL_REC_2020 (1<<1)
+#define NVMEDIA_VIDEO_DECODER_PIXEL_REC_2020 (1U<<1)
 
 /**
  * \hideinitializer
  * \brief Use 16 bit surfaces if contents is higher than 8 bit.
  */
 
-#define NVMEDIA_VIDEO_DECODER_OUTPUT_16BIT_SURFACES (1<<2)
+#define NVMEDIA_VIDEO_DECODER_OUTPUT_16BIT_SURFACES (1U<<2)
 
 /**
  * \hideinitializer
  * \brief Create decoder for encrypted content decoding
  */
 
-#define NVMEDIA_VIDEO_DECODER_ENABLE_AES  (1<<3)
+#define NVMEDIA_VIDEO_DECODER_ENABLE_AES  (1U<<3)
 
 /**
  * \hideinitializer
  * \brief Create decoder to output in NV24 format.
  */
 
-#define NVMEDIA_VIDEO_DECODER_NV24_OUTPUT (1<<4)
+#define NVMEDIA_VIDEO_DECODER_NV24_OUTPUT (1U<<4)
 
 /**
  * \hideinitializer
  * \brief Enable decoder profiling support
  */
 
-#define NVMEDIA_VIDEO_DECODER_PROFILING   (1<<5)
+#define NVMEDIA_VIDEO_DECODER_PROFILING   (1U<<5)
 
 /**
  * \hideinitializer
  * \brief Enable decoder motion vector dump
  */
 
-#define NVMEDIA_VIDEO_DECODER_DUMP_MV     (1<<6)
+#define NVMEDIA_VIDEO_DECODER_DUMP_MV     (1U<<6)
 
 /*@} <!-- Ends decoder_create_flag sub-group --> */
 
@@ -298,7 +301,7 @@ NvMediaVideoDecoderGetVersion(
 
 NvMediaVideoDecoder *
 NvMediaVideoDecoderCreateEx(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaVideoCodec codec,
     uint16_t width,
     uint16_t height,
@@ -314,7 +317,7 @@ NvMediaVideoDecoderCreateEx(
  */
 void
 NvMediaVideoDecoderDestroy(
-   NvMediaVideoDecoder *decoder
+   const NvMediaVideoDecoder *decoder
 );
 
 /**
@@ -349,10 +352,10 @@ NvMediaVideoDecoderDestroy(
  */
 NvMediaStatus
 NvMediaVideoDecoderRenderEx(
-    NvMediaVideoDecoder *decoder,
-    NvMediaVideoSurface *target,
-    NvMediaPictureInfo *pictureInfo,
-    void *encryptParams,
+    const NvMediaVideoDecoder *decoder,
+    const NvMediaVideoSurface *target,
+    const NvMediaPictureInfo *pictureInfo,
+    const void *encryptParams,
     uint32_t numBitstreamBuffers,
     const NvMediaBitstreamBuffer *bitstreams,
     NvMediaVideoDecodeStats *FrameStatsDump,
@@ -386,9 +389,9 @@ NvMediaVideoDecoderRenderEx(
 
 NvMediaStatus
 NvMediaVideoDecoderSliceDecode (
-    NvMediaVideoDecoder *decoder,
-    NvMediaVideoSurface *target,
-    NvMediaSliceDecodeData *sliceDecData
+    const NvMediaVideoDecoder *decoder,
+    const NvMediaVideoSurface *target,
+    const NvMediaSliceDecodeData *sliceDecData
 );
 
 
@@ -442,7 +445,7 @@ NvMediaVideoDecoderSliceDecode (
 
 NvMediaStatus
 NvMediaVideoDecoderGetFrameDecodeStatus(
-    NvMediaVideoDecoder *decoder,
+    const NvMediaVideoDecoder *decoder,
     uint32_t ringEntryIdx,
     NvMediaVideoDecodeFrameStatus *FrameStatus
 );
@@ -457,7 +460,7 @@ NvMediaVideoDecoderGetFrameDecodeStatus(
  */
 NvMediaStatus
 NvMediaVideoDecoderGetBackwardUpdates(
-    NvMediaVideoDecoder *decoder,
+    const NvMediaVideoDecoder *decoder,
     void *backupdates
 );
 
@@ -498,6 +501,22 @@ NvMediaVideoDecoderGetBackwardUpdates(
  * - Added \ref NvMedia_MB_Type_enum enumerator
  * - Added \ref NvMedia_MB_Part_enum enumerator
  * - Added qp, mb_type and mb_part to \ref NvMediaMotionVectorMB_Metadata structure
+ *
+ * <b> Version 1.7 </b> Dec 14, 2018
+ * - Defined Macro constants as unsigned to fix MISRA issues
+ * - Fix MISRA violations 21.1 and 21.2
+ *
+ * <b> Version 1.8 </b> January 15, 2019
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 1.9 </b> Feb 11, 2019
+ * - Added opaque handle for decoder
+ *   internal usage into video decoder object
+ * - Fix MISRA violations 11.3
+ * - Fix MISRA violations 8.13
+ *
+ * <b> Version 1.10 </b> Feb 28, 2019
+ * - Added required header include nvmedia_core.h
  */
 
 /** @} <!-- Ends decoder_api Video Decoder --> */
@@ -506,4 +525,4 @@ NvMediaVideoDecoderGetBackwardUpdates(
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_VIDDEC_H */
+#endif /* NVMEDIA_VIDDEC_H */
