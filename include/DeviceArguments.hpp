@@ -42,12 +42,12 @@
 #include <iostream>
 
 namespace DriveWorks {
-
   class DeviceArguments {
   public:
     using PairStrStr = std::pair<std::string, std::string>;
     using VecPairStrStr = std::vector<PairStrStr>;
-    explicit DeviceArguments(const VecPairStrStr& options);
+
+    explicit DeviceArguments(const VecPairStrStr &options);
 
     void printArguments();
 
@@ -59,8 +59,7 @@ namespace DriveWorks {
     std::map<std::string, std::string> arguments;
     const std::string empty_string = {};
   };
-
-};//namespace
+}
 
 #endif
 
