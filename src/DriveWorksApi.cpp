@@ -261,8 +261,11 @@ namespace DriveWorks {
           g_run = false;
         }
         NvMediaIJPE *jpegEncoder = NULL;
+        NvMediaSurfFormatAttr attrs[7];
+        NVM_SURF_FMT_SET_ATTR_YUV(attrs, YUV, 422, PLANAR, UINT, 8, PL);
+        NvMediaSurfaceType surface_type = NvMediaSurfaceFormatGetType(attrs, 7);
         jpegEncoder = NvMediaIJPECreate(device,
-                                        NvMediaSurfaceType_Image_YUV_420,
+                                        surface_type,
                                         (uint8_t) 1, max_jpeg_bytes);
         if (!jpegEncoder) {
           std::cerr << "main: NvMediaIJPECreate failed\n" << std::endl;
