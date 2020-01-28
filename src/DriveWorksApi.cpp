@@ -40,7 +40,7 @@ namespace DriveWorks {
     is_running_ = true;
 
     InitializeContextHandle(context_handle_);
-    InitializeSalHandle(&sal_handle_, context_handle_);
+    InitializeSalHandle(sal_handle_, context_handle_);
     // Init a number of cameras base on arguments
     initSensors(&cameras, &g_numCameras, sal_handle_, device_arguments_);
     // Init image frames and start camera image acquisition
@@ -60,10 +60,11 @@ namespace DriveWorks {
     dwInitialize(&context_handle, DW_VERSION, &context_parameters);
   }
 
-  void DriveWorksApi::InitializeSalHandle(dwSALHandle_t *sal_handle, dwContextHandle_t context_handle) {
+  void DriveWorksApi::InitializeSalHandle(dwSALHandle_t &sal_handle,
+                                          const dwContextHandle_t &context_handle) {
     std::cout << "InitializeSalHandle is called!" << std::endl;
     dwStatus result;
-    result = dwSAL_initialize(sal_handle, context_handle);
+    result = dwSAL_initialize(&sal_handle, context_handle);
     if (result != DW_SUCCESS) {
       std::cerr << "Cannot initialize SAL: " << dwGetStatusName(result)
                 << std::endl;

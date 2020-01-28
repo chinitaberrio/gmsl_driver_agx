@@ -119,7 +119,8 @@ namespace DriveWorks {
   private:
     static void InitializeContextHandle(dwContextHandle_t &context_handle);
 
-    static void InitializeSalHandle(dwSALHandle_t *sal_handle, dwContextHandle_t context_handle);
+    static void InitializeSalHandle(dwSALHandle_t &sal_handle,
+                                    const dwContextHandle_t &context_handle);
 
     void initSensors(std::vector<Camera> *cameras,
                      uint32_t *numCameras,
