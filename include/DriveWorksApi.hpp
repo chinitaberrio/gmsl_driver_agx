@@ -62,35 +62,24 @@
 #include <mutex>
 #include <condition_variable>
 
-// CORE
 #include <dw/core/Context.h>
 #include <dw/core/Logger.h>
 #include <dw/core/VersionCurrent.h>
-// HAL (need  nvmedia_image.h)
 #include <dw/sensors/Sensors.h>
 #include <dw/sensors/SensorSerializer.h>
 
-// IMAGE
-//#include <dw/image/FormatConverter.h>
-//#include <dw/image/ImageStreamer.h>
 #include <dw/image/Image.h>
 #include <dw/interop/streamer/ImageStreamer.h>
-//#include <dw/image/deprecated/ImageDeprecated.h>
 
-//#include "nvmedia_image.h"
-//#include "nvmedia_ijpe.h"
 #include <drive-t186ref-linux/include/nvmedia_image.h>
 #include <drive-t186ref-linux/include/nvmedia_ijpe.h>
-// OPENCV-ROS Bridge
+
 #include "cv_connection.hpp"
-
 #include "DeviceArguments.hpp"
-
 #include <folly/ProducerConsumerQueue.h>
 
 
 namespace DriveWorks {
-
   struct Camera {
     dwSensorHandle_t sensor;
     uint32_t numSiblings;
@@ -103,19 +92,19 @@ namespace DriveWorks {
     std::vector<NvMediaIJPE *> jpegEncoders;
   };
 
-
-  struct ImageConfig {
-    uint32_t pub_width;                     //publish image width
-    uint32_t pub_height;                    //publish image height
-    uint32_t pub_buffer;                    //publish buffer
-    bool pub_compressed;                    //publish raw or compressed image
-    uint32_t pub_compressed_quality;        //image compressed quality
-    std::string pub_caminfo_folder;         //camera calibration folder
+  struct ImageConfigPub {
+    uint32_t image_width;
+    uint32_t image_height;
+    uint32_t buffer_size;
+    bool is_compressed;
+    uint32_t jpeg_quality;
+    std::string camerainfo_folder;
   };
 
   class DriveWorksApi {
   public:
-    DriveWorksApi(DeviceArguments arguments, ImageConfig g_imageConfig);
+    explicit DriveWorksApi(const DeviceArguments &arguments,
+                           const ImageConfigPub &pub_image_config);
 
     void stopCameras();
 
@@ -159,22 +148,17 @@ namespace DriveWorks {
 
   private:
     bool gTakeScreenshot = true;
-    bool gImageCompressed = true;
     int gScreenshotCount = 0;
     bool g_run = false;
     bool g_exitCompleted = false;
     bool g_initState = false;
-    uint32_t g_imageWidth;
-    uint32_t g_imageHeight;
     uint32_t g_numCameras;
     uint32_t g_numPort;
     std::vector<uint32_t> g_numCameraPort;
     const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
-    uint32_t JPEG_quality = 70;
-    std::string g_calibFolder = "";
 
-    DeviceArguments g_arguments;
-    ImageConfig g_imageConfig;
+    DeviceArguments device_arguments_;
+    ImageConfigPub pub_image_config_;
     std::vector<Camera> cameras;
     bool eof;
     dwContextHandle_t sdk = DW_NULL_HANDLE;

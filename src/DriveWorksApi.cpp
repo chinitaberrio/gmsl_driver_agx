@@ -29,20 +29,14 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #include "DriveWorksApi.hpp"
 
 namespace DriveWorks {
-  DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
-                               ImageConfig imageConfig) :
-    g_arguments(arguments), g_imageConfig(imageConfig) {
-    // init image publishing configuration
-    g_imageWidth = imageConfig.pub_width;
-    g_imageHeight = imageConfig.pub_height;
-    gImageCompressed = imageConfig.pub_compressed;
-    JPEG_quality = imageConfig.pub_compressed_quality;
-    g_calibFolder = imageConfig.pub_caminfo_folder;
-    // init sdk, and start cameras
+  DriveWorksApi::DriveWorksApi(const DeviceArguments &arguments,
+                               const ImageConfigPub &pub_image_config) :
+    device_arguments_(arguments),
+    pub_image_config_(pub_image_config) {
+
     this->startCameras();
   }
 
@@ -293,7 +287,7 @@ namespace DriveWorks {
         std::string("port_") + std::to_string(port) + std::string("/camera_") +
         std::to_string(cameraIdx);
       const std::string cam_info_file =
-        std::string("file://") + std::string(g_calibFolder) +
+        std::string("file://") + std::string(pub_image_config_.camerainfo_folder) +
         std::to_string(port) + std::to_string(cameraIdx) +
         std::string("_calibration.yml");
       std::unique_ptr<OpenCVConnector> cvPtr(
@@ -355,7 +349,7 @@ namespace DriveWorks {
             if (NvMediaImageLock(frameNVMrgba->img, NVMEDIA_IMAGE_ACCESS_READ,
                                  &surfaceMap) == NVMEDIA_STATUS_OK) {
               // publish an image
-              if (gImageCompressed) {
+              if (pub_image_config_.is_compressed) {
                 // compressed
                 cv_connectors[cameraIdx]->WriteToJpeg(
                   g_frameJPGPtr[port][cameraIdx],
@@ -365,8 +359,8 @@ namespace DriveWorks {
                 cv_connectors[cameraIdx]->WriteToOpenCV(
                   (unsigned char *) surfaceMap.surface[0].mapping,
                   frameNVMrgba->prop.width, frameNVMrgba->prop.height,
-                  g_imageWidth,
-                  g_imageHeight);
+                  pub_image_config_.image_width,
+                  pub_image_config_.image_height);
               }
 
               NvMediaImageUnlock(frameNVMrgba->img);
@@ -430,8 +424,8 @@ namespace DriveWorks {
       std::cerr << "dwImage_getNvMedia:frameyuv_nvm: " << dwGetStatusName(result) << std::endl;
     }
 
-    if (gImageCompressed) {
-      NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(jpegEncoder, frameyuv_nvm->img, JPEG_quality);
+    if (pub_image_config_.is_compressed) {
+      NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(jpegEncoder, frameyuv_nvm->img, pub_image_config_.jpeg_quality);
       if (nvStatus != NVMEDIA_STATUS_OK) {
         std::cerr << "NvMediaIJPEFeedFrameQuality failed: %x\n" << nvStatus << std::endl;
       }
@@ -495,7 +489,7 @@ namespace DriveWorks {
     initSdk(&sdk);
     initSAL(&sal, sdk);
     // Init a number of cameras base on arguments
-    initSensors(&cameras, &g_numCameras, sal, g_arguments);
+    initSensors(&cameras, &g_numCameras, sal, device_arguments_);
     // Init image frames and start camera image acquisition
     initFramesStart();
     // Set values
