@@ -91,17 +91,14 @@
 
 namespace DriveWorks {
 
-// Combine by camera sensor
   struct Camera {
     dwSensorHandle_t sensor;
     uint32_t numSiblings;
     uint32_t width;
     uint32_t height;
-    dwImageStreamerHandle_t streamer;// different streamers to support different resolutions
-//  dwImageHandle_t image_handle;
-//  dwImageFormatConverterHandle_t yuv2rgba;
+    dwImageStreamerHandle_t streamer;
     std::queue<dwImageHandle_t *> rgbaPool;
-    std::vector <dwImageHandle_t> frameRGBA;
+    std::vector<dwImageHandle_t> frameRGBA;
     std::queue<uint8_t *> jpegPool;
     std::vector<NvMediaIJPE *> jpegEncoders;
   };
@@ -116,13 +113,9 @@ namespace DriveWorks {
     std::string pub_caminfo_folder;         //camera calibration folder
   };
 
-
-// Driveworks SDK interface for GMSL Camera
   class DriveWorksApi {
   public:
     DriveWorksApi(DeviceArguments arguments, ImageConfig g_imageConfig);
-
-    ~DriveWorksApi();
 
     void stopCameras();
 
@@ -132,17 +125,16 @@ namespace DriveWorks {
 
     uint32_t getNumPort();
 
-    std::vector <uint32_t> getCameraPort();
+    std::vector<uint32_t> getCameraPort();
 
   private:
     void startCameras();
 
-    //Driveworks sdk interface
     void initSdk(dwContextHandle_t *context);
 
     void initSAL(dwSALHandle_t *sal, dwContextHandle_t context);
 
-    void initSensors(std::vector <Camera> *cameras,
+    void initSensors(std::vector<Camera> *cameras,
                      uint32_t *numCameras,
                      dwSALHandle_t sal,
                      DeviceArguments &arguments);
@@ -166,7 +158,6 @@ namespace DriveWorks {
 
 
   private:
-    //Variables
     bool gTakeScreenshot = true;
     bool gImageCompressed = true;
     int gScreenshotCount = 0;
@@ -177,22 +168,20 @@ namespace DriveWorks {
     uint32_t g_imageHeight;
     uint32_t g_numCameras;
     uint32_t g_numPort;
-    std::vector <uint32_t> g_numCameraPort;
+    std::vector<uint32_t> g_numCameraPort;
     const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
     uint32_t JPEG_quality = 70;
     std::string g_calibFolder = "";
 
-
-    //DriveWorks sdk
     DeviceArguments g_arguments;
     ImageConfig g_imageConfig;
-    std::vector <Camera> cameras;
+    std::vector<Camera> cameras;
     bool eof;
     dwContextHandle_t sdk = DW_NULL_HANDLE;
     dwSALHandle_t sal = DW_NULL_HANDLE;
-    std::vector <std::vector<dwImageHandle_t *>> g_frameRGBAPtr;
-    std::vector <std::vector<uint8_t *>> g_frameJPGPtr;
-    std::vector <std::vector<uint32_t>> g_compressedSize;
+    std::vector<std::vector<dwImageHandle_t *>> g_frameRGBAPtr;
+    std::vector<std::vector<uint8_t *>> g_frameJPGPtr;
+    std::vector<std::vector<uint32_t>> g_compressedSize;
 
   };
 

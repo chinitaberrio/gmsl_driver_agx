@@ -1,8 +1,6 @@
 #include <iostream>
-//ROS Headers
 #include <ros/ros.h>
 #include "SekonixCamera.h"
-
 
 // Running state
 static bool volatile running = true;
@@ -13,11 +11,7 @@ void signalHandler(int sig) {
   ros::shutdown();
 }
 
-// -------------------------------------------------------------------------------
-//     MAIN
-// -------------------------------------------------------------------------------
-
-std::vector <DriveWorks::option_t> options =
+std::vector<DriveWorks::option_t> options =
   {
     // making pair camera config key:value
     std::make_pair("type-a", "ar0231-rccb"),
@@ -51,15 +45,12 @@ int main(int argc, char **argv) {
 
   SekonixCamera gmsl_multiple_cam(nh, CameraArguments);
 
-  // other main thread: waiting for a signal to stop&shutdown
   while (running & ros::ok()) {
     ros::spinOnce();
   }
 
-  // Gmsl camera signal termination- call camera cleanup
   std::cout << "Shutting down cameras .." << std::endl;
   gmsl_multiple_cam.Shutdown();
-
 
   ros::spin();
   return 0;

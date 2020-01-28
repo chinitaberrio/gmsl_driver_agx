@@ -41,30 +41,24 @@
 #include <vector>
 #include <iostream>
 
-namespace DriveWorks
-{
+namespace DriveWorks {
 
-typedef std::pair<std::string, std::string> option_t;
+  typedef std::pair<std::string, std::string> option_t;
 
-class DeviceArguments
-{
-public:
-  /* Constructor */
-  DeviceArguments(const std::vector<option_t>& options);
-  /* Destructor */
-  ~DeviceArguments();
-	/* Print arguments on screen */
-  void printArguments();
-  /* Get arguments */
-  const std::string& get(const char *name) const;
-  /* Set argument */
-  bool set(const char* name, std::string new_value);
+  class DeviceArguments {
+  public:
+    DeviceArguments(const std::vector<option_t> &options);
 
+    void printArguments();
 
-private:
-  std::map<std::string, std::string> arguments;
-  const std::string empty_string = {};
-};
+    const std::string &get(const char *name) const;
+
+    bool set(const char *name, std::string new_value);
+
+  private:
+    std::map<std::string, std::string> arguments;
+    const std::string empty_string = {};
+  };
 
 };//namespace
 

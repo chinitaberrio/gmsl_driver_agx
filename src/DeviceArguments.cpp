@@ -32,68 +32,43 @@
   Initial Date: 10/05/18
 */
 
-
 #include "DeviceArguments.hpp"
 
+namespace DriveWorks {
 
-namespace DriveWorks
-{
-
-//Constructor
-DeviceArguments::DeviceArguments(const std::vector<option_t>& options)
-{
-  // init arguments
-  for(auto& option: options)
-  {
-    arguments.insert(option);
+  DeviceArguments::DeviceArguments(const std::vector<option_t> &options) {
+    // init arguments
+    for (auto &option: options) {
+      arguments.insert(option);
+    }
   }
+
+  void DeviceArguments::printArguments() {
+    for (auto arg: arguments) {
+      std::cout << arg.first << "    " << arg.second << std::endl;
+    }
+  }
+
+  const std::string &DeviceArguments::get(const char *name) const {
+    auto it = arguments.find(name);
+    if (it == arguments.end()) {
+      printf("Get error: Missing device argument '%s' requested\n", name);
+      return empty_string;
+    } else {
+      return it->second;
+    }
+  }
+
+
+  bool DeviceArguments::set(const char *name, std::string new_value) {
+    auto it = arguments.find(name);
+    if (it == arguments.end()) {
+      printf("Set error: Missing argument '%s' requested\n", name);
+      return false;
+    } else {
+      arguments[name] = new_value;
+      return true;
+    }
+  }
+
 }
-
-//Destructor
-DeviceArguments::~DeviceArguments()
-{
-
-}
-
-
-void DeviceArguments::printArguments()
-{
-  for(auto arg: arguments)
-  {
-    std::cout << arg.first << "    " << arg.second << std::endl;
-  }
-}
-
-const std::string& DeviceArguments::get(const char *name) const
-{
-  auto it = arguments.find(name);
-  if (it == arguments.end())
-  {
-    printf("Get error: Missing device argument '%s' requested\n", name);
-    return empty_string;
-  }
-  else
-  {
-    return it->second;
-  }
-}
-
-
-bool DeviceArguments::set(const char* name, std::string new_value)
-{
-  auto it = arguments.find(name);
-  if (it == arguments.end())
-  {
-    printf("Set error: Missing argument '%s' requested\n", name);
-    return false;
-  }
-  else
-  {
-    arguments[name] =  new_value;
-    return true;
-  }
-}
-
-}//namespace
-
-
