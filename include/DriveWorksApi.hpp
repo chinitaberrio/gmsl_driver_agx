@@ -117,11 +117,9 @@ namespace DriveWorks {
     std::vector<uint32_t> getCameraPort();
 
   private:
-    void startCameras();
+    static void InitializeContextHandle(dwContextHandle_t &context_handle);
 
-    void initSdk(dwContextHandle_t *context);
-
-    void initSAL(dwSALHandle_t *sal, dwContextHandle_t context);
+    static void InitializeSalHandle(dwSALHandle_t *sal_handle, dwContextHandle_t context_handle);
 
     void initSensors(std::vector<Camera> *cameras,
                      uint32_t *numCameras,
@@ -149,7 +147,7 @@ namespace DriveWorks {
   private:
     bool gTakeScreenshot = true;
     int gScreenshotCount = 0;
-    bool g_run = false;
+    bool is_running_{false};
     bool g_exitCompleted = false;
     bool g_initState = false;
     uint32_t g_numCameras;
@@ -161,8 +159,8 @@ namespace DriveWorks {
     ImageConfigPub pub_image_config_;
     std::vector<Camera> cameras;
     bool eof;
-    dwContextHandle_t sdk = DW_NULL_HANDLE;
-    dwSALHandle_t sal = DW_NULL_HANDLE;
+    dwContextHandle_t context_handle_ = DW_NULL_HANDLE;
+    dwSALHandle_t sal_handle_ = DW_NULL_HANDLE;
     std::vector<std::vector<dwImageHandle_t *>> g_frameRGBAPtr;
     std::vector<std::vector<uint8_t *>> g_frameJPGPtr;
     std::vector<std::vector<uint32_t>> g_compressedSize;

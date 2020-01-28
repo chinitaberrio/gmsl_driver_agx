@@ -36,22 +36,34 @@ namespace DriveWorks {
                                const ImageConfigPub &pub_image_config) :
     device_arguments_(arguments),
     pub_image_config_(pub_image_config) {
+    std::cout << "DriveWorksApi::DriveWorksApi is called!" << std::endl;
+    is_running_ = true;
 
-    this->startCameras();
+    InitializeContextHandle(context_handle_);
+    InitializeSalHandle(&sal_handle_, context_handle_);
+    // Init a number of cameras base on arguments
+    initSensors(&cameras, &g_numCameras, sal_handle_, device_arguments_);
+    // Init image frames and start camera image acquisition
+    initFramesStart();
+    // Set values
+    g_numPort = cameras.size();
+    // Set done init state
+    g_initState = true;
+    // Start image publishing thread
+    startCameraPipline();
   }
 
-  void DriveWorksApi::initSdk(dwContextHandle_t *context) {
-    std::cout << "Init SDK .. " << std::endl;
-    // Instantiate Driveworks SDK context
-    dwContextParameters sdkParams;
-    memset(&sdkParams, 0, sizeof(dwContextParameters));
-    dwInitialize(context, DW_VERSION, &sdkParams);
+  void DriveWorksApi::InitializeContextHandle(dwContextHandle_t &context_handle) {
+    std::cout << "InitializeContextHandle is called!" << std::endl;
+    dwContextParameters context_parameters;
+    memset(&context_parameters, 0, sizeof(dwContextParameters));
+    dwInitialize(&context_handle, DW_VERSION, &context_parameters);
   }
 
-  void DriveWorksApi::initSAL(dwSALHandle_t *sal, dwContextHandle_t context) {
-    std::cout << "Init SAL .. " << std::endl;
+  void DriveWorksApi::InitializeSalHandle(dwSALHandle_t *sal_handle, dwContextHandle_t context_handle) {
+    std::cout << "InitializeSalHandle is called!" << std::endl;
     dwStatus result;
-    result = dwSAL_initialize(sal, context);
+    result = dwSAL_initialize(sal_handle, context_handle);
     if (result != DW_SUCCESS) {
       std::cerr << "Cannot initialize SAL: " << dwGetStatusName(result)
                 << std::endl;
@@ -169,7 +181,7 @@ namespace DriveWorks {
     }
 
     // init RGBA frames for each camera in the port(e.g. 4 cameras/port)
-    for (size_t csiPort = 0; csiPort < cameras.size() && g_run; csiPort++) {
+    for (size_t csiPort = 0; csiPort < cameras.size() && is_running_; csiPort++) {
       initFrameImage(&cameras[csiPort]);
       // record a number of connected camera
       g_numCameraPort.push_back(cameras[csiPort].numSiblings);
@@ -203,11 +215,11 @@ namespace DriveWorks {
            cameraIdx < camera->numSiblings; cameraIdx++) {
         for (int32_t k = 0; k < pool_size; k++) {
           dwImageHandle_t rgba{};
-          result = dwImage_create(&rgba, displayImageProperties, sdk);
+          result = dwImage_create(&rgba, displayImageProperties, context_handle_);
           if (result != DW_SUCCESS) {
             std::cerr << "Cannot create nvmedia image for pool:"
                       << dwGetStatusName(result) << std::endl;
-            g_run = false;
+            is_running_ = false;
             break;
           }
           // don't forget to delete dwImage via g_frameRGBA when exit
@@ -224,7 +236,7 @@ namespace DriveWorks {
         device = NvMediaDeviceCreate();
         if (!device) {
           std::cerr << "main: NvMediaDeviceCreate failed\n" << std::endl;
-          g_run = false;
+          is_running_ = false;
         }
         NvMediaIJPE *jpegEncoder = NULL;
         NvMediaSurfFormatAttr attrs[7];
@@ -235,7 +247,7 @@ namespace DriveWorks {
                                         (uint8_t) 1, max_jpeg_bytes);
         if (!jpegEncoder) {
           std::cerr << "main: NvMediaIJPECreate failed\n" << std::endl;
-          g_run = false;
+          is_running_ = false;
         } else {
           camera->jpegEncoders.push_back(jpegEncoder);
         }
@@ -249,7 +261,7 @@ namespace DriveWorks {
         }
       }
       // start camera capturing
-      g_run = g_run && dwSensor_start(camera->sensor) == DW_SUCCESS;
+      is_running_ = is_running_ && dwSensor_start(camera->sensor) == DW_SUCCESS;
       eof = false;
     }
   }
@@ -261,7 +273,7 @@ namespace DriveWorks {
     for (uint32_t i = 0; i < cameras.size(); ++i) {
       camThreads.push_back(
         std::thread(&DriveWorksApi::WorkerPortPipeline, this, &cameras[i], i,
-                    sdk));
+                    context_handle_));
     }
 
     // start camera threads and release
@@ -295,7 +307,7 @@ namespace DriveWorks {
       cv_connectors.push_back(std::move(cvPtr));
     }
 
-    while (g_run && ros::ok()) {
+    while (is_running_ && ros::ok()) {
       bool eofAny = false;
       // capture from all csi-ports
       // NOTE if cross-csi-synch is active, all cameras will capture at the same time
@@ -373,7 +385,7 @@ namespace DriveWorks {
         gScreenshotCount++;
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(5));
-      g_run = g_run && !eofAny;
+      is_running_ = is_running_ && !eofAny;
     }//end while
   }
 
@@ -404,7 +416,7 @@ namespace DriveWorks {
 //    rgbaImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
 //    dwImage_create(&frameNVrgba, rgbaImageProperties, sdk);
 
-    result = dwImage_copyConvert(*frameNVMrgba, frameNVMyuv, sdk);
+    result = dwImage_copyConvert(*frameNVMrgba, frameNVMyuv, context_handle_);
 
     if (result != DW_SUCCESS) {
       std::cerr << "copyConvertNvMedia: " << dwGetStatusName(result) << std::endl;
@@ -461,7 +473,7 @@ namespace DriveWorks {
       if (result != DW_SUCCESS) {
         std::cerr << "Cannot destroy nvmedia: " << dwGetStatusName(result)
                   << std::endl;
-        g_run = false;
+        is_running_ = false;
         break;
       }
     }
@@ -476,28 +488,9 @@ namespace DriveWorks {
     // release sdk and sal
     // release used objects in correct order
     std::cout << "Release SDK .." << std::endl;
-    dwSAL_release(sal);
-    dwRelease(sdk);
+    dwSAL_release(sal_handle_);
+    dwRelease(context_handle_);
     dwLogger_release();
-  }
-
-  void DriveWorksApi::startCameras() {
-    std::cout << "Start camera... " << std::endl;
-    // set run flag
-    g_run = true;
-    // Create GMSL Camera interface, based on the camera selector mask
-    initSdk(&sdk);
-    initSAL(&sal, sdk);
-    // Init a number of cameras base on arguments
-    initSensors(&cameras, &g_numCameras, sal, device_arguments_);
-    // Init image frames and start camera image acquisition
-    initFramesStart();
-    // Set values
-    g_numPort = cameras.size();
-    // Set done init state
-    g_initState = true;
-    // Start image publishing thread
-    startCameraPipline();
   }
 
   void DriveWorksApi::stopCameras() {
@@ -510,12 +503,12 @@ namespace DriveWorks {
     releaseSDK();
     // set init and run state
     g_exitCompleted = true;
-    g_run = false;
+    is_running_ = false;
     g_initState = false;
   }
 
   bool DriveWorksApi::isCamReady() {
-    return g_run && g_initState;
+    return is_running_ && g_initState;
   }
 
   uint32_t DriveWorksApi::getNumPort() {
@@ -527,7 +520,7 @@ namespace DriveWorks {
   }
 
   bool DriveWorksApi::isShutdownCompleted() {
-    return g_exitCompleted && !g_run;
+    return g_exitCompleted && !is_running_;
   }
 
 }
