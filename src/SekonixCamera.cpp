@@ -1,6 +1,6 @@
 #include "SekonixCamera.h"
 
-SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArguments) : nh_(nh_in) {
+SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in) : nh_(nh_in) {
 
   nh_in.param("/sekonix_camera_node/image_width", image_width_, int(640));
   nh_in.param("/sekonix_camera_node/image_height", image_height_, int(480));
@@ -41,6 +41,19 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   nh_in.param<std::string>("/sekonix_camera_node/fifo_size", fifo_size_value, "3");
   nh_in.param<std::string>("/sekonix_camera_node/slave", slave_value, "0");
 
+  DeviceArguments::VecPairStrStr options =
+    {
+      // making pair camera config key:value
+      std::make_pair("type-a", "ar0231-rccb"),
+      std::make_pair("type-b", "ar0231-rccb"),
+      std::make_pair("type-c", "ar0231-rccb"),
+      std::make_pair("type-d", "ar0231-rccb"),
+      std::make_pair("selector_mask", "11111111"),
+      std::make_pair("cross_csi_sync", "0"),
+      std::make_pair("fifo_size", "3"),
+      std::make_pair("slave", "0"),
+    };
+  DriveWorks::DeviceArguments CameraArguments(options);
 
   CameraArguments.set("type-a", type_a_value);
   CameraArguments.set("type-b", type_b_value);

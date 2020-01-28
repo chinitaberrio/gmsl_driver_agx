@@ -36,9 +36,8 @@
 
 namespace DriveWorks {
 
-  DeviceArguments::DeviceArguments(const std::vector<option_t> &options) {
-    // init arguments
-    for (auto &option: options) {
+  DeviceArguments::DeviceArguments(const VecPairStrStr& options) {
+    for (const PairStrStr &option: options) {
       arguments.insert(option);
     }
   }

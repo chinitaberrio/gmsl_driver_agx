@@ -14,7 +14,7 @@ using namespace DriveWorks;
 
 class SekonixCamera {
 public:
-  explicit SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArguments);
+  explicit SekonixCamera(ros::NodeHandle &nh_in);
 
   void Shutdown();
 

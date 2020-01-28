@@ -11,23 +11,9 @@ void signalHandler(int sig) {
   ros::shutdown();
 }
 
-std::vector<DriveWorks::option_t> options =
-  {
-    // making pair camera config key:value
-    std::make_pair("type-a", "ar0231-rccb"),
-    std::make_pair("type-b", "ar0231-rccb"),
-    std::make_pair("type-c", "ar0231-rccb"),
-    std::make_pair("type-d", "ar0231-rccb"),
-    std::make_pair("selector_mask", "11111111"),
-    std::make_pair("cross_csi_sync", "0"),
-    std::make_pair("fifo_size", "3"),
-    std::make_pair("slave", "0"),
-  };
-
 
 int main(int argc, char **argv) {
 
-  DriveWorks::DeviceArguments CameraArguments(options);
 
   ros::init(argc, argv, "gmsl_node");
   ros::NodeHandle nh;
@@ -43,7 +29,7 @@ int main(int argc, char **argv) {
 
   ROS_INFO_STREAM("GMSL node started!");
 
-  SekonixCamera gmsl_multiple_cam(nh, CameraArguments);
+  SekonixCamera gmsl_multiple_cam(nh);
 
   while (running & ros::ok()) {
     ros::spinOnce();

@@ -43,11 +43,11 @@
 
 namespace DriveWorks {
 
-  typedef std::pair<std::string, std::string> option_t;
-
   class DeviceArguments {
   public:
-    DeviceArguments(const std::vector<option_t> &options);
+    using PairStrStr = std::pair<std::string, std::string>;
+    using VecPairStrStr = std::vector<PairStrStr>;
+    explicit DeviceArguments(const VecPairStrStr& options);
 
     void printArguments();
 
