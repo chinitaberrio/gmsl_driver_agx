@@ -37,24 +37,26 @@
   Initial Date: 10/05/18
 */
 
-
 #include "cv_connection.hpp"
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-OpenCVConnector::OpenCVConnector(std::string topic_name, std::string camera_frame_id, std::string cam_info_file, int buffer) : it_(nh_), counter(0), camera_id(camera_frame_id), camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id) {
-  //init image pub topic
+OpenCVConnector::OpenCVConnector(std::string topic_name,
+                                 std::string camera_frame_id,
+                                 std::string cam_info_file,
+                                 int buffer)
+  : it_(nh_),
+    counter(0),
+    camera_id(camera_frame_id),
+    camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id) {
   std::string topic_raw = topic_name + std::string("/image_raw");
   std::string topic_jpg = topic_name + std::string("/image_raw/compressed");
   pub = it_.advertise(topic_raw, buffer);
   pub_jpg = nh_.advertise<sensor_msgs::CompressedImage>(topic_jpg, buffer);
-  //init pub camera info topic
   pub_caminfo = nh_.advertise<sensor_msgs::CameraInfo>(camera_frame_id + std::string("/camera_info"), 1);
 
-  //init camera info
   if (camera_info_manager.validateURL(cam_info_file)) {
     camera_info_manager.loadCameraInfo(cam_info_file);
     camera_info = camera_info_manager.getCameraInfo();
@@ -64,15 +66,10 @@ OpenCVConnector::OpenCVConnector(std::string topic_name, std::string camera_fram
 }
 
 
-OpenCVConnector::~OpenCVConnector() {
-}
-
-
 void OpenCVConnector::WriteToOpenCV(unsigned char *buffer, int width_in, int height_in, int width_pub, int height_pub) {
   cv::Mat mat_img(cv::Size(width_in, height_in), CV_8UC4, buffer);    // create a cv::Mat from rgbaImage
   cv::Mat dst;
 
-  // if we need to resize
   if ((width_in != width_pub) || (height_in != height_pub)) {
     cv::resize(mat_img, dst, cv::Size(width_pub, height_pub));          // resize to the publishing size
   } else {
@@ -97,7 +94,6 @@ void OpenCVConnector::WriteToOpenCV(unsigned char *buffer, int width_in, int hei
 }
 
 void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size) {
-  // publishing original size only
   sensor_msgs::CompressedImage img_msg_compressed;
   img_msg_compressed.data.resize(compressed_size);
   memcpy(&img_msg_compressed.data[0], data, compressed_size);

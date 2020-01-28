@@ -15,15 +15,14 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
 
   // from DriveWorksApi.hpp
   ImageConfig imageConfig = {
-    (uint32_t) image_width_,                //publish image width
-    (uint32_t) image_height_,                //publish image height
-    (uint32_t) pub_buffer_,                //publish buffer
-    img_compressed_,            //publish raw or compressed image
-    (uint32_t) jpeg_quality_,   //image compressed quality
-    calib_folder,             //camera calibration folder
+    (uint32_t) image_width_,
+    (uint32_t) image_height_,
+    (uint32_t) pub_buffer_,
+    img_compressed_,
+    (uint32_t) jpeg_quality_,
+    calib_folder,
   };
 
-  // read ros param here for camera configurations
   std::string type_a_value = "";
   std::string type_b_value = "";
   std::string type_c_value = "";
@@ -32,7 +31,7 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   std::string cross_csi_sync_value = "";
   std::string fifo_size_value = "";
   std::string slave_value = "";
-  // reading new configuration
+
   nh_in.param<std::string>("/sekonix_camera_node/type_a", type_a_value, "ar0231-rccb-bae-sf3324");
   nh_in.param<std::string>("/sekonix_camera_node/type_b", type_b_value, "ar0231-rccb-bae-sf3324");
   nh_in.param<std::string>("/sekonix_camera_node/type_c", type_c_value, "ar0231-rccb-bae-sf3324");
@@ -43,7 +42,6 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   nh_in.param<std::string>("/sekonix_camera_node/slave", slave_value, "0");
 
 
-  // setting new configurations
   CameraArguments.set("type-a", type_a_value);
   CameraArguments.set("type-b", type_b_value);
   CameraArguments.set("type-c", type_c_value);
@@ -53,44 +51,16 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in, DeviceArguments CameraArgum
   CameraArguments.set("fifo_size", fifo_size_value);
   CameraArguments.set("slave", slave_value);
 
-  // create gmsl camera instance with the arguments
-  gmsl_cam_ = new DriveWorksApi(CameraArguments, imageConfig);
-  // start camera frame grabber threads
-  this->Startup();
+  gmsl_cam_ = std::make_unique<DriveWorksApi>(CameraArguments, imageConfig);
 
-}
-
-/*
- * Destructor
- */
-SekonixCamera::~SekonixCamera() {
-  if (gmsl_cam_) delete gmsl_cam_;
-}
-
-/*
- * Start the polling threads to grab an image from the camera and publish it
- */
-void SekonixCamera::Startup() {
-  // After gmsl cameras init - start image publishing thread(s)
   while (!(gmsl_cam_->isCamReady())) {
     sleep(1);
   }
-  // Ready
   numPort_ = gmsl_cam_->getNumPort();
   std::cout << "Start camera threads .." << std::endl;
 }
 
-/*
- * Stop the polling threads to grab an image from the camera and publish it
- * Send a request to cleanup the camera connections all at once
- */
-
 void SekonixCamera::Shutdown() {
-  // Clean up camera frames & sdk all at once
   gmsl_cam_->stopCameras();
 }
-
-/* DriveWorks ns */
-
-
 
