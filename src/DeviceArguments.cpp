@@ -36,7 +36,7 @@
 
 namespace DriveWorks {
 
-  DeviceArguments::DeviceArguments(const VecPairStrStr& options) {
+  DeviceArguments::DeviceArguments(const VecPairStrStr &options) {
     for (const PairStrStr &option: options) {
       arguments.insert(option);
     }
@@ -48,10 +48,10 @@ namespace DriveWorks {
     }
   }
 
-  const std::string &DeviceArguments::get(const char *name) const {
+  const std::string &DeviceArguments::get(const std::string &name) const {
     auto it = arguments.find(name);
     if (it == arguments.end()) {
-      printf("Get error: Missing device argument '%s' requested\n", name);
+      std::cout << "Get error: Missing device argument: " << name << std::endl;
       return empty_string;
     } else {
       return it->second;
@@ -59,10 +59,10 @@ namespace DriveWorks {
   }
 
 
-  bool DeviceArguments::set(const char *name, std::string new_value) {
+  bool DeviceArguments::set(const std::string &name, const std::string &new_value) {
     auto it = arguments.find(name);
     if (it == arguments.end()) {
-      printf("Set error: Missing argument '%s' requested\n", name);
+      std::cout << "Set error: Missing argument: " << name << std::endl;
       return false;
     } else {
       arguments[name] = new_value;

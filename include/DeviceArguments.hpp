@@ -51,9 +51,9 @@ namespace DriveWorks {
 
     void printArguments();
 
-    const std::string &get(const char *name) const;
+    const std::string &get(const std::string &name) const;
 
-    bool set(const char *name, std::string new_value);
+    bool set(const std::string &name, const std::string &new_value);
 
   private:
     std::map<std::string, std::string> arguments;
