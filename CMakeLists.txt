@@ -71,7 +71,8 @@ add_executable(${NODE_NAME}
         src/SekonixCamera.cpp
         src/DriveWorksApi.cpp
         src/DeviceArguments.cpp
-        src/cv_connection.cpp)
+        src/cv_connection.cpp
+        src/CameraPort.cpp)
 
 target_link_libraries(${NODE_NAME}
         ${catkin_LIBRARIES}

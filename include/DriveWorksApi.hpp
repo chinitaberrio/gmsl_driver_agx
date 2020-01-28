@@ -76,20 +76,10 @@
 #include "cv_connection.hpp"
 #include "DeviceArguments.hpp"
 #include <folly/ProducerConsumerQueue.h>
+#include "CameraPort.h"
 
 
 namespace DriveWorks {
-  struct CameraPort {
-    dwSensorHandle_t sensor_handle;
-    uint32_t count_siblings;
-    uint32_t image_width;
-    uint32_t image_height;
-    std::queue<dwImageHandle_t *> rgbaPool;
-    std::vector<dwImageHandle_t> frameRGBA;
-    std::queue<uint8_t *> jpegPool;
-    std::vector<NvMediaIJPE *> jpegEncoders;
-  };
-
   struct ImageConfigPub {
     uint32_t image_width;
     uint32_t image_height;
@@ -121,9 +111,9 @@ namespace DriveWorks {
                                     const dwContextHandle_t &context_handle);
 
     static void InitializeCameras(std::vector<CameraPort> &camera_ports,
-                           int &numCameras,
-                           const dwSALHandle_t &sal,
-                           const DeviceArguments &device_arguments);
+                                  int &numCameras,
+                                  const dwSALHandle_t &sal,
+                                  const DeviceArguments &device_arguments);
 
     void initFramesStart();
 

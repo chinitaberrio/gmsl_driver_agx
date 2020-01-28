@@ -137,9 +137,6 @@ namespace DriveWorks {
         continue;
       }
 
-      CameraPort camera_port;
-      camera_port.sensor_handle = sensor_handle;
-
       dwImageProperties image_properties;
       dwSensorCamera_getImageProperties(&image_properties,
                                         DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
@@ -148,11 +145,9 @@ namespace DriveWorks {
       dwCameraProperties camera_properties;
       dwSensorCamera_getSensorProperties(&camera_properties, sensor_handle);
 
-      camera_port.image_width = image_properties.width;
-      camera_port.image_height = image_properties.height;
-      camera_port.count_siblings = camera_properties.siblings;
+      CameraPort camera_port(sensor_handle, image_properties, camera_properties);
       camera_ports.push_back(camera_port);
-      numCameras += camera_port.count_siblings;
+      numCameras += camera_port.GetSiblingCount();
     }
   }
 
@@ -171,7 +166,7 @@ namespace DriveWorks {
       std::vector<uint8_t *> pool_jpeg;
       std::vector<uint32_t> poolsize;
       for (size_t cameraIdx = 0;
-           cameraIdx < cameras_[csiPort].count_siblings; ++cameraIdx) {
+           cameraIdx < cameras_[csiPort].GetSiblingCount(); ++cameraIdx) {
         pool.push_back(nullptr);
         pool_jpeg.push_back(nullptr);
         poolsize.push_back(0);
@@ -187,7 +182,7 @@ namespace DriveWorks {
     for (size_t csiPort = 0; csiPort < cameras_.size() && is_running_; csiPort++) {
       initFrameImage(&cameras_[csiPort]);
       // record a number of connected camera
-      g_numCameraPort.push_back(cameras_[csiPort].count_siblings);
+      g_numCameraPort.push_back(cameras_[csiPort].GetSiblingCount());
     }
   }
 
@@ -198,7 +193,7 @@ namespace DriveWorks {
     // since image streamer might hold up-to one frame when using egl stream
     dwStatus result;
     int32_t pool_size = 2;
-    uint32_t numFramesRGBA = pool_size * camera->count_siblings;
+    uint32_t numFramesRGBA = pool_size * camera->GetSiblingCount();
 
     // temp variable for easy access and de-reference back to camera->frameRGBA in releasing nvidia image frame read
     std::vector<dwImageHandle_t> &g_frameRGBA = camera->frameRGBA;
@@ -208,14 +203,14 @@ namespace DriveWorks {
       dwImageProperties cameraImageProperties;
       dwSensorCamera_getImageProperties(&cameraImageProperties,
                                         DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
-                                        camera->sensor_handle);
+                                        camera->GetSensorHandle());
       dwImageProperties displayImageProperties = cameraImageProperties;
       displayImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
       displayImageProperties.type = DW_IMAGE_NVMEDIA;
 
       // allocate image pool
       for (uint32_t cameraIdx = 0;
-           cameraIdx < camera->count_siblings; cameraIdx++) {
+           cameraIdx < camera->GetSiblingCount(); cameraIdx++) {
         for (int32_t k = 0; k < pool_size; k++) {
           dwImageHandle_t rgba{};
           result = dwImage_create(&rgba, displayImageProperties, context_handle_);
@@ -234,7 +229,7 @@ namespace DriveWorks {
 
       // NVMedia image compression definition.
       for (uint32_t cameraIdx = 0;
-           cameraIdx < camera->count_siblings; cameraIdx++) {
+           cameraIdx < camera->GetSiblingCount(); cameraIdx++) {
         NvMediaDevice *device;
         device = NvMediaDeviceCreate();
         if (!device) {
@@ -257,14 +252,14 @@ namespace DriveWorks {
       }
       // allocate compressed image pool
       for (uint32_t cameraIdx = 0;
-           cameraIdx < camera->count_siblings; cameraIdx++) {
+           cameraIdx < camera->GetSiblingCount(); cameraIdx++) {
         for (int32_t k = 0; k < pool_size; k++) {
           uint8_t *jpeg_img = (uint8_t *) malloc(max_jpeg_bytes);
           camera->jpegPool.push(jpeg_img);
         }
       }
       // start camera capturing
-      is_running_ = is_running_ && dwSensor_start(camera->sensor_handle) == DW_SUCCESS;
+      is_running_ = is_running_ && dwSensor_start(camera->GetSensorHandle()) == DW_SUCCESS;
       eof = false;
     }
   }
@@ -293,7 +288,7 @@ namespace DriveWorks {
     std::vector<std::unique_ptr<OpenCVConnector>> cv_connectors;
     // init multiple cv cameras connection and topic name
     for (uint32_t cameraIdx = 0;
-         cameraIdx < cameraSensor->count_siblings; cameraIdx++) {
+         cameraIdx < cameraSensor->GetSiblingCount(); cameraIdx++) {
       // Topic mapping e.g. gmsl_image_raw_<nvidia cam port A=0, B=1, C=2>_<sibling id 0,1,2,3> : port_0/camera_1/(image_raw,image_raw/compressed)
       const std::string topic =
         std::string("port_") + std::to_string(port) + std::string("/camera_") +
@@ -326,11 +321,11 @@ namespace DriveWorks {
         }
 
         // capture from all cameras within a csi port
-        for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->count_siblings &&
+        for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->GetSiblingCount() &&
                                      !cameraSensor->rgbaPool.empty(); cameraIdx++) {
           // capture, convert to rgba and return it
           eof = captureCamera(cameraSensor->rgbaPool.front(),
-                              cameraSensor->sensor_handle,
+                              cameraSensor->GetSensorHandle(),
                               port, cameraIdx,
                               cameraSensor->jpegPool.front(),
                               cameraSensor->jpegEncoders[cameraIdx]);
@@ -353,7 +348,7 @@ namespace DriveWorks {
       if (gTakeScreenshot) {
         {
 
-          for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->count_siblings &&
+          for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->GetSiblingCount() &&
                                        !cameraSensor->rgbaPool.empty(); cameraIdx++) {
             //copy to memory replacing by //takeScreenshot(g_frameRGBAPtr[port][cameraIdx], port, cameraIdx);
 
@@ -462,9 +457,9 @@ namespace DriveWorks {
     // release sensor
     std::cout << "Cleaning camera thread .. " << std::endl;
     {
-      dwSensor_stop(cameraSensor->sensor_handle);
+      dwSensor_stop(cameraSensor->GetSensorHandle());
       std::cout << "Cleaning camera thread .. dwSensor " << std::endl;
-      dwSAL_releaseSensor(cameraSensor->sensor_handle);
+      dwSAL_releaseSensor(cameraSensor->GetSensorHandle());
       std::cout << "Cleaning camera thread .. dwSAL " << std::endl;
 //    dwImageFormatConverter_release(&cameraSensor->yuv2rgba);
       std::cout << "Cleaning camera thread .. dwConvert " << std::endl;
