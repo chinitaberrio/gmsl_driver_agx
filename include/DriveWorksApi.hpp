@@ -69,7 +69,6 @@
 #include <dw/sensors/SensorSerializer.h>
 
 #include <dw/image/Image.h>
-#include <dw/interop/streamer/ImageStreamer.h>
 
 #include <drive-t186ref-linux/include/nvmedia_image.h>
 #include <drive-t186ref-linux/include/nvmedia_ijpe.h>
@@ -80,12 +79,11 @@
 
 
 namespace DriveWorks {
-  struct Camera {
-    dwSensorHandle_t sensor;
-    uint32_t numSiblings;
-    uint32_t width;
-    uint32_t height;
-    dwImageStreamerHandle_t streamer;
+  struct CameraPort {
+    dwSensorHandle_t sensor_handle;
+    uint32_t count_siblings;
+    uint32_t image_width;
+    uint32_t image_height;
     std::queue<dwImageHandle_t *> rgbaPool;
     std::vector<dwImageHandle_t> frameRGBA;
     std::queue<uint8_t *> jpegPool;
@@ -103,8 +101,8 @@ namespace DriveWorks {
 
   class DriveWorksApi {
   public:
-    explicit DriveWorksApi(const DeviceArguments &arguments,
-                           const ImageConfigPub &pub_image_config);
+    explicit DriveWorksApi(DeviceArguments arguments,
+                           ImageConfigPub pub_image_config);
 
     void stopCameras();
 
@@ -122,25 +120,25 @@ namespace DriveWorks {
     static void InitializeSalHandle(dwSALHandle_t &sal_handle,
                                     const dwContextHandle_t &context_handle);
 
-    void initSensors(std::vector<Camera> *cameras,
-                     uint32_t *numCameras,
-                     dwSALHandle_t sal,
-                     DeviceArguments &arguments);
+    static void InitializeCameras(std::vector<CameraPort> &camera_ports,
+                           int &numCameras,
+                           const dwSALHandle_t &sal,
+                           const DeviceArguments &device_arguments);
 
     void initFramesStart();
 
-    void initFrameImage(Camera *cameraSensor);
+    void initFrameImage(CameraPort *cameraSensor);
 
     void startCameraPipline();
 
-    void WorkerPortPipeline(Camera *cameraSensor, uint32_t port, dwContextHandle_t sdk);
+    void WorkerPortPipeline(CameraPort *cameraSensor, uint32_t port, dwContextHandle_t sdk);
 
     dwStatus captureCamera(dwImageHandle_t *frameNVMrgba,
                            dwSensorHandle_t cameraSensor, uint32_t port,
                            uint32_t sibling,
                            uint8_t *jpeg_image, NvMediaIJPE *jpegEncoder);
 
-    void releaseCameras(Camera *cameraSensor);
+    void releaseCameras(CameraPort *cameraSensor);
 
     void releaseSDK();
 
@@ -151,14 +149,14 @@ namespace DriveWorks {
     bool is_running_{false};
     bool g_exitCompleted = false;
     bool g_initState = false;
-    uint32_t g_numCameras;
+    int count_camera_;
     uint32_t g_numPort;
     std::vector<uint32_t> g_numCameraPort;
     const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
 
     DeviceArguments device_arguments_;
     ImageConfigPub pub_image_config_;
-    std::vector<Camera> cameras;
+    std::vector<CameraPort> cameras_;
     bool eof;
     dwContextHandle_t context_handle_ = DW_NULL_HANDLE;
     dwSALHandle_t sal_handle_ = DW_NULL_HANDLE;

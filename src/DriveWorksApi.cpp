@@ -31,22 +31,23 @@
 
 #include "DriveWorksApi.hpp"
 
+#include <utility>
+
 namespace DriveWorks {
-  DriveWorksApi::DriveWorksApi(const DeviceArguments &arguments,
-                               const ImageConfigPub &pub_image_config) :
-    device_arguments_(arguments),
-    pub_image_config_(pub_image_config) {
+  DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
+                               ImageConfigPub pub_image_config) :
+    device_arguments_(std::move(arguments)),
+    pub_image_config_(std::move(pub_image_config)) {
     std::cout << "DriveWorksApi::DriveWorksApi is called!" << std::endl;
     is_running_ = true;
 
     InitializeContextHandle(context_handle_);
     InitializeSalHandle(sal_handle_, context_handle_);
-    // Init a number of cameras base on arguments
-    initSensors(&cameras, &g_numCameras, sal_handle_, device_arguments_);
+    InitializeCameras(cameras_, count_camera_, sal_handle_, device_arguments_);
     // Init image frames and start camera image acquisition
     initFramesStart();
     // Set values
-    g_numPort = cameras.size();
+    g_numPort = cameras_.size();
     // Set done init state
     g_initState = true;
     // Start image publishing thread
@@ -73,10 +74,12 @@ namespace DriveWorks {
   }
 
   void
-  DriveWorksApi::initSensors(std::vector<Camera> *cameras, uint32_t *numCameras,
-                             dwSALHandle_t sal, DeviceArguments &arguments) {
-    std::cout << "Init Sensors .. " << std::endl;
-    std::string selector = arguments.get("selector_mask");
+  DriveWorksApi::InitializeCameras(std::vector<CameraPort> &camera_ports,
+                                   int &numCameras,
+                                   const dwSALHandle_t &sal,
+                                   const DeviceArguments &device_arguments) {
+    std::cout << "InitializeCameras is called!" << std::endl;
+    std::string selector = device_arguments.get("selector_mask");
     dwStatus result;
     // identify active ports
     int idx = 0;
@@ -89,87 +92,86 @@ namespace DriveWorks {
       }
     }
 
-    // parsing arguments
-    (*numCameras) = 0;
+    // Parse Arguments
+    numCameras = 0;
     for (size_t p = 0; p < 4; p++) {
-      if (cnt[p] > 0) {
-        std::string params;
-        params += std::string("camera-group=") + port[p];
-        params += ",camera-type=" +
-                  arguments.get((std::string("type-") + port[p]).c_str());
-        params += ",camera-count=4"; // when using the mask, just ask for all cameras, mask will select properly
-
-        if (selector.size() >= p * 4) {
-          params += ",camera-mask=" + selector.substr(p * 4, std::min(
-            selector.size() - p * 4, size_t{4}));
-        }
-
-        params += ",slave=" + arguments.get("slave");
-        params += ",cross-csi-sync=" + arguments.get("cross_csi_sync");
-        params += ",fifo-size=" + arguments.get("fifo_size");
-
-
-        //Debug arguments
-
-        std::cout << "DEBUG ARGS PORT:  " << p << std::endl;
-        std::cout << params.c_str() << std::endl;
-
-        //End Debug
-
-        dwSensorHandle_t salSensor = DW_NULL_HANDLE;
-        dwSensorParams salParams;
-        salParams.parameters = params.c_str();
-        salParams.protocol = "camera.gmsl";
-        result = dwSAL_createSensor(&salSensor, salParams, sal);
-        if (result == DW_SUCCESS) {
-          Camera cam;
-          cam.sensor = salSensor;
-
-          dwImageProperties cameraImageProperties;
-          dwSensorCamera_getImageProperties(&cameraImageProperties,
-                                            DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
-                                            salSensor);
-
-          dwCameraProperties cameraProperties;
-          dwSensorCamera_getSensorProperties(&cameraProperties, salSensor);
-
-          cam.width = cameraImageProperties.width;
-          cam.height = cameraImageProperties.height;
-          cam.numSiblings = cameraProperties.siblings;
-          cameras->push_back(cam);
-
-          (*numCameras) += cam.numSiblings;
-        } else {
-          std::cerr << "Cannot create driver: " << salParams.protocol
-                    << " with params: " << salParams.parameters << std::endl
-                    << "Error: " << dwGetStatusName(result) << std::endl;
-
-          if (result == DW_INVALID_ARGUMENT) {
-            std::cerr << "It is possible the given camera is not supported. "
-                      << "Please refer to the documentation for this sample."
-                      << std::endl;
-          }
-        }
+      if (cnt[p] <= 0) {
+        std::cout << "GMSL port #" << p << "is empty." << std::endl;
+        continue;
       }
+
+      std::string params;
+      params += "camera-group=" + port[p];
+      params += ",camera-type=" +
+                device_arguments.get("type-" + port[p]);
+      params += ",camera-count=4"; // when using the mask, just ask for all cameras, mask will select properly
+
+      if (selector.size() >= p * 4) {
+        params += ",camera-mask=" + selector.substr(p * 4, std::min(
+          selector.size() - p * 4, size_t{4}));
+      }
+
+      params += ",slave=" + device_arguments.get("slave");
+      params += ",cross-csi-sync=" + device_arguments.get("cross_csi_sync");
+      params += ",fifo-size=" + device_arguments.get("fifo_size");
+
+      std::cout << "DEBUG ARGS PORT:  " << p << std::endl;
+      std::cout << params << std::endl;
+
+      dwSensorHandle_t sensor_handle = DW_NULL_HANDLE;
+      dwSensorParams sensor_params;
+      sensor_params.parameters = params.c_str();
+      sensor_params.protocol = "camera.gmsl";
+      result = dwSAL_createSensor(&sensor_handle, sensor_params, sal);
+
+      if (result != DW_SUCCESS) {
+        std::cerr << "Cannot create driver: " << sensor_params.protocol
+                  << " with params: " << sensor_params.parameters << std::endl
+                  << "Error: " << dwGetStatusName(result) << std::endl;
+
+        if (result == DW_INVALID_ARGUMENT) {
+          std::cerr << "It is possible the given camera is not supported. "
+                    << "Please refer to the documentation for this sample."
+                    << std::endl;
+        }
+        continue;
+      }
+
+      CameraPort camera_port;
+      camera_port.sensor_handle = sensor_handle;
+
+      dwImageProperties image_properties;
+      dwSensorCamera_getImageProperties(&image_properties,
+                                        DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
+                                        sensor_handle);
+
+      dwCameraProperties camera_properties;
+      dwSensorCamera_getSensorProperties(&camera_properties, sensor_handle);
+
+      camera_port.image_width = image_properties.width;
+      camera_port.image_height = image_properties.height;
+      camera_port.count_siblings = camera_properties.siblings;
+      camera_ports.push_back(camera_port);
+      numCameras += camera_port.count_siblings;
     }
   }
 
   void DriveWorksApi::initFramesStart() {
     std::cout << "Init Camera Frames .. " << std::endl;
     // check cameras connected to csi ports
-    if (cameras.size() == 0) {
+    if (cameras_.size() == 0) {
       std::cerr << "Need to specify at least 1 at most 12 cameras to be used"
                 << std::endl;
       exit(-1);
     }
 
     // allocate frameRGBA pointer
-    for (size_t csiPort = 0; csiPort < cameras.size(); csiPort++) {
+    for (size_t csiPort = 0; csiPort < cameras_.size(); csiPort++) {
       std::vector<dwImageHandle_t *> pool;
       std::vector<uint8_t *> pool_jpeg;
       std::vector<uint32_t> poolsize;
       for (size_t cameraIdx = 0;
-           cameraIdx < cameras[csiPort].numSiblings; ++cameraIdx) {
+           cameraIdx < cameras_[csiPort].count_siblings; ++cameraIdx) {
         pool.push_back(nullptr);
         pool_jpeg.push_back(nullptr);
         poolsize.push_back(0);
@@ -182,21 +184,21 @@ namespace DriveWorks {
     }
 
     // init RGBA frames for each camera in the port(e.g. 4 cameras/port)
-    for (size_t csiPort = 0; csiPort < cameras.size() && is_running_; csiPort++) {
-      initFrameImage(&cameras[csiPort]);
+    for (size_t csiPort = 0; csiPort < cameras_.size() && is_running_; csiPort++) {
+      initFrameImage(&cameras_[csiPort]);
       // record a number of connected camera
-      g_numCameraPort.push_back(cameras[csiPort].numSiblings);
+      g_numCameraPort.push_back(cameras_[csiPort].count_siblings);
     }
   }
 
-  void DriveWorksApi::initFrameImage(Camera *camera) {
+  void DriveWorksApi::initFrameImage(CameraPort *camera) {
     std::cout << "Init Camera Frame Pools .. " << std::endl;
     // RGBA image pool for conversion from YUV camera output
     // two RGBA frames per camera per sibling for a pool
     // since image streamer might hold up-to one frame when using egl stream
     dwStatus result;
     int32_t pool_size = 2;
-    uint32_t numFramesRGBA = pool_size * camera->numSiblings;
+    uint32_t numFramesRGBA = pool_size * camera->count_siblings;
 
     // temp variable for easy access and de-reference back to camera->frameRGBA in releasing nvidia image frame read
     std::vector<dwImageHandle_t> &g_frameRGBA = camera->frameRGBA;
@@ -206,14 +208,14 @@ namespace DriveWorks {
       dwImageProperties cameraImageProperties;
       dwSensorCamera_getImageProperties(&cameraImageProperties,
                                         DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
-                                        camera->sensor);
+                                        camera->sensor_handle);
       dwImageProperties displayImageProperties = cameraImageProperties;
       displayImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
       displayImageProperties.type = DW_IMAGE_NVMEDIA;
 
       // allocate image pool
       for (uint32_t cameraIdx = 0;
-           cameraIdx < camera->numSiblings; cameraIdx++) {
+           cameraIdx < camera->count_siblings; cameraIdx++) {
         for (int32_t k = 0; k < pool_size; k++) {
           dwImageHandle_t rgba{};
           result = dwImage_create(&rgba, displayImageProperties, context_handle_);
@@ -232,7 +234,7 @@ namespace DriveWorks {
 
       // NVMedia image compression definition.
       for (uint32_t cameraIdx = 0;
-           cameraIdx < camera->numSiblings; cameraIdx++) {
+           cameraIdx < camera->count_siblings; cameraIdx++) {
         NvMediaDevice *device;
         device = NvMediaDeviceCreate();
         if (!device) {
@@ -255,14 +257,14 @@ namespace DriveWorks {
       }
       // allocate compressed image pool
       for (uint32_t cameraIdx = 0;
-           cameraIdx < camera->numSiblings; cameraIdx++) {
+           cameraIdx < camera->count_siblings; cameraIdx++) {
         for (int32_t k = 0; k < pool_size; k++) {
           uint8_t *jpeg_img = (uint8_t *) malloc(max_jpeg_bytes);
           camera->jpegPool.push(jpeg_img);
         }
       }
       // start camera capturing
-      is_running_ = is_running_ && dwSensor_start(camera->sensor) == DW_SUCCESS;
+      is_running_ = is_running_ && dwSensor_start(camera->sensor_handle) == DW_SUCCESS;
       eof = false;
     }
   }
@@ -271,27 +273,27 @@ namespace DriveWorks {
   void DriveWorksApi::startCameraPipline() {
     std::cout << "Start camera pipline  " << std::endl;
     std::vector<std::thread> camThreads;
-    for (uint32_t i = 0; i < cameras.size(); ++i) {
+    for (uint32_t i = 0; i < cameras_.size(); ++i) {
       camThreads.push_back(
-        std::thread(&DriveWorksApi::WorkerPortPipeline, this, &cameras[i], i,
+        std::thread(&DriveWorksApi::WorkerPortPipeline, this, &cameras_[i], i,
                     context_handle_));
     }
 
     // start camera threads and release
-    for (uint32_t i = 0; i < cameras.size(); ++i) {
+    for (uint32_t i = 0; i < cameras_.size(); ++i) {
       camThreads.at(i).detach();
     }
   }
 
 
-  void DriveWorksApi::WorkerPortPipeline(Camera *cameraSensor, uint32_t port,
+  void DriveWorksApi::WorkerPortPipeline(CameraPort *cameraSensor, uint32_t port,
                                          dwContextHandle_t sdk) {
     std::cout << "Start worker for port: " << port << std::endl;
     // cv publishers
     std::vector<std::unique_ptr<OpenCVConnector>> cv_connectors;
     // init multiple cv cameras connection and topic name
     for (uint32_t cameraIdx = 0;
-         cameraIdx < cameraSensor->numSiblings; cameraIdx++) {
+         cameraIdx < cameraSensor->count_siblings; cameraIdx++) {
       // Topic mapping e.g. gmsl_image_raw_<nvidia cam port A=0, B=1, C=2>_<sibling id 0,1,2,3> : port_0/camera_1/(image_raw,image_raw/compressed)
       const std::string topic =
         std::string("port_") + std::to_string(port) + std::string("/camera_") +
@@ -324,11 +326,11 @@ namespace DriveWorks {
         }
 
         // capture from all cameras within a csi port
-        for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->numSiblings &&
+        for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->count_siblings &&
                                      !cameraSensor->rgbaPool.empty(); cameraIdx++) {
           // capture, convert to rgba and return it
           eof = captureCamera(cameraSensor->rgbaPool.front(),
-                              cameraSensor->sensor,
+                              cameraSensor->sensor_handle,
                               port, cameraIdx,
                               cameraSensor->jpegPool.front(),
                               cameraSensor->jpegEncoders[cameraIdx]);
@@ -351,7 +353,7 @@ namespace DriveWorks {
       if (gTakeScreenshot) {
         {
 
-          for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->numSiblings &&
+          for (uint32_t cameraIdx = 0; cameraIdx < cameraSensor->count_siblings &&
                                        !cameraSensor->rgbaPool.empty(); cameraIdx++) {
             //copy to memory replacing by //takeScreenshot(g_frameRGBAPtr[port][cameraIdx], port, cameraIdx);
 
@@ -456,13 +458,13 @@ namespace DriveWorks {
     return DW_SUCCESS;
   }
 
-  void DriveWorksApi::releaseCameras(Camera *cameraSensor) {
+  void DriveWorksApi::releaseCameras(CameraPort *cameraSensor) {
     // release sensor
     std::cout << "Cleaning camera thread .. " << std::endl;
     {
-      dwSensor_stop(cameraSensor->sensor);
+      dwSensor_stop(cameraSensor->sensor_handle);
       std::cout << "Cleaning camera thread .. dwSensor " << std::endl;
-      dwSAL_releaseSensor(cameraSensor->sensor);
+      dwSAL_releaseSensor(cameraSensor->sensor_handle);
       std::cout << "Cleaning camera thread .. dwSAL " << std::endl;
 //    dwImageFormatConverter_release(&cameraSensor->yuv2rgba);
       std::cout << "Cleaning camera thread .. dwConvert " << std::endl;
@@ -497,8 +499,8 @@ namespace DriveWorks {
   void DriveWorksApi::stopCameras() {
     std::cout << "Stop camera... " << std::endl;
     // loop through all camera ports to cleanup all connected cameras
-    for (size_t csiPort = 0; csiPort < cameras.size(); csiPort++) {
-      releaseCameras(&cameras[csiPort]);
+    for (size_t csiPort = 0; csiPort < cameras_.size(); csiPort++) {
+      releaseCameras(&cameras_[csiPort]);
     }
     // sdk instances release
     releaseSDK();
