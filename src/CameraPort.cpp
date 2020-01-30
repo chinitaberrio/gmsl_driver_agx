@@ -14,9 +14,14 @@ namespace DriveWorks {
 
   dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
     dwImageProperties cameraImageProperties;
-    dwSensorCamera_getImageProperties(&cameraImageProperties,
-                                      DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
-                                      sensor_handle);
+    dwStatus status = dwSensorCamera_getImageProperties(&cameraImageProperties,
+                                                        DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
+                                                        sensor_handle);
+    if (status != DW_SUCCESS) {
+      std::cerr << "dwSensorCamera_getImageProperties:"
+                << dwGetStatusName(status) << std::endl;
+      return status;
+    }
     dwImageProperties displayImageProperties = cameraImageProperties;
     displayImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
     displayImageProperties.type = DW_IMAGE_NVMEDIA;
