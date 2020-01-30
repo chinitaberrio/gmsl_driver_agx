@@ -131,10 +131,8 @@ namespace DriveWorks {
 
       std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
 
-      bool write_is_successfull = camera.QueueImageHandles->write(image_handle);
-      if (!write_is_successfull) {
+      while (!camera.QueueImageHandles->write(image_handle)) {
         std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
-        std::cerr << "write_is_successfull: " << write_is_successfull << std::endl;
       }
       std::cout << "write_is_successfull For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
