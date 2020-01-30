@@ -214,19 +214,23 @@ namespace DriveWorks {
         dwImageNvMedia *frameNVMrgba;
         CameraPort::Camera &camera = camera_port.Cameras[cameraIdx];
         std::cout << "cameraIdx: " << cameraIdx << std::endl;
-        std::cout << "camera.ImageHandle: " << (camera.ImageHandle == nullptr) << std::endl;
+        std::cout << "camera.ImageHandle == nullptr: " << (camera.ImageHandle == nullptr) << std::endl;
         dwImage_getNvMedia(&frameNVMrgba, camera.ImageHandle);
-        std::cout << "aft dwImage_getNvMedia for port: " << port << std::endl;
+        std::cout << "aft dwImage_getNvMedia for port: " << port << "cam " << cameraIdx << std::endl;
         NvMediaImageSurfaceMap surfaceMap;
 
         if (NvMediaImageLock(frameNVMrgba->img, NVMEDIA_IMAGE_ACCESS_READ,
                              &surfaceMap) == NVMEDIA_STATUS_OK) {
+          std::cout << "NvMediaImageLock for port: " << port << "cam " << cameraIdx << std::endl;
           // publish an image
           if (pub_image_config_.is_compressed) {
             // compressed
+
+            std::cout << "bef WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
             cv_connectors[cameraIdx]->WriteToJpeg(
               camera.JpegImage,
               camera.CountByteJpeg);
+            std::cout << "aft WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
           } else {
             //raw (resize if set)
             cv_connectors[cameraIdx]->WriteToOpenCV(
@@ -237,6 +241,7 @@ namespace DriveWorks {
           }
 
           NvMediaImageUnlock(frameNVMrgba->img);
+          std::cout << "NvMediaImageUnlock for port: " << port << "cam " << cameraIdx << std::endl;
         } else {
           std::cout << "CANNOT LOCK NVMEDIA IMAGE - NO SCREENSHOT\n";
         }
