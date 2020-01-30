@@ -115,7 +115,17 @@ namespace DriveWorks {
       }
       std::cout << "dwSensorCamera_getImage For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
+
+
       dwImageHandle_t image_handle;
+
+      dwImageProperties displayImageProperties = image_properties;
+      displayImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
+      displayImageProperties.type = DW_IMAGE_NVMEDIA;
+      const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
+      dwStatus result = dwImage_create(&image_handle, displayImageProperties, context_handle);
+
+
       status = dwImage_copyConvert(image_handle, image_handle_yuv, context_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
@@ -131,7 +141,7 @@ namespace DriveWorks {
       std::cout << "write_is_successfull For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
-      dwStatus result = dwImage_destroy(image_handle_yuv);
+      result = dwImage_destroy(image_handle_yuv);
       if (result != DW_SUCCESS) {
         std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
       }
