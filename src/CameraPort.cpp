@@ -98,7 +98,7 @@ namespace DriveWorks {
   void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle) {
     for (int ind_camera = 0; ind_camera < 1; ind_camera++) {
 //    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
-      std::cout << "ReadFramesPushImages For Port: " << port
+      std::cout << "Producer ReadFramesPushImages For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
       dwCameraFrameHandle_t camera_frame_handle;
       dwStatus status;
@@ -107,14 +107,14 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
         continue;
       }
-      std::cout << "dwSensorCamera_readFrame For Port: " << port
+      std::cout << "Producer dwSensorCamera_readFrame For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
       dwImageHandle_t image_handle_yuv;
       status = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(status) << std::endl;
       }
-      std::cout << "dwSensorCamera_getImage For Port: " << port
+      std::cout << "Producer dwSensorCamera_getImage For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       dwImageHandle_t image_handle;
@@ -125,7 +125,7 @@ namespace DriveWorks {
       if (status != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
       }
-      std::cout << "dwImage_copyConvert For Port: " << port
+      std::cout << "Producer dwImage_copyConvert For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
       Camera &camera = Cameras[ind_camera];
 
@@ -134,7 +134,7 @@ namespace DriveWorks {
       while (!camera.QueueImageHandles->write(image_handle)) {
         std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
       }
-      std::cout << "write_is_successfull For Port: " << port
+      std::cout << "Producer write_is_successfull For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       result = dwImage_destroy(image_handle_yuv);
@@ -167,7 +167,7 @@ namespace DriveWorks {
         //spin until we get a value
         std::this_thread::sleep_for(std::chrono::microseconds(50));
       }
-      std::cout << "QueueImageHandles->read For Port: " << port
+      std::cout << "Consumer QueueImageHandles->read For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       dwImageNvMedia *image_nvmedia;
@@ -175,25 +175,25 @@ namespace DriveWorks {
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_getNvMedia: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
-      std::cout << "dwImage_getNvMedia For Port: " << port
+      std::cout << "Consumer dwImage_getNvMedia For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
       if (nvStatus != NVMEDIA_STATUS_OK) {
         std::cerr << "NvMediaIJPEFeedFrame failed: " << nvStatus << std::endl;
       }
-      std::cout << "NvMediaIJPEFeedFrame For Port: " << port
+      std::cout << "Consumer NvMediaIJPEFeedFrame For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       nvStatus = NvMediaIJPEBitsAvailable(camera.NvMediaIjpe, &camera.CountByteJpeg, NVMEDIA_ENCODE_BLOCKING_TYPE_IF_PENDING, 10000);
-      std::cout << "NvMediaIJPEBitsAvailable For Port: " << port
+      std::cout << "Consumer NvMediaIJPEBitsAvailable For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       nvStatus = NvMediaIJPEGetBits(camera.NvMediaIjpe, &camera.CountByteJpeg, camera.JpegImage, 0);
       if (nvStatus != NVMEDIA_STATUS_OK && nvStatus != NVMEDIA_STATUS_NONE_PENDING) {
         std::cerr << "NvMediaIJPEGetBits failed: " << nvStatus << std::endl;
       }
-      std::cout << "NvMediaIJPEGetBits For Port: " << port
+      std::cout << "Consumer NvMediaIJPEGetBits For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       ros::Time time = ros::Time::now();
@@ -201,14 +201,14 @@ namespace DriveWorks {
         camera.JpegImage,
         camera.CountByteJpeg,
         time);
-      std::cout << "Published For Port: " << port
+      std::cout << "Consumer Published For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
       dwStatus result = dwImage_destroy(image_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
       }
-      std::cout << "dwImage_destroy For Port: " << port
+      std::cout << "Consumer dwImage_destroy For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
     }
