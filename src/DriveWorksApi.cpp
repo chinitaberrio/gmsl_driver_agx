@@ -156,6 +156,7 @@ namespace DriveWorks {
         exit(EXIT_FAILURE);
       }
     }
+    std::cerr << "camera_ports Start succeded" << std::endl;
     is_running_ = true;
   }
 
