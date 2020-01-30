@@ -54,6 +54,7 @@ namespace DriveWorks {
         std::cerr << "NvMediaIJPECreate failed." << std::endl;
         exit(EXIT_FAILURE);
       }
+      Cameras.emplace_back(camera);
     }
     return dwSensor_start(GetSensorHandle());
   }
