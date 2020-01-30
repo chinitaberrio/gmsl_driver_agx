@@ -71,12 +71,14 @@ namespace DriveWorks {
       Camera &camera = Cameras[i];
       camera.ReadingResult = DW_FAILURE;
       dwCameraFrameHandle_t camera_frame_handle;
+      std::cout << "bef dwSensorCamera_readFrame: " << i << std::endl;
       camera.ReadingResult = dwSensorCamera_readFrame(&camera_frame_handle, i, 300000, sensor_handle);
+
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
         continue;
       }
-      std::cout << "dwSensorCamera_readFrame: " << i << std::endl;
+      std::cout << "aft dwSensorCamera_readFrame: " << i << std::endl;
 
       dwImageHandle_t image_handle_yuv;
       camera.ReadingResult = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
