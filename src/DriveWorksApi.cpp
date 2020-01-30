@@ -208,6 +208,7 @@ namespace DriveWorks {
       std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
       camera_port.ReadFrames(context_handle_);
       std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
+      std::cout << "camera_port.GetSiblingCount(): " << camera_port.GetSiblingCount() << std::endl;
 
       for (uint32_t cameraIdx = 0; cameraIdx < camera_port.GetSiblingCount(); cameraIdx++) {
         dwImageNvMedia *frameNVMrgba;
