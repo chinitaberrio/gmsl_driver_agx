@@ -56,11 +56,11 @@ namespace DriveWorks {
   }
 
   void CameraPort::ReadFrames(const dwContextHandle_t &context_handle) {
-    for (auto &camera : Cameras) {
-
+    for (int i = 0; i < Cameras.size(); i++) {
+      Camera &camera = Cameras[i];
       camera.ReadingResult = DW_FAILURE;
       dwCameraFrameHandle_t camera_frame_handle;
-      camera.ReadingResult = dwSensorCamera_readFrame(&camera_frame_handle, GetSiblingCount(), 300000, sensor_handle);
+      camera.ReadingResult = dwSensorCamera_readFrame(&camera_frame_handle, i, 300000, sensor_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
         continue;
