@@ -10,14 +10,25 @@
 namespace DriveWorks {
   class CameraPort {
   public:
-    std::queue<dwImageHandle_t *> rgbaPool;
-    std::vector<dwImageHandle_t> frameRGBA;
-    std::queue<uint8_t *> jpegPool;
-    std::vector<NvMediaIJPE *> jpegEncoders;
+    struct Camera {
+//      std::vector<dwImageHandle_t> ImageHandles;
+//      std::vector<NvMediaIJPE> NvMediaIjpes;
+      dwImageHandle_t ImageHandle;
+      NvMediaIJPE *NvMediaIjpe;
+      NvMediaDevice *NvMediaDevicee;
+      uint32_t CountByteJpeg;
+      uint8_t *JpegImage;
+      dwStatus ReadingResult;
+    };
+    std::vector<Camera> Cameras;
 
     explicit CameraPort(dwSensorHandle_t sensor_handle,
                         dwImageProperties image_properties,
                         dwCameraProperties camera_properties);
+
+    dwStatus Start(dwContextHandle_t context_handle);
+
+    void ReadFrames(const dwContextHandle_t &context_handle);
 
     int GetSiblingCount();
 

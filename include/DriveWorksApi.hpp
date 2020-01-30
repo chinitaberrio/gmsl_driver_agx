@@ -98,11 +98,6 @@ namespace DriveWorks {
 
     bool isCamReady();
 
-    bool isShutdownCompleted();
-
-    uint32_t getNumPort();
-
-    std::vector<uint32_t> getCameraPort();
 
   private:
     static void InitializeContextHandle(dwContextHandle_t &context_handle);
@@ -110,23 +105,16 @@ namespace DriveWorks {
     static void InitializeSalHandle(dwSALHandle_t &sal_handle,
                                     const dwContextHandle_t &context_handle);
 
-    static void InitializeCameras(std::vector<CameraPort> &camera_ports,
-                                  int &numCameras,
-                                  const dwSALHandle_t &sal,
-                                  const DeviceArguments &device_arguments);
+    void InitializeCameraPorts(std::vector<CameraPort> &camera_ports,
+                               int &count_cameras,
+                               const dwSALHandle_t &sal,
+                               const DeviceArguments &device_arguments);
 
-    void initFramesStart();
+    void StartCameraPortWorkers();
 
-    void initFrameImage(CameraPort *cameraSensor);
-
-    void startCameraPipline();
-
-    void WorkerPortPipeline(CameraPort *cameraSensor, uint32_t port, dwContextHandle_t sdk);
-
-    dwStatus captureCamera(dwImageHandle_t *frameNVMrgba,
-                           dwSensorHandle_t cameraSensor, uint32_t port,
-                           uint32_t sibling,
-                           uint8_t *jpeg_image, NvMediaIJPE *jpegEncoder);
+    void WorkerPortPipeline(CameraPort &camera_port,
+                            uint32_t port,
+                            const dwContextHandle_t &sdk);
 
     void releaseCameras(CameraPort *cameraSensor);
 
@@ -134,25 +122,17 @@ namespace DriveWorks {
 
 
   private:
-    bool gTakeScreenshot = true;
-    int gScreenshotCount = 0;
     bool is_running_{false};
-    bool g_exitCompleted = false;
-    bool g_initState = false;
-    int count_camera_;
-    uint32_t g_numPort;
-    std::vector<uint32_t> g_numCameraPort;
-    const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
+    int count_camera_{0};
 
     DeviceArguments device_arguments_;
     ImageConfigPub pub_image_config_;
-    std::vector<CameraPort> cameras_;
-    bool eof;
+    std::vector<CameraPort> camera_ports_;
     dwContextHandle_t context_handle_ = DW_NULL_HANDLE;
     dwSALHandle_t sal_handle_ = DW_NULL_HANDLE;
-    std::vector<std::vector<dwImageHandle_t *>> g_frameRGBAPtr;
-    std::vector<std::vector<uint8_t *>> g_frameJPGPtr;
-    std::vector<std::vector<uint32_t>> g_compressedSize;
+//    std::vector<std::vector<dwImageHandle_t *>> g_frameRGBAPtr;
+//    std::vector<std::vector<uint8_t *>> g_frameJPGPtr;
+//    std::vector<std::vector<uint32_t>> g_compressedSize;
 
   };
 
