@@ -143,11 +143,11 @@ namespace DriveWorks {
 
 
       CameraPort camera_port(sensor_handle,
-        image_properties,
-        camera_properties,
-        debug_mode_,
-        p,
-        pub_image_config_.camerainfo_folder);
+                             image_properties,
+                             camera_properties,
+                             debug_mode_,
+                             p,
+                             pub_image_config_.camerainfo_folder);
       camera_ports.push_back(camera_port);
       count_cameras += camera_port.GetSiblingCount();
     }
@@ -170,22 +170,25 @@ namespace DriveWorks {
   }
 
   void DriveWorksApi::WorkIt() {
+    int pushy = 0;
 
     // Start Image Publisher Consumers
-//    for (auto &camera_port : camera_ports_) {
-//      camera_port.StartConsumers(is_running_);
-//    }
-    // Start Camera Read Producer
-//    for (auto &camera_port  : camera_ports_) {
-//      camera_port.ReadFramesPushImages(context_handle_);
-//    }
-    camera_ports_[0].StartConsumers(is_running_);
-    int pushy = 0;
-    while(is_running_){
-      std::cout << "Pushy push push" << pushy << std::endl;
-      pushy++;
-      camera_ports_[0].ReadFramesPushImages(context_handle_);
+    for (auto &camera_port : camera_ports_) {
+      camera_port.StartConsumers(is_running_);
     }
+//     Start Camera Read Producer
+    while (is_running_) {
+      std::cout << "Pushy push push" << pushy << std::endl;
+      for (auto &camera_port  : camera_ports_) {
+        camera_port.ReadFramesPushImages(context_handle_);
+      }
+    }
+//    camera_ports_[0].StartConsumers(is_running_);
+//    while (is_running_) {
+//      std::cout << "Pushy push push" << pushy << std::endl;
+//      pushy++;
+//      camera_ports_[0].ReadFramesPushImages(context_handle_);
+//    }
 
   }
 
