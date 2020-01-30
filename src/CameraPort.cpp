@@ -106,8 +106,9 @@ namespace DriveWorks {
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
-
       std::cout << "dwImage_copyConvert spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      return;
+
       if (debug_mode)
         std::cout << "camera.ImageHandle: " << camera.ImageHandle << std::endl;
 
