@@ -2,17 +2,40 @@
 #include <dw/core/Status.h>
 #include <iostream>
 #include <StopWatch.h>
+#include <thread>
 
 
 namespace DriveWorks {
   CameraPort::CameraPort(dwSensorHandle_t sensor_handle,
                          dwImageProperties image_properties,
                          dwCameraProperties camera_properties,
-                         bool debug_mode)
+                         bool debug_mode,
+                         int port,
+                         const std::string &caminfo_folder)
     : debug_mode(debug_mode),
       sensor_handle(sensor_handle),
       image_properties(image_properties),
-      camera_properties(camera_properties) {
+      camera_properties(camera_properties),
+      port(port) {
+    Cameras.resize( GetSiblingCount());
+    for (uint32_t cameraIdx = 0; cameraIdx < GetSiblingCount(); cameraIdx++) {
+      // Topic mapping e.g. gmsl_image_raw_<nvidia cam port A=0, B=1, C=2>_<sibling id 0,1,2,3> : port_0/camera_1/(image_raw,image_raw/compressed)
+      const std::string topic =
+        std::string("port_") + std::to_string(port) + std::string("/camera_") +
+        std::to_string(cameraIdx);
+      const std::string camera_frame_id =
+        std::string("port_") + std::to_string(port) + std::string("/camera_") +
+        std::to_string(cameraIdx);
+      const std::string cam_info_file =
+        std::string("file://") + caminfo_folder +
+        std::to_string(port) + std::to_string(cameraIdx) +
+        std::string("_calibration.yml");
+      Camera &camera = Cameras[cameraIdx];
+      camera.OpenCvConnector = std::make_shared<OpenCVConnector>(topic, camera_frame_id, cam_info_file, 10);
+      camera.QueueImageHandles = std::make_shared<folly::ProducerConsumerQueue<dwImageHandle_t>>(5);
+    }
+
+
   }
 
   dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
@@ -29,7 +52,7 @@ namespace DriveWorks {
     displayImageProperties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
     displayImageProperties.type = DW_IMAGE_NVMEDIA;
     for (size_t i = 0; i < GetSiblingCount(); ++i) {
-      Camera camera{};
+      Camera &camera = Cameras[i];
       const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
       camera.JpegImage = (uint8_t *) malloc(max_jpeg_bytes);
       dwStatus result = dwImage_create(&camera.ImageHandle, displayImageProperties, context_handle);
@@ -59,7 +82,6 @@ namespace DriveWorks {
         exit(EXIT_FAILURE);
       }
 
-      Cameras.emplace_back(camera);
     }
     return dwSensor_start(GetSensorHandle());
   }
@@ -71,6 +93,100 @@ namespace DriveWorks {
   dwSensorHandle_t CameraPort::GetSensorHandle() const {
     return sensor_handle;
   }
+
+
+  void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle) {
+    for (int i = 0; i < Cameras.size(); i++) {
+      dwCameraFrameHandle_t camera_frame_handle;
+      dwStatus status;
+      status = dwSensorCamera_readFrame(&camera_frame_handle, i, DW_TIMEOUT_INFINITE, sensor_handle);
+      if (status != DW_SUCCESS) {
+        std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
+        continue;
+      }
+      dwImageHandle_t image_handle_yuv;
+      status = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
+      if (status != DW_SUCCESS) {
+        std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(status) << std::endl;
+      }
+      dwImageHandle_t image_handle;
+      status = dwImage_copyConvert(image_handle, image_handle_yuv, context_handle);
+      if (status != DW_SUCCESS) {
+        std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
+      }
+      Camera &camera = Cameras[i];
+      bool write_is_successfull = camera.QueueImageHandles->write(image_handle);
+      if (!write_is_successfull) {
+        std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
+        std::cerr << "write_is_successfull: " << write_is_successfull << std::endl;
+      }
+
+      dwStatus result = dwImage_destroy(image_handle_yuv);
+      if (result != DW_SUCCESS) {
+        std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
+      }
+    }
+  }
+
+
+  void CameraPort::StartConsumers(const bool &is_running) {
+    for (size_t ind_camera = 0; ind_camera < GetSiblingCount(); ++ind_camera) {
+      Camera &camera = Cameras[ind_camera];
+      camera.future = std::async(std::launch::async,
+                                 &CameraPort::ConsumeImagesPublishMessages,
+                                 this,
+                                 std::ref(is_running),
+                                 ind_camera);
+    }
+  }
+
+  void CameraPort::ConsumeImagesPublishMessages(const bool &is_running,
+                                                int ind_camera) {
+    Camera &camera = Cameras[ind_camera];
+    while (is_running) {
+      dwImageHandle_t image_handle;
+      while (!camera.QueueImageHandles->read(image_handle)) {
+        //spin until we get a value
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
+      }
+
+      dwImageNvMedia *image_nvmedia;
+      camera.ReadingResult = dwImage_getNvMedia(&image_nvmedia, image_handle);
+      if (camera.ReadingResult != DW_SUCCESS) {
+        std::cerr << "dwImage_getNvMedia: " << dwGetStatusName(camera.ReadingResult) << std::endl;
+      }
+
+      NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
+      if (nvStatus != NVMEDIA_STATUS_OK) {
+        std::cerr << "NvMediaIJPEFeedFrameQuality failed: " << nvStatus << std::endl;
+      }
+      nvStatus = NvMediaIJPEBitsAvailable(camera.NvMediaIjpe, &camera.CountByteJpeg, NVMEDIA_ENCODE_BLOCKING_TYPE_IF_PENDING, 10000);
+
+      nvStatus = NvMediaIJPEGetBits(camera.NvMediaIjpe, &camera.CountByteJpeg, camera.JpegImage, 0);
+      if (nvStatus != NVMEDIA_STATUS_OK && nvStatus != NVMEDIA_STATUS_NONE_PENDING) {
+        std::cerr << "NvMediaIJPEGetBits failed: " << nvStatus << std::endl;
+      }
+
+      NvMediaImageSurfaceMap surfaceMap;
+
+      if (NvMediaImageLock(image_nvmedia->img, NVMEDIA_IMAGE_ACCESS_READ,
+                           &surfaceMap) == NVMEDIA_STATUS_OK) {
+
+        camera.OpenCvConnector->WriteToJpeg(
+          camera.JpegImage,
+          camera.CountByteJpeg,
+          ros::Time::now());
+      }
+
+      NvMediaImageUnlock(image_nvmedia->img);
+
+      dwStatus result = dwImage_destroy(image_handle);
+      if (result != DW_SUCCESS) {
+        std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
+      }
+    }
+  }
+
 
   void CameraPort::ReadFrames(const dwContextHandle_t &context_handle) {
     StopWatch watch;
@@ -88,7 +204,7 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
         continue;
       }
-      std::cout << "dwSensorCamera_readFrame spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "dwSensorCamera_readFrame spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
       if (debug_mode)
         std::cout << "aft dwSensorCamera_readFrame: " << i << std::endl;
 
@@ -98,7 +214,7 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      std::cout << "dwSensorCamera_getImage spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "dwSensorCamera_getImage spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
       if (debug_mode)
         std::cout << "image_handle_yuv: " << image_handle_yuv << std::endl;
 
@@ -106,9 +222,7 @@ namespace DriveWorks {
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
-      std::cout << "dwImage_copyConvert spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
-
-
+      std::cout << "dwImage_copyConvert spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
 
 
       camera.ReadingResult = dwSensorCamera_returnFrame(&camera_frame_handle);
@@ -116,7 +230,7 @@ namespace DriveWorks {
         std::cout << "dwSensorCamera_returnFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      std::cout << "dwSensorCamera_returnFrame spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "dwSensorCamera_returnFrame spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
       continue;
 
       if (debug_mode)
@@ -128,28 +242,29 @@ namespace DriveWorks {
         std::cerr << "dwImage_getNvMedia: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      std::cout << "dwImage_getNvMedia spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "dwImage_getNvMedia spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
       NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
       if (nvStatus != NVMEDIA_STATUS_OK) {
         std::cerr << "NvMediaIJPEFeedFrameQuality failed: " << nvStatus << std::endl;
       }
-      std::cout << "NvMediaIJPEFeedFrame spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "NvMediaIJPEFeedFrame spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
       nvStatus = NvMediaIJPEBitsAvailable(camera.NvMediaIjpe, &camera.CountByteJpeg, NVMEDIA_ENCODE_BLOCKING_TYPE_IF_PENDING, 10000);
 
-      std::cout << "NvMediaIJPEBitsAvailable spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "NvMediaIJPEBitsAvailable spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
       nvStatus = NvMediaIJPEGetBits(camera.NvMediaIjpe, &camera.CountByteJpeg, camera.JpegImage, 0);
       if (nvStatus != NVMEDIA_STATUS_OK && nvStatus != NVMEDIA_STATUS_NONE_PENDING) {
         std::cerr << "NvMediaIJPEGetBits failed: " << nvStatus << std::endl;
       }
-      std::cout << "NvMediaIJPEGetBits spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "NvMediaIJPEGetBits spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
 
       camera.ReadingResult = dwSensorCamera_returnFrame(&camera_frame_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cout << "dwSensorCamera_returnFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      std::cout << "dwSensorCamera_returnFrame spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
+      std::cout << "dwSensorCamera_returnFrame spent: " << watch.ElapsedMilliSeconds() << " ms." << std::endl;
     }
 
   }
+
 }

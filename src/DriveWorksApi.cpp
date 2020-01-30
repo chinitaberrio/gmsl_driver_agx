@@ -46,7 +46,8 @@ namespace DriveWorks {
     InitializeContextHandle(context_handle_);
     InitializeSalHandle(sal_handle_, context_handle_);
     InitializeCameraPorts(camera_ports_, count_camera_, sal_handle_, device_arguments_);
-    StartCameraPortWorkers();
+//    StartCameraPortWorkers();
+    WorkIt();
   }
 
   void DriveWorksApi::InitializeContextHandle(dwContextHandle_t &context_handle) {
@@ -140,7 +141,13 @@ namespace DriveWorks {
       dwCameraProperties camera_properties;
       dwSensorCamera_getSensorProperties(&camera_properties, sensor_handle);
 
-      CameraPort camera_port(sensor_handle, image_properties, camera_properties, debug_mode_);
+
+      CameraPort camera_port(sensor_handle,
+        image_properties,
+        camera_properties,
+        debug_mode_,
+        p,
+        pub_image_config_.camerainfo_folder);
       camera_ports.push_back(camera_port);
       count_cameras += camera_port.GetSiblingCount();
     }
@@ -160,6 +167,22 @@ namespace DriveWorks {
     }
     std::cerr << "camera_ports Start succeded" << std::endl;
     is_running_ = true;
+  }
+
+  void DriveWorksApi::WorkIt() {
+
+    // Start Image Publisher Consumers
+    for (auto &camera_port  : camera_ports_) {
+      camera_port.StartConsumers(is_running_);
+    }
+
+
+    // Start Camera Read Producer
+    for (auto &camera_port  : camera_ports_) {
+      camera_port.ReadFramesPushImages(context_handle_);
+    }
+
+
   }
 
   void DriveWorksApi::StartCameraPortWorkers() {
@@ -219,7 +242,7 @@ namespace DriveWorks {
         std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
       if (debug_mode_)
         std::cout << "camera_port.GetSiblingCount(): " << camera_port.GetSiblingCount() << std::endl;
-      continue;
+
       for (uint32_t cameraIdx = 0; cameraIdx < camera_port.GetSiblingCount(); cameraIdx++) {
         dwImageNvMedia *frameNVMrgba;
         CameraPort::Camera &camera = camera_port.Cameras[cameraIdx];

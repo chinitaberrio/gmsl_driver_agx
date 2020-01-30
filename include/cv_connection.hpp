@@ -51,13 +51,14 @@
 
 
 class OpenCVConnector {
-
 public:
+  using Ptr = std::shared_ptr<OpenCVConnector>;
+
   OpenCVConnector(std::string topic_name, std::string camera_frame_id, std::string cam_info_file, int buffer);
 
   void WriteToOpenCV(unsigned char *data, int width_in, int height_in, int width_pub, int height_pub);
 
-  void WriteToJpeg(uint8_t *data, uint32_t compressed_size, const ros::Time& time_stamp);
+  void WriteToJpeg(uint8_t *data, uint32_t compressed_size, const ros::Time &time_stamp);
 
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;

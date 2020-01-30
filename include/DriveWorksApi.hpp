@@ -47,6 +47,7 @@
 #include <iostream>
 #include <cstring>
 #include <thread>
+#include <future>
 #include <queue>
 
 #ifdef LINUX
@@ -109,6 +110,8 @@ namespace DriveWorks {
                                int &count_cameras,
                                const dwSALHandle_t &sal,
                                const DeviceArguments &device_arguments);
+
+    void WorkIt();
 
     void StartCameraPortWorkers();
 
