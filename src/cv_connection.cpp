@@ -96,9 +96,7 @@ void OpenCVConnector::WriteToOpenCV(unsigned char *buffer, int width_in, int hei
 void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size) {
   sensor_msgs::CompressedImage img_msg_compressed;
   img_msg_compressed.data.resize(compressed_size);
-  std::cout << "img_msg_compressed.data.resize: " << std::endl;
   memcpy(&img_msg_compressed.data[0], data, compressed_size);
-  std::cout << "memcpy: " << std::endl;
   std_msgs::Header header;                                            // empty header
   header.seq = counter;                                              // user defined counter
   header.stamp = ros::Time::now();                                    // time
@@ -106,7 +104,6 @@ void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size) {
   img_msg_compressed.header = header;
   img_msg_compressed.format = "jpeg";
   pub_jpg.publish(img_msg_compressed);
-  std::cout << "pub_jpg: " << std::endl;
 
   //publish camera info
   camera_info.header = header;
