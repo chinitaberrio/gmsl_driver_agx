@@ -96,19 +96,19 @@ namespace DriveWorks {
 
 
   void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle) {
-//    for (int ind_camera = 0; ind_camera < 1; ind_camera++) {
-    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
+    for (int ind_camera = 0; ind_camera < 1; ind_camera++) {
+//    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
       std::cout << "Producer ReadFramesPushImages For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
       dwCameraFrameHandle_t camera_frame_handle;
       dwStatus status;
-      status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, DW_TIMEOUT_INFINITE, sensor_handle);
+      status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, 30000, sensor_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
         continue;
       }
       std::cout << "Producer dwSensorCamera_readFrame For Port: " << port
-                << " Camera: " << ind_camera << std::endl;
+                << " Camera: " << ind_camera <<std::endl;
       dwImageHandle_t image_handle_yuv;
       status = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
       if (status != DW_SUCCESS) {
