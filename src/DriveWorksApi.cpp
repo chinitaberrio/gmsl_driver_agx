@@ -172,6 +172,7 @@ namespace DriveWorks {
                                        context_handle_);
       worker.detach();
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 
 
