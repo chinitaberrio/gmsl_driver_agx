@@ -122,6 +122,7 @@ namespace DriveWorks {
       if (nvStatus != NVMEDIA_STATUS_OK) {
         std::cerr << "NvMediaIJPEFeedFrameQuality failed: " << nvStatus << std::endl;
       }
+      std::cout << "NvMediaIJPEFeedFrame spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
       nvStatus = NvMediaIJPEBitsAvailable(camera.NvMediaIjpe, &camera.CountByteJpeg, NVMEDIA_ENCODE_BLOCKING_TYPE_IF_PENDING, 10000);
 
       std::cout << "NvMediaIJPEBitsAvailable spent: " <<  watch.ElapsedMilliSeconds() << " ms." << std::endl;
