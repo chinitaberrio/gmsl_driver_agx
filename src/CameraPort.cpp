@@ -106,16 +106,22 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
         continue;
       }
+      std::cout << "dwSensorCamera_readFrame For Port: " << port
+                << " Camera: " << ind_camera << std::endl;
       dwImageHandle_t image_handle_yuv;
       status = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(status) << std::endl;
       }
+      std::cout << "dwSensorCamera_getImage For Port: " << port
+                << " Camera: " << ind_camera << std::endl;
       dwImageHandle_t image_handle;
       status = dwImage_copyConvert(image_handle, image_handle_yuv, context_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
       }
+      std::cout << "dwImage_copyConvert For Port: " << port
+                << " Camera: " << ind_camera << std::endl;
       Camera &camera = Cameras[ind_camera];
       bool write_is_successfull = camera.QueueImageHandles->write(image_handle);
       if (!write_is_successfull) {
