@@ -163,7 +163,8 @@ namespace DriveWorks {
   void DriveWorksApi::StartCameraPortWorkers() {
     std::cout << "StartCameraPortWorkers is called!" << std::endl;
     std::vector<std::thread> camThreads;
-    for (uint32_t i = 0; i < camera_ports_.size(); ++i) {
+    for (uint32_t i = 0; i < 1 ++i) {
+//    for (uint32_t i = 0; i < camera_ports_.size(); ++i) {
       std::thread worker = std::thread(&DriveWorksApi::WorkerPortPipeline,
                                        this,
                                        std::ref(camera_ports_[i]),
