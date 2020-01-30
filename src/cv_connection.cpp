@@ -99,7 +99,7 @@ void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size, const
 //  memcpy(&img_msg_compressed.data[0], data, compressed_size);
   std_msgs::Header header;                                            // empty header
   header.seq = counter;                                              // user defined counter
-  header.stamp = ros::Time::now();                                    // time
+  header.stamp = time_stamp;                                    // time
   header.frame_id = camera_id;                                        // camera id
   img_msg_compressed.header = header;
   img_msg_compressed.format = "jpeg";
