@@ -12,15 +12,16 @@ namespace DriveWorks {
       camera_properties(camera_properties) {
   }
 
-  dwStatus CameraPort::Start(dwContextHandle_t context_handle) {
-
+  dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
+    image_properties.format = DW_IMAGE_FORMAT_RGBA_UINT8;
+    image_properties.type = DW_IMAGE_NVMEDIA;
     for (size_t i = 0; i < GetSiblingCount(); ++i) {
       Camera camera{};
       dwStatus result = dwImage_create(camera.ImageHandle, image_properties, context_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "Cannot dwImage_create:"
                   << dwGetStatusName(result) << std::endl;
-        break;
+        return result;
       }
 
       camera.NvMediaDevicee = nullptr;

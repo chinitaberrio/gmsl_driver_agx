@@ -26,7 +26,7 @@ namespace DriveWorks {
                         dwImageProperties image_properties,
                         dwCameraProperties camera_properties);
 
-    dwStatus Start(dwContextHandle_t context_handle);
+    dwStatus Start(const dwContextHandle_t & context_handle);
 
     void ReadFrames(const dwContextHandle_t &context_handle);
 
