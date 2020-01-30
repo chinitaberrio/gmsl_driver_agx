@@ -184,7 +184,7 @@ namespace DriveWorks {
 
       NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
       if (nvStatus != NVMEDIA_STATUS_OK) {
-        std::cerr << "NvMediaIJPEFeedFrameQuality failed: " << nvStatus << std::endl;
+        std::cerr << "NvMediaIJPEFeedFrame failed: " << nvStatus << std::endl;
       }
       std::cout << "NvMediaIJPEFeedFrame For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
