@@ -228,6 +228,7 @@ namespace DriveWorks {
 
             std::cout << "bef WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
             std::cout << "camera.CountByteJpeg: " << camera.CountByteJpeg << std::endl;
+            std::cout << "cv_connectors.size(): " << cv_connectors.size() << std::endl;
             cv_connectors[cameraIdx]->WriteToJpeg(
               camera.JpegImage,
               camera.CountByteJpeg);
