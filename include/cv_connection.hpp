@@ -57,7 +57,7 @@ public:
 
   void WriteToOpenCV(unsigned char *data, int width_in, int height_in, int width_pub, int height_pub);
 
-  void WriteToJpeg(uint8_t *data, uint32_t compressed_size);
+  void WriteToJpeg(uint8_t *data, uint32_t compressed_size, const ros::Time& time_stamp);
 
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;

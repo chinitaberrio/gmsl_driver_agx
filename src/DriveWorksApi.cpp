@@ -209,6 +209,7 @@ namespace DriveWorks {
       if (debug_mode_)
         std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
       camera_port.ReadFrames(context_handle_);
+      ros::Time time_stamp = ros::Time::now();
       if (debug_mode_)
         std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
       if (debug_mode_)
@@ -240,7 +241,8 @@ namespace DriveWorks {
               std::cout << "camera.CountByteJpeg: " << camera.CountByteJpeg << std::endl;
             cv_connectors[cameraIdx]->WriteToJpeg(
               camera.JpegImage,
-              camera.CountByteJpeg);
+              camera.CountByteJpeg,
+              time_stamp);
             if (debug_mode_)
               std::cout << "aft WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
           } else {
