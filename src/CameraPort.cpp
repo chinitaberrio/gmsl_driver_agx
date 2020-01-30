@@ -16,7 +16,7 @@ namespace DriveWorks {
 
     for (size_t i = 0; i < GetSiblingCount(); ++i) {
       Camera camera{};
-      dwStatus result = dwImage_create(&camera.ImageHandle, image_properties, context_handle);
+      dwStatus result = dwImage_create(camera.ImageHandle, image_properties, context_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "Cannot dwImage_create:"
                   << dwGetStatusName(result) << std::endl;
@@ -72,7 +72,7 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      camera.ReadingResult = dwImage_copyConvert(camera.ImageHandle, image_handle_yuv, context_handle);
+      camera.ReadingResult = dwImage_copyConvert(*camera.ImageHandle, image_handle_yuv, context_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
