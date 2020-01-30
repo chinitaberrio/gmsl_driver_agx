@@ -180,7 +180,10 @@ namespace DriveWorks {
 //      camera_port.ReadFramesPushImages(context_handle_);
 //    }
     camera_ports_[0].StartConsumers(is_running_);
-    camera_ports_[0].ReadFramesPushImages(context_handle_);
+    while(is_running_){
+      std::cout << "Pushy push push" << std::endl;
+      camera_ports_[0].ReadFramesPushImages(context_handle_);
+    }
 
   }
 
