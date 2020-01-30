@@ -27,7 +27,7 @@ namespace DriveWorks {
     displayImageProperties.type = DW_IMAGE_NVMEDIA;
     for (size_t i = 0; i < GetSiblingCount(); ++i) {
       Camera camera{};
-      dwStatus result = dwImage_create(camera.ImageHandle, displayImageProperties, context_handle);
+      dwStatus result = dwImage_create(&camera.ImageHandle, displayImageProperties, context_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "Cannot dwImage_create:"
                   << dwGetStatusName(result) << std::endl;
@@ -86,7 +86,7 @@ namespace DriveWorks {
 
       std::cout << "image_handle_yuv: " << image_handle_yuv << std::endl;
 
-      camera.ReadingResult = dwImage_copyConvert(*camera.ImageHandle, image_handle_yuv, context_handle);
+      camera.ReadingResult = dwImage_copyConvert(camera.ImageHandle, image_handle_yuv, context_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }

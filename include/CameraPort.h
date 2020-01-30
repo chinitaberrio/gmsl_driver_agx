@@ -13,7 +13,7 @@ namespace DriveWorks {
     struct Camera {
 //      std::vector<dwImageHandle_t> ImageHandles;
 //      std::vector<NvMediaIJPE> NvMediaIjpes;
-      dwImageHandle_t *ImageHandle;
+      dwImageHandle_t ImageHandle{};
       NvMediaIJPE *NvMediaIjpe;
       NvMediaDevice *NvMediaDevicee;
       uint32_t CountByteJpeg;
