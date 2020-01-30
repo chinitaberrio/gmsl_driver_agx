@@ -195,23 +195,21 @@ namespace DriveWorks {
       std::cout << "NvMediaIJPEGetBits For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
-      NvMediaImageSurfaceMap surfaceMap;
-
-      if (NvMediaImageLock(image_nvmedia->img, NVMEDIA_IMAGE_ACCESS_READ,
-                           &surfaceMap) == NVMEDIA_STATUS_OK) {
-
-        camera.OpenCvConnector->WriteToJpeg(
-          camera.JpegImage,
-          camera.CountByteJpeg,
-          ros::Time::now());
-      }
-
-      NvMediaImageUnlock(image_nvmedia->img);
+      ros::Time time = ros::Time::now();
+      camera.OpenCvConnector->WriteToJpeg(
+        camera.JpegImage,
+        camera.CountByteJpeg,
+        time);
+      std::cout << "Published For Port: " << port
+                << " Camera: " << ind_camera << std::endl;
 
       dwStatus result = dwImage_destroy(image_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
       }
+      std::cout << "dwImage_destroy For Port: " << port
+                << " Camera: " << ind_camera << std::endl;
+
     }
   }
 
