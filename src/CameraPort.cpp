@@ -17,7 +17,7 @@ namespace DriveWorks {
       image_properties(image_properties),
       camera_properties(camera_properties),
       port(port) {
-    Cameras.resize( GetSiblingCount());
+    Cameras.resize(GetSiblingCount());
     for (uint32_t cameraIdx = 0; cameraIdx < GetSiblingCount(); cameraIdx++) {
       // Topic mapping e.g. gmsl_image_raw_<nvidia cam port A=0, B=1, C=2>_<sibling id 0,1,2,3> : port_0/camera_1/(image_raw,image_raw/compressed)
       const std::string topic =
@@ -96,10 +96,12 @@ namespace DriveWorks {
 
 
   void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle) {
-    for (int i = 0; i < Cameras.size(); i++) {
+    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
+      std::cout << "ReadFramesPushImages For Port: " << port
+                << "Camera: " << ind_camera << std::endl;
       dwCameraFrameHandle_t camera_frame_handle;
       dwStatus status;
-      status = dwSensorCamera_readFrame(&camera_frame_handle, i, DW_TIMEOUT_INFINITE, sensor_handle);
+      status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, DW_TIMEOUT_INFINITE, sensor_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
         continue;
@@ -114,7 +116,7 @@ namespace DriveWorks {
       if (status != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
       }
-      Camera &camera = Cameras[i];
+      Camera &camera = Cameras[ind_camera];
       bool write_is_successfull = camera.QueueImageHandles->write(image_handle);
       if (!write_is_successfull) {
         std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
@@ -131,6 +133,8 @@ namespace DriveWorks {
 
   void CameraPort::StartConsumers(const bool &is_running) {
     for (size_t ind_camera = 0; ind_camera < GetSiblingCount(); ++ind_camera) {
+      std::cout << "Starting Consumer For Port: " << port
+                << "Camera: " << ind_camera << std::endl;
       Camera &camera = Cameras[ind_camera];
       camera.future = std::async(std::launch::async,
                                  &CameraPort::ConsumeImagesPublishMessages,
