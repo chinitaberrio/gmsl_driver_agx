@@ -27,6 +27,8 @@ namespace DriveWorks {
     displayImageProperties.type = DW_IMAGE_NVMEDIA;
     for (size_t i = 0; i < GetSiblingCount(); ++i) {
       Camera camera{};
+      const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
+      camera.JpegImage = (uint8_t *) malloc(max_jpeg_bytes);
       dwStatus result = dwImage_create(&camera.ImageHandle, displayImageProperties, context_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "Cannot dwImage_create:"
@@ -44,7 +46,6 @@ namespace DriveWorks {
       camera.NvMediaIjpe = nullptr;
       NvMediaSurfFormatAttr attrs[7];
       NVM_SURF_FMT_SET_ATTR_YUV(attrs, YUV, 422, PLANAR, UINT, 8, PL);
-      const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
       NvMediaSurfaceType surface_type = NvMediaSurfaceFormatGetType(attrs, 7);
       camera.NvMediaIjpe = NvMediaIJPECreate(camera.NvMediaDevicee,
                                              surface_type,
@@ -54,6 +55,7 @@ namespace DriveWorks {
         std::cerr << "NvMediaIJPECreate failed." << std::endl;
         exit(EXIT_FAILURE);
       }
+
       Cameras.emplace_back(camera);
     }
     return dwSensor_start(GetSensorHandle());
