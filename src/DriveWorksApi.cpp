@@ -212,7 +212,7 @@ namespace DriveWorks {
       for (uint32_t cameraIdx = 0; cameraIdx < camera_port.GetSiblingCount(); cameraIdx++) {
         dwImageNvMedia *frameNVMrgba;
         CameraPort::Camera& camera = camera_port.Cameras[cameraIdx];
-
+        std::cout << "camera.ImageHandle: " << camera.ImageHandle << std::endl;
         dwImage_getNvMedia(&frameNVMrgba, camera.ImageHandle);
         std::cout << "aft dwImage_getNvMedia for port: " << port << std::endl;
         NvMediaImageSurfaceMap surfaceMap;
