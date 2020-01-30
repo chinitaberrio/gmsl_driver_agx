@@ -72,7 +72,8 @@ add_executable(${NODE_NAME}
         src/DriveWorksApi.cpp
         src/DeviceArguments.cpp
         src/cv_connection.cpp
-        src/CameraPort.cpp)
+        src/CameraPort.cpp
+        src/StopWatch.cpp)
 
 target_link_libraries(${NODE_NAME}
         ${catkin_LIBRARIES}

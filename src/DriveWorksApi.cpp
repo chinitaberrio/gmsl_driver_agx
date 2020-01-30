@@ -32,6 +32,7 @@
 #include "DriveWorksApi.hpp"
 
 #include <utility>
+#include <StopWatch.h>
 
 namespace DriveWorks {
   DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
@@ -203,9 +204,12 @@ namespace DriveWorks {
     }
     std::cout << "CvConnectors are initialized for port: " << port << std::endl;
 
+    StopWatch watch;
     while (is_running_ && ros::ok()) {
       // capture from all csi-ports
       // NOTE if cross-csi-synch is active, all cameras will capture at the same time
+      watch.Reset();
+      watch.Start();
       if (debug_mode_)
         std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
       camera_port.ReadFrames(context_handle_);
@@ -263,6 +267,8 @@ namespace DriveWorks {
         if (debug_mode_)
           std::cout << "aft NvMediaImageUnlock for port: " << port << std::endl;
       }
+      watch.Stop();
+      std::cout << "Port #" << port << " spent " << watch.ElapsedMilliSeconds() << "ms." << std::endl;
       if (debug_mode_)
         std::cout << "aft Publishing stuff for port: " << port << std::endl;
     }
