@@ -213,6 +213,7 @@ namespace DriveWorks {
       if (debug_mode_)
         std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
       camera_port.ReadFrames(context_handle_);
+      std::cout << "ReadFrames Port #" << port << " spent " << watch.ElapsedMilliSeconds() << "ms." << std::endl;
       ros::Time time_stamp = ros::Time::now();
       if (debug_mode_)
         std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
