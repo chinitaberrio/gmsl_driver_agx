@@ -124,6 +124,7 @@ namespace DriveWorks {
   private:
     bool is_running_{false};
     int count_camera_{0};
+    bool debug_mode_{false};
 
     DeviceArguments device_arguments_;
     ImageConfigPub pub_image_config_;

@@ -10,6 +10,7 @@
 namespace DriveWorks {
   class CameraPort {
   public:
+    bool debug_mode{false};
     struct Camera {
 //      std::vector<dwImageHandle_t> ImageHandles;
 //      std::vector<NvMediaIJPE> NvMediaIjpes;
@@ -24,7 +25,8 @@ namespace DriveWorks {
 
     explicit CameraPort(dwSensorHandle_t sensor_handle,
                         dwImageProperties image_properties,
-                        dwCameraProperties camera_properties);
+                        dwCameraProperties camera_properties,
+                        bool debug_mode);
 
     dwStatus Start(const dwContextHandle_t & context_handle);
 

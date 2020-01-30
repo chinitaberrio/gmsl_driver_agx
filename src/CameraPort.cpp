@@ -6,8 +6,10 @@
 namespace DriveWorks {
   CameraPort::CameraPort(dwSensorHandle_t sensor_handle,
                          dwImageProperties image_properties,
-                         dwCameraProperties camera_properties)
-    : sensor_handle(sensor_handle),
+                         dwCameraProperties camera_properties,
+                         bool debug_mode)
+    : debug_mode(debug_mode),
+      sensor_handle(sensor_handle),
       image_properties(image_properties),
       camera_properties(camera_properties) {
   }
@@ -70,19 +72,22 @@ namespace DriveWorks {
   }
 
   void CameraPort::ReadFrames(const dwContextHandle_t &context_handle) {
-    std::cout << "Cameras.size(): " << Cameras.size() << std::endl;
+    if (debug_mode)
+      std::cout << "Cameras.size(): " << Cameras.size() << std::endl;
     for (int i = 0; i < Cameras.size(); i++) {
       Camera &camera = Cameras[i];
       camera.ReadingResult = DW_FAILURE;
       dwCameraFrameHandle_t camera_frame_handle;
-      std::cout << "bef dwSensorCamera_readFrame: " << i << std::endl;
+      if (debug_mode)
+        std::cout << "bef dwSensorCamera_readFrame: " << i << std::endl;
       camera.ReadingResult = dwSensorCamera_readFrame(&camera_frame_handle, i, 300000, sensor_handle);
 
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
         continue;
       }
-      std::cout << "aft dwSensorCamera_readFrame: " << i << std::endl;
+      if (debug_mode)
+        std::cout << "aft dwSensorCamera_readFrame: " << i << std::endl;
 
       dwImageHandle_t image_handle_yuv;
       camera.ReadingResult = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
@@ -90,14 +95,16 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      std::cout << "image_handle_yuv: " << image_handle_yuv << std::endl;
+      if (debug_mode)
+        std::cout << "image_handle_yuv: " << image_handle_yuv << std::endl;
 
       camera.ReadingResult = dwImage_copyConvert(camera.ImageHandle, image_handle_yuv, context_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
-      std::cout << "camera.ImageHandle: " << camera.ImageHandle << std::endl;
+      if (debug_mode)
+        std::cout << "camera.ImageHandle: " << camera.ImageHandle << std::endl;
 
       dwImageNvMedia *image_nvmedia;
       camera.ReadingResult = dwImage_getNvMedia(&image_nvmedia, image_handle_yuv);

@@ -37,7 +37,8 @@ namespace DriveWorks {
   DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
                                ImageConfigPub pub_image_config) :
     device_arguments_(std::move(arguments)),
-    pub_image_config_(std::move(pub_image_config)) {
+    pub_image_config_(std::move(pub_image_config)),
+    debug_mode_(false) {
     std::cout << "DriveWorksApi::DriveWorksApi is called!" << std::endl;
     is_running_ = true;
 
@@ -138,7 +139,7 @@ namespace DriveWorks {
       dwCameraProperties camera_properties;
       dwSensorCamera_getSensorProperties(&camera_properties, sensor_handle);
 
-      CameraPort camera_port(sensor_handle, image_properties, camera_properties);
+      CameraPort camera_port(sensor_handle, image_properties, camera_properties, debug_mode_);
       camera_ports.push_back(camera_port);
       count_cameras += camera_port.GetSiblingCount();
     }
@@ -172,7 +173,7 @@ namespace DriveWorks {
                                        context_handle_);
       worker.detach();
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+//    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 
 
@@ -205,34 +206,43 @@ namespace DriveWorks {
     while (is_running_ && ros::ok()) {
       // capture from all csi-ports
       // NOTE if cross-csi-synch is active, all cameras will capture at the same time
-      std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
+      if (debug_mode_)
+        std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
       camera_port.ReadFrames(context_handle_);
-      std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
-      std::cout << "camera_port.GetSiblingCount(): " << camera_port.GetSiblingCount() << std::endl;
+      if (debug_mode_)
+        std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
+      if (debug_mode_)
+        std::cout << "camera_port.GetSiblingCount(): " << camera_port.GetSiblingCount() << std::endl;
 
       for (uint32_t cameraIdx = 0; cameraIdx < camera_port.GetSiblingCount(); cameraIdx++) {
         dwImageNvMedia *frameNVMrgba;
         CameraPort::Camera &camera = camera_port.Cameras[cameraIdx];
-        std::cout << "cameraIdx: " << cameraIdx << std::endl;
-        std::cout << "camera.ImageHandle == nullptr: " << (camera.ImageHandle == nullptr) << std::endl;
+        if (debug_mode_)
+          std::cout << "cameraIdx: " << cameraIdx << std::endl;
+        if (debug_mode_)
+          std::cout << "camera.ImageHandle == nullptr: " << (camera.ImageHandle == nullptr) << std::endl;
         dwImage_getNvMedia(&frameNVMrgba, camera.ImageHandle);
-        std::cout << "aft dwImage_getNvMedia for port: " << port << "cam " << cameraIdx << std::endl;
+        if (debug_mode_)
+          std::cout << "aft dwImage_getNvMedia for port: " << port << "cam " << cameraIdx << std::endl;
         NvMediaImageSurfaceMap surfaceMap;
 
         if (NvMediaImageLock(frameNVMrgba->img, NVMEDIA_IMAGE_ACCESS_READ,
                              &surfaceMap) == NVMEDIA_STATUS_OK) {
-          std::cout << "NvMediaImageLock for port: " << port << "cam " << cameraIdx << std::endl;
+          if (debug_mode_)
+            std::cout << "NvMediaImageLock for port: " << port << "cam " << cameraIdx << std::endl;
           // publish an image
           if (pub_image_config_.is_compressed) {
             // compressed
 
-            std::cout << "bef WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
-            std::cout << "camera.CountByteJpeg: " << camera.CountByteJpeg << std::endl;
-            std::cout << "cv_connectors.size(): " << cv_connectors.size() << std::endl;
+            if (debug_mode_)
+              std::cout << "bef WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
+            if (debug_mode_)
+              std::cout << "camera.CountByteJpeg: " << camera.CountByteJpeg << std::endl;
             cv_connectors[cameraIdx]->WriteToJpeg(
               camera.JpegImage,
               camera.CountByteJpeg);
-            std::cout << "aft WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
+            if (debug_mode_)
+              std::cout << "aft WriteToJpeg for port: " << port << "cam " << cameraIdx << std::endl;
           } else {
             //raw (resize if set)
             cv_connectors[cameraIdx]->WriteToOpenCV(
@@ -243,13 +253,16 @@ namespace DriveWorks {
           }
 
           NvMediaImageUnlock(frameNVMrgba->img);
-          std::cout << "NvMediaImageUnlock for port: " << port << "cam " << cameraIdx << std::endl;
+          if (debug_mode_)
+            std::cout << "NvMediaImageUnlock for port: " << port << "cam " << cameraIdx << std::endl;
         } else {
           std::cout << "CANNOT LOCK NVMEDIA IMAGE - NO SCREENSHOT\n";
         }
-        std::cout << "aft NvMediaImageUnlock for port: " << port << std::endl;
+        if (debug_mode_)
+          std::cout << "aft NvMediaImageUnlock for port: " << port << std::endl;
       }
-      std::cout << "aft Publishing stuff for port: " << port << std::endl;
+      if (debug_mode_)
+        std::cout << "aft Publishing stuff for port: " << port << std::endl;
     }
   }
 
