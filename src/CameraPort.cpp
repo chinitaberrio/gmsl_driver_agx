@@ -128,6 +128,9 @@ namespace DriveWorks {
       std::cout << "dwImage_copyConvert For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
       Camera &camera = Cameras[ind_camera];
+
+      std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
+
       bool write_is_successfull = camera.QueueImageHandles->write(image_handle);
       if (!write_is_successfull) {
         std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
