@@ -197,18 +197,21 @@ namespace DriveWorks {
         new OpenCVConnector(topic, camera_frame_id, cam_info_file, 10));
       cv_connectors.push_back(std::move(cvPtr));
     }
+    std::cout << "CvConnectors are initialized for port: " << port << std::endl;
 
-    bool eof;
     while (is_running_ && ros::ok()) {
       // capture from all csi-ports
       // NOTE if cross-csi-synch is active, all cameras will capture at the same time
+      std::cout << "bef camera_port.ReadFrames for port: " << port << std::endl;
       camera_port.ReadFrames(context_handle_);
+      std::cout << "aft camera_port.ReadFrames for port: " << port << std::endl;
 
       for (uint32_t cameraIdx = 0; cameraIdx < camera_port.GetSiblingCount(); cameraIdx++) {
         dwImageNvMedia *frameNVMrgba;
         CameraPort::Camera& camera = camera_port.Cameras[cameraIdx];
 
         dwImage_getNvMedia(&frameNVMrgba, camera.ImageHandle);
+        std::cout << "aft dwImage_getNvMedia for port: " << port << std::endl;
         NvMediaImageSurfaceMap surfaceMap;
 
         if (NvMediaImageLock(frameNVMrgba->img, NVMEDIA_IMAGE_ACCESS_READ,
@@ -232,7 +235,9 @@ namespace DriveWorks {
         } else {
           std::cout << "CANNOT LOCK NVMEDIA IMAGE - NO SCREENSHOT\n";
         }
+        std::cout << "aft NvMediaImageUnlock for port: " << port << std::endl;
       }
+      std::cout << "aft Publishing stuff for port: " << port << std::endl;
     }
   }
 
