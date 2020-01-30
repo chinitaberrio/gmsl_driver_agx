@@ -65,6 +65,7 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(camera.ReadingResult) << std::endl;
         continue;
       }
+      std::cout << "dwSensorCamera_readFrame: " << i << std::endl;
 
       dwImageHandle_t image_handle_yuv;
       camera.ReadingResult = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
@@ -72,10 +73,14 @@ namespace DriveWorks {
         std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
 
+      std::cout << "image_handle_yuv: " << image_handle_yuv << std::endl;
+
       camera.ReadingResult = dwImage_copyConvert(*camera.ImageHandle, image_handle_yuv, context_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_copyConvert: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
+
+      std::cout << "camera.ImageHandle: " << camera.ImageHandle << std::endl;
 
       dwImageNvMedia *image_nvmedia;
       camera.ReadingResult = dwImage_getNvMedia(&image_nvmedia, image_handle_yuv);
