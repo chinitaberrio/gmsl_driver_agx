@@ -28,7 +28,6 @@ namespace DriveWorks {
       uint8_t *JpegImage;
       dwStatus ReadingResult;
       std::shared_future<void> future;
-      std::shared_future<void> future_producer;
     };
     std::vector<Camera> Cameras;
 
@@ -42,12 +41,10 @@ namespace DriveWorks {
     dwStatus Start(const dwContextHandle_t &context_handle);
 
 
-    void StartProducers(const bool &is_running,
-                        const dwContextHandle_t &context_handle);
+    std::shared_future<void> StartProducer(const bool &is_running,
+                                           const dwContextHandle_t &context_handle);
 
-    void ReadFramesPushImages(const dwContextHandle_t &context_handle,
-                              const bool &is_running,
-                              int ind_camera);
+    void ReadFramesPushImages(const dwContextHandle_t &context_handle, const bool &is_running);
 
     void StartConsumers(const bool &is_running);
 
