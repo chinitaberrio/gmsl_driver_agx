@@ -137,6 +137,8 @@ namespace DriveWorks {
       std::cout << "timestamp: " << timestamp << std::endl;
       std::cout << "timestamp difference with ros time: " << time_stamp << std::endl;
 
+      ros::Time time((double) timestamp * 10e-6);
+
       dwImageHandle_t image_handle;
 
       status = dwImage_create(&image_handle, image_properties, context_handle);
@@ -160,7 +162,7 @@ namespace DriveWorks {
 
       Camera::ImageWithStamp image_with_stamp;
       image_with_stamp.image_handle = image_handle;
-      image_with_stamp.time_stamp = time_stamp;
+      image_with_stamp.time_stamp = time;
       while (!camera.QueueImageHandles->write(image_with_stamp)) {
         std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
       }
