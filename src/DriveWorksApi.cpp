@@ -177,21 +177,19 @@ namespace DriveWorks {
       camera_port.StartConsumers(is_running_);
     }
 //     Start Camera Read Producer
-    std::vector<std::shared_future<void>> future_producers;
-    for (auto &camera_port  : camera_ports_) {
-      future_producers.push_back(camera_port.StartProducer(is_running_, context_handle_));
+//    std::vector<std::shared_future<void>> future_producers;
+    while (is_running_) {
+      for (auto &camera_port  : camera_ports_) {
+        camera_port.ReadFramesPushImages(context_handle_, is_running_);
+//        future_producers.push_back(camera_port.StartProducer(is_running_, context_handle_));
+      }
     }
 
-    for (const auto &future : future_producers) {
-      future.wait();
-    }
-    std::cout << "Wait is over." << std::endl;
-//    camera_ports_[0].StartConsumers(is_running_);
-//    while (is_running_) {
-//      std::cout << "Pushy push push" << pushy << std::endl;
-//      pushy++;
-//      camera_ports_[0].ReadFramesPushImages(context_handle_);
+//    for (const auto &future : future_producers) {
+//      future.wait();
 //    }
+//    std::cout << "Wait is over." << std::endl;
+
 
   }
 
