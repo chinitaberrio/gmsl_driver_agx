@@ -142,9 +142,9 @@ namespace DriveWorks {
       dwTime_t timestamp;
       dwImage_getTimestamp(&timestamp, image_handle_original);
       double time_nvidia_sec = (double) timestamp * 10e-7;
-      std::cout << "timestamp: " << timestamp << std::endl;
-      std::cout << "time_nvidia_sec: " << time_nvidia_sec << std::endl;
-      std::cout << "ros time - nvidia time: " << (time_nvidia_sec - time_stamp.toSec()) << std::endl << std::endl;
+//      std::cout << "timestamp: " << timestamp << std::endl;
+//      std::cout << "time_nvidia_sec: " << time_nvidia_sec << std::endl;
+//      std::cout << "ros time - nvidia time: " << (time_nvidia_sec - time_stamp.toSec()) << std::endl << std::endl;
 
       ros::Time time((double) timestamp * 10e-7);
 
