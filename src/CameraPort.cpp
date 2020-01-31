@@ -96,8 +96,8 @@ namespace DriveWorks {
 
 
   void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle) {
-    for (int ind_camera = 0; ind_camera < 1; ind_camera++) {
-//    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
+//    for (int ind_camera = 0; ind_camera < 1; ind_camera++) {
+    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
       std::cout << "Producer ReadFramesPushImages For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
       dwCameraFrameHandle_t camera_frame_handle;
