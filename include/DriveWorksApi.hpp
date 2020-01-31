@@ -78,6 +78,7 @@
 #include "DeviceArguments.hpp"
 #include <folly/ProducerConsumerQueue.h>
 #include "CameraPort.h"
+#include "PrintEventHandler.h"
 
 
 namespace DriveWorks {
@@ -95,10 +96,7 @@ namespace DriveWorks {
     explicit DriveWorksApi(DeviceArguments arguments,
                            ImageConfigPub pub_image_config);
 
-    void stopCameras();
-
-    bool isCamReady();
-
+    void Shutdown();
 
   private:
     static void InitializeContextHandle(dwContextHandle_t &context_handle);
@@ -106,37 +104,24 @@ namespace DriveWorks {
     static void InitializeSalHandle(dwSALHandle_t &sal_handle,
                                     const dwContextHandle_t &context_handle);
 
-    void InitializeCameraPorts(std::vector<CameraPort> &camera_ports,
+    void InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
                                int &count_cameras,
                                const dwSALHandle_t &sal,
                                const DeviceArguments &device_arguments);
 
     void WorkIt();
 
-    void StartCameraPortWorkers();
-
-    void WorkerPortPipeline(CameraPort &camera_port,
-                            uint32_t port,
-                            const dwContextHandle_t &sdk);
-
-    void releaseCameras(CameraPort *cameraSensor);
-
-    void releaseSDK();
-
-
   private:
-    bool is_running_{false};
+    std::atomic_bool is_running_{false};
     int count_camera_{0};
     bool debug_mode_{false};
 
     DeviceArguments device_arguments_;
     ImageConfigPub pub_image_config_;
-    std::vector<CameraPort> camera_ports_;
+    std::vector<CameraPort::Ptr> camera_ports_;
     dwContextHandle_t context_handle_ = DW_NULL_HANDLE;
     dwSALHandle_t sal_handle_ = DW_NULL_HANDLE;
-//    std::vector<std::vector<dwImageHandle_t *>> g_frameRGBAPtr;
-//    std::vector<std::vector<uint8_t *>> g_frameJPGPtr;
-//    std::vector<std::vector<uint32_t>> g_compressedSize;
+    PrintEventHandler::Ptr print_event_handler_;
 
   };
 

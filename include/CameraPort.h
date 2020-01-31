@@ -9,10 +9,12 @@
 #include <folly/ProducerConsumerQueue.h>
 #include <future>
 #include "cv_connection.hpp"
+#in
 
 namespace DriveWorks {
   class CameraPort {
   public:
+    using Ptr = std::shared_ptr<CameraPort>;
     bool debug_mode{false};
     struct Camera {
       struct ImageWithStamp {
@@ -21,19 +23,17 @@ namespace DriveWorks {
       };
       std::shared_ptr<folly::ProducerConsumerQueue<ImageWithStamp>> QueueImageHandles;
       OpenCVConnector::Ptr OpenCvConnector;
-      dwImageHandle_t ImageHandle{};
       NvMediaIJPE *NvMediaIjpe;
-      NvMediaDevice *NvMediaDevicee;
+      NvMediaDevice *NvmediaDevice;
       uint32_t CountByteJpeg;
       uint8_t *JpegImage;
-      dwStatus ReadingResult;
       std::shared_future<void> future;
+      int Index;
     };
     std::vector<Camera> Cameras;
 
+
     explicit CameraPort(dwSensorHandle_t sensor_handle,
-                        dwImageProperties image_properties,
-                        dwCameraProperties camera_properties,
                         bool debug_mode,
                         int port,
                         const std::string &caminfo_folder);
@@ -41,26 +41,28 @@ namespace DriveWorks {
     dwStatus Start(const dwContextHandle_t &context_handle);
 
 
-    std::shared_future<void> StartProducer(const bool &is_running,
+    std::shared_future<void> StartProducer(std::atomic_bool &is_running,
                                            const dwContextHandle_t &context_handle);
 
-    void ReadFramesPushImages(const dwContextHandle_t &context_handle, const bool &is_running);
+    void ReadFramesPushImages(const dwContextHandle_t &context_handle, std::atomic_bool &is_running);
 
-    void StartConsumers(const bool &is_running);
+    void StartConsumers(std::atomic_bool &is_running);
 
-    void ConsumeImagesPublishMessages(const bool &is_running,
+    void ConsumeImagesPublishMessages(std::atomic_bool &is_running,
                                       int ind_camera);
-
-    void ReadFrames(const dwContextHandle_t &context_handle);
 
     int GetSiblingCount();
 
     dwSensorHandle_t GetSensorHandle() const;
 
+    void CleanUp();
+
+    virtual ~CameraPort();
+
   private:
-    dwSensorHandle_t sensor_handle;
-    dwImageProperties image_properties;
-    dwCameraProperties camera_properties;
+    dwSensorHandle_t sensor_handle_;
+    dwImageProperties image_properties_;
+    dwCameraProperties camera_properties_;
     int port;
   };
 }

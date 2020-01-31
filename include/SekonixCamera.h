@@ -15,7 +15,7 @@ public:
 private:
   ros::NodeHandle &nh_;
 
-  std::unique_ptr<DriveWorks::DriveWorksApi> gmsl_cam_;
+  std::unique_ptr<DriveWorks::DriveWorksApi> driveworks_api_;
 };
 
 

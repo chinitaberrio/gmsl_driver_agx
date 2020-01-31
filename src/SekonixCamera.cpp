@@ -66,15 +66,10 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in) : nh_(nh_in) {
   camera_arguments.set("fifo_size", fifo_size_value);
   camera_arguments.set("slave", slave_value);
 
-  gmsl_cam_ = std::make_unique<DriveWorks::DriveWorksApi>(camera_arguments, imageConfig);
-
-  while (!(gmsl_cam_->isCamReady())) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-  std::cout << "Start camera threads .." << std::endl;
+  driveworks_api_ = std::make_unique<DriveWorks::DriveWorksApi>(camera_arguments, imageConfig);
 }
 
 void SekonixCamera::Shutdown() {
-  gmsl_cam_->stopCameras();
+  driveworks_api_->Shutdown();
 }
 
