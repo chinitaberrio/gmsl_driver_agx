@@ -131,6 +131,12 @@ namespace DriveWorks {
         std::cout << "Producer dwSensorCamera_getImage For Port: " << port
                   << " Camera: " << ind_camera << std::endl;
 
+
+      dwTime_t timestamp;
+      dwImage_getTimestamp(&timestamp, image_handle_original);
+      std::cout << "timestamp: " << timestamp << std::endl;
+      std::cout << "timestamp difference with ros time: " << time_stamp << std::endl;
+
       dwImageHandle_t image_handle;
 
       status = dwImage_create(&image_handle, image_properties, context_handle);
