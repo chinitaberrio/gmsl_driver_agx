@@ -146,10 +146,10 @@ namespace DriveWorks {
       std::cout << "Producer write_is_successfull For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
-      result = dwImage_destroy(image_handle_yuv);
-      if (result != DW_SUCCESS) {
-        std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
-      }
+//      result = dwImage_destroy(image_handle_yuv);
+//      if (result != DW_SUCCESS) {
+//        std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
+//      }
     }
   }
 
