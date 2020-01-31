@@ -149,7 +149,8 @@ namespace DriveWorks {
 
       Camera &camera = Cameras[ind_camera];
 
-      std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
+      if (debug_mode)
+        std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
 
       Camera::ImageWithStamp image_with_stamp;
       image_with_stamp.image_handle = image_handle;
@@ -192,7 +193,7 @@ namespace DriveWorks {
       Camera::ImageWithStamp image_with_stamp;
       while (!camera.QueueImageHandles->read(image_with_stamp)) {
         //spin until we get a value
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
       }
       if (debug_mode)
         std::cout << "Consumer QueueImageHandles->read For Port: " << port
