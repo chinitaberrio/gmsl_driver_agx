@@ -32,7 +32,7 @@ namespace DriveWorks {
         std::string("_calibration.yml");
       Camera &camera = Cameras[cameraIdx];
       camera.OpenCvConnector = std::make_shared<OpenCVConnector>(topic, camera_frame_id, cam_info_file, 10);
-      camera.QueueImageHandles = std::make_shared<folly::ProducerConsumerQueue<dwImageHandle_t>>(5);
+      camera.QueueImageHandles = std::make_shared<folly::ProducerConsumerQueue<Camera::ImageWithStamp>>(5);
     }
 
 
