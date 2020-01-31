@@ -95,65 +95,75 @@ namespace DriveWorks {
   }
 
 
-  void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle) {
-//    for (int ind_camera = 0; ind_camera < 1; ind_camera++) {
-    for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
-      std::cout << "Producer ReadFramesPushImages For Port: " << port
-                << " Camera: " << ind_camera << std::endl;
-      dwCameraFrameHandle_t camera_frame_handle;
-      dwStatus status;
-      status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, DW_TIMEOUT_INFINITE, sensor_handle);
-      if (status != DW_SUCCESS) {
-        std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
-        continue;
+  std::shared_future<void> CameraPort::StartProducer(const bool &is_running,
+                                                     const dwContextHandle_t &context_handle) {
+    std::cout << "Starting Producer For Port: " << port << std::endl;
+
+    return std::async(std::launch::async,
+                      &CameraPort::ReadFramesPushImages,
+                      this,
+                      context_handle,
+                      is_running);
+  }
+
+  void CameraPort::ReadFramesPushImages(const dwContextHandle_t &context_handle, const bool &is_running) {
+    while (is_running) {
+      for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
+        std::cout << "Producer ReadFramesPushImages For Port: " << port
+                  << " Camera: " << ind_camera << std::endl;
+        dwCameraFrameHandle_t camera_frame_handle;
+        dwStatus status;
+        status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, DW_TIMEOUT_INFINITE, sensor_handle);
+        if (status != DW_SUCCESS) {
+          std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
+          continue;
+        }
+        ros::Time time_stamp = ros::Time::now();
+        std::cout << "Producer dwSensorCamera_readFrame For Port: " << port
+                  << " Camera: " << ind_camera << std::endl;
+        dwImageHandle_t image_handle_original;
+        status = dwSensorCamera_getImage(&image_handle_original, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
+        if (status != DW_SUCCESS) {
+          std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(status) << std::endl;
+        }
+        std::cout << "Producer dwSensorCamera_getImage For Port: " << port
+                  << " Camera: " << ind_camera << std::endl;
+
+        dwImageHandle_t image_handle;
+
+        status = dwImage_create(&image_handle, image_properties, context_handle);
+        if (status != DW_SUCCESS) {
+          std::cerr << "dwImage_create: " << dwGetStatusName(status) << std::endl;
+        }
+
+        status = dwImage_copyConvert(image_handle, image_handle_original, context_handle);
+        if (status != DW_SUCCESS) {
+          std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
+        }
+        std::cout << "Producer dwImage_copyConvert For Port: " << port
+                  << " Camera: " << ind_camera << std::endl;
+
+
+        Camera &camera = Cameras[ind_camera];
+
+        std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
+
+        Camera::ImageWithStamp image_with_stamp;
+        image_with_stamp.image_handle = image_handle;
+        image_with_stamp.time_stamp = time_stamp;
+        while (!camera.QueueImageHandles->write(image_with_stamp)) {
+          std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
+        }
+        std::cout << "Producer write_is_successfull For Port: " << port
+                  << " Camera: " << ind_camera << std::endl;
+
+        status = dwSensorCamera_returnFrame(&camera_frame_handle);
+        if (status != DW_SUCCESS) {
+          std::cout << "dwSensorCamera_returnFrame: " << dwGetStatusName(status) << std::endl;
+        }
+        std::cout << "Producer dwSensorCamera_returnFrame For Port: " << port
+                  << " Camera: " << ind_camera << std::endl;
       }
-      ros::Time time_stamp = ros::Time::now();
-      std::cout << "Producer dwSensorCamera_readFrame For Port: " << port
-                << " Camera: " << ind_camera <<std::endl;
-      dwImageHandle_t image_handle_yuv;
-      status = dwSensorCamera_getImage(&image_handle_yuv, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
-      if (status != DW_SUCCESS) {
-        std::cerr << "dwSensorCamera_getImage: " << dwGetStatusName(status) << std::endl;
-      }
-      std::cout << "Producer dwSensorCamera_getImage For Port: " << port
-                << " Camera: " << ind_camera << std::endl;
-
-      dwImageHandle_t image_handle;
-
-      dwStatus result = dwImage_create(&image_handle, image_properties, context_handle);
-
-      status = dwImage_copyConvert(image_handle, image_handle_yuv, context_handle);
-      if (status != DW_SUCCESS) {
-        std::cerr << "dwImage_copyConvert: " << dwGetStatusName(status) << std::endl;
-      }
-      std::cout << "Producer dwImage_copyConvert For Port: " << port
-                << " Camera: " << ind_camera << std::endl;
-
-
-      status = dwSensorCamera_returnFrame(&camera_frame_handle);
-      if (status != DW_SUCCESS) {
-        std::cout << "dwSensorCamera_returnFrame: " << dwGetStatusName(status) << std::endl;
-      }
-      std::cout << "Producer dwSensorCamera_returnFrame For Port: " << port
-                << " Camera: " << ind_camera << std::endl;
-
-      Camera &camera = Cameras[ind_camera];
-
-      std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
-
-      Camera::ImageWithStamp image_with_stamp;
-      image_with_stamp.image_handle = image_handle;
-      image_with_stamp.time_stamp = time_stamp;
-      while (!camera.QueueImageHandles->write(image_with_stamp)) {
-        std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
-      }
-      std::cout << "Producer write_is_successfull For Port: " << port
-                << " Camera: " << ind_camera << std::endl;
-
-//      result = dwImage_destroy(image_handle_yuv);
-//      if (result != DW_SUCCESS) {
-//        std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
-//      }
     }
   }
 

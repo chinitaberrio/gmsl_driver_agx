@@ -15,7 +15,7 @@ namespace DriveWorks {
   public:
     bool debug_mode{false};
     struct Camera {
-      struct ImageWithStamp{
+      struct ImageWithStamp {
         dwImageHandle_t image_handle;
         ros::Time time_stamp;
       };
@@ -36,16 +36,20 @@ namespace DriveWorks {
                         dwCameraProperties camera_properties,
                         bool debug_mode,
                         int port,
-                        const std::string& caminfo_folder);
+                        const std::string &caminfo_folder);
 
     dwStatus Start(const dwContextHandle_t &context_handle);
 
-    void ReadFramesPushImages(const dwContextHandle_t &context_handle);
+
+    std::shared_future<void> StartProducer(const bool &is_running,
+                                           const dwContextHandle_t &context_handle);
+
+    void ReadFramesPushImages(const dwContextHandle_t &context_handle, const bool &is_running);
 
     void StartConsumers(const bool &is_running);
 
     void ConsumeImagesPublishMessages(const bool &is_running,
-      int ind_camera);
+                                      int ind_camera);
 
     void ReadFrames(const dwContextHandle_t &context_handle);
 
