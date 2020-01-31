@@ -102,11 +102,12 @@ namespace DriveWorks {
                 << " Camera: " << ind_camera << std::endl;
       dwCameraFrameHandle_t camera_frame_handle;
       dwStatus status;
-      status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, 30000, sensor_handle);
+      status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, DW_TIMEOUT_INFINITE, sensor_handle);
       if (status != DW_SUCCESS) {
         std::cerr << "dwSensorCamera_readFrame: " << dwGetStatusName(status) << std::endl;
         continue;
       }
+      ros::Time time_stamp = ros::Time::now();
       std::cout << "Producer dwSensorCamera_readFrame For Port: " << port
                 << " Camera: " << ind_camera <<std::endl;
       dwImageHandle_t image_handle_yuv;
@@ -140,7 +141,10 @@ namespace DriveWorks {
 
       std::cerr << "queue current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
 
-      while (!camera.QueueImageHandles->write(image_handle)) {
+      Camera::ImageWithStamp image_with_stamp;
+      image_with_stamp.image_handle = image_handle;
+      image_with_stamp.time_stamp = time_stamp;
+      while (!camera.QueueImageHandles->write(image_with_stamp)) {
         std::cerr << "queue is full, current size: " << camera.QueueImageHandles->sizeGuess() << std::endl;
       }
       std::cout << "Producer write_is_successfull For Port: " << port
@@ -171,8 +175,8 @@ namespace DriveWorks {
                                                 int ind_camera) {
     Camera &camera = Cameras[ind_camera];
     while (is_running) {
-      dwImageHandle_t image_handle;
-      while (!camera.QueueImageHandles->read(image_handle)) {
+      Camera::ImageWithStamp image_with_stamp;
+      while (!camera.QueueImageHandles->read(image_with_stamp)) {
         //spin until we get a value
         std::this_thread::sleep_for(std::chrono::microseconds(50));
       }
@@ -180,7 +184,7 @@ namespace DriveWorks {
                 << " Camera: " << ind_camera << std::endl;
 
       dwImageNvMedia *image_nvmedia;
-      camera.ReadingResult = dwImage_getNvMedia(&image_nvmedia, image_handle);
+      camera.ReadingResult = dwImage_getNvMedia(&image_nvmedia, image_with_stamp.image_handle);
       if (camera.ReadingResult != DW_SUCCESS) {
         std::cerr << "dwImage_getNvMedia: " << dwGetStatusName(camera.ReadingResult) << std::endl;
       }
@@ -205,7 +209,7 @@ namespace DriveWorks {
       std::cout << "Consumer NvMediaIJPEGetBits For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
-      ros::Time time = ros::Time::now();
+      ros::Time time = image_with_stamp.time_stamp;
       camera.OpenCvConnector->WriteToJpeg(
         camera.JpegImage,
         camera.CountByteJpeg,
@@ -213,7 +217,7 @@ namespace DriveWorks {
       std::cout << "Consumer Published For Port: " << port
                 << " Camera: " << ind_camera << std::endl;
 
-      dwStatus result = dwImage_destroy(image_handle);
+      dwStatus result = dwImage_destroy(image_with_stamp.image_handle);
       if (result != DW_SUCCESS) {
         std::cerr << "dwImage_destroy: " << dwGetStatusName(result) << std::endl;
       }

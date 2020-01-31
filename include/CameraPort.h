@@ -15,7 +15,11 @@ namespace DriveWorks {
   public:
     bool debug_mode{false};
     struct Camera {
-      std::shared_ptr<folly::ProducerConsumerQueue<dwImageHandle_t>> QueueImageHandles;
+      struct ImageWithStamp{
+        dwImageHandle_t image_handle;
+        ros::Time time_stamp;
+      };
+      std::shared_ptr<folly::ProducerConsumerQueue<ImageWithStamp>> QueueImageHandles;
       OpenCVConnector::Ptr OpenCvConnector;
       dwImageHandle_t ImageHandle{};
       NvMediaIJPE *NvMediaIjpe;
