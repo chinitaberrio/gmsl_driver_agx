@@ -5,7 +5,7 @@
 
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "gmsl_node", ros::init_options::NoSigintHandler);
+  ros::init(argc, argv, "sekonix_camera_node", ros::init_options::NoSigintHandler);
   ros::NodeHandle nh;
 
   auto signal_handler = [](int sig) {
@@ -21,10 +21,10 @@ int main(int argc, char **argv) {
   signal(SIGTERM, signal_handler); // kill command
   signal(SIGSTOP, signal_handler); // kill command
 
-  ROS_INFO_STREAM("GMSL node started!");
-
   std::string name_pretty{"Main"};
   PrintEventHandler::Ptr print_event_handler = std::make_shared<PrintEventHandler>();
+  print_event_handler->Print(name_pretty, "sekonix_camera_node started!");
+
   SekonixCamera sekonix_camera(nh, print_event_handler);
 
   print_event_handler->Print(name_pretty, "Spinning has started!");
