@@ -5,17 +5,19 @@
 #include "DriveWorksApi.hpp"
 #include "DeviceArguments.hpp"
 #include <memory>
+#include "PrintEventHandler.h"
 
 class SekonixCamera {
 public:
-  explicit SekonixCamera(ros::NodeHandle &nh_in);
+  explicit SekonixCamera(ros::NodeHandle &nh_in, PrintEventHandler::Ptr print_event_handler);
 
   void Shutdown();
 
 private:
   ros::NodeHandle &nh_;
-
+  PrintEventHandler::Ptr print_event_handler_;
   std::unique_ptr<DriveWorks::DriveWorksApi> driveworks_api_;
+  std::string name_pretty_;
 };
 
 

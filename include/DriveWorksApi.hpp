@@ -93,10 +93,11 @@ namespace DriveWorks {
 
   class DriveWorksApi {
   public:
-    explicit DriveWorksApi(DeviceArguments arguments,
-                           ImageConfigPub pub_image_config);
+    explicit DriveWorksApi(DeviceArguments arguments, ImageConfigPub pub_image_config, PrintEventHandler::Ptr print_event_handler);
 
     void Shutdown();
+
+    virtual ~DriveWorksApi();
 
   private:
     static void InitializeContextHandle(dwContextHandle_t &context_handle);
@@ -122,6 +123,7 @@ namespace DriveWorks {
     dwContextHandle_t context_handle_ = DW_NULL_HANDLE;
     dwSALHandle_t sal_handle_ = DW_NULL_HANDLE;
     PrintEventHandler::Ptr print_event_handler_;
+    std::string name_pretty_;
 
   };
 

@@ -2,8 +2,11 @@
 #include <thread>
 #include <chrono>
 
-SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in) : nh_(nh_in) {
-
+SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
+                             PrintEventHandler::Ptr print_event_handler)
+  : nh_(nh_in),
+    print_event_handler_(std::move(print_event_handler)),
+    name_pretty_("SekonixCamera") {
   int image_width_;
   int image_height_;
   int pub_buffer_;
@@ -66,10 +69,14 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in) : nh_(nh_in) {
   camera_arguments.set("fifo_size", fifo_size_value);
   camera_arguments.set("slave", slave_value);
 
-  driveworks_api_ = std::make_unique<DriveWorks::DriveWorksApi>(camera_arguments, imageConfig);
+  driveworks_api_ = std::make_unique<DriveWorks::DriveWorksApi>(camera_arguments,
+                                                                imageConfig,
+                                                                print_event_handler_);
 }
 
 void SekonixCamera::Shutdown() {
-  driveworks_api_->Shutdown();
+  print_event_handler_->Print(name_pretty_, "Shutdown is called!");
+  driveworks_api_.reset();
+  print_event_handler_->Print(name_pretty_, "Shutdown is finished!");
 }
 

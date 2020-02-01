@@ -4,7 +4,6 @@
 #include <StopWatch.h>
 #include <thread>
 #include <utility>
-#include "DriveworksHelper.h"
 
 
 namespace DriveWorks {
@@ -31,10 +30,10 @@ namespace DriveWorks {
     status = dwSensorCamera_getImageProperties(&image_properties_,
                                                DW_CAMERA_OUTPUT_NATIVE_PROCESSED,
                                                sensor_handle);
-    report_status("dwSensorCamera_getImageProperties",status);
+    report_status("dwSensorCamera_getImageProperties", status);
 
     status = dwSensorCamera_getSensorProperties(&camera_properties_, sensor_handle);
-    report_status("dwSensorCamera_getSensorProperties",status);
+    report_status("dwSensorCamera_getSensorProperties", status);
 
     for (uint32_t ind_camera = 0; ind_camera < GetSiblingCount(); ind_camera++) {
       const std::string topic = "port_" + std::to_string(port) + "/camera_" + std::to_string(ind_camera);
@@ -265,32 +264,34 @@ namespace DriveWorks {
   }
 
   void CameraPort::CleanUp() {
-    std::cout << "Camera Port " << port << " clean up has started!" << std::endl;
+    printer_->Print(name_pretty_, "clean up has started!");
     dwStatus status;
     status = dwSensor_stop(GetSensorHandle());
     if (status != DW_SUCCESS) {
-      std::cerr << "dwSensor_stop: " << dwGetStatusName(status) << std::endl;
+      printer_->Print(name_pretty_, "dwSensor_stop: " + std::string(dwGetStatusName(status)));
     }
-    std::cout << "Camera Port " << port << " dwSensor_stop." << std::endl;
+    printer_->Print(name_pretty_, "dwSensor_stop");
     status = dwSAL_releaseSensor(GetSensorHandle());
     if (status != DW_SUCCESS) {
-      std::cerr << "dwSAL_releaseSensor: " << dwGetStatusName(status) << std::endl;
+      printer_->Print(name_pretty_, "dwSAL_releaseSensor: " + std::string(dwGetStatusName(status)));
     }
-    std::cout << "Camera Port " << port << " dwSAL_releaseSensor." << std::endl;
+    printer_->Print(name_pretty_, "dwSAL_releaseSensor");
     for (auto &camera : Cameras) {
       NvMediaIJPEDestroy(camera.NvMediaIjpe);
-      std::cout << "Camera Port " << port << "Cam " << camera.Index << " NvMediaIJPEDestroy." << std::endl;
+      printer_->Print(camera.NamePretty, "NvMediaIJPEDestroy");
       NvMediaDeviceDestroy(camera.NvmediaDevice);
-      std::cout << "Camera Port " << port << "Cam " << camera.Index << " NvMediaDeviceDestroy." << std::endl;
+      printer_->Print(camera.NamePretty, "NvMediaDeviceDestroy");
     }
     for (auto &camera : Cameras) {
       camera.future.get();
+      printer_->Print(camera.NamePretty, "Future is received.");
     }
     future_.get();
+    printer_->Print(name_pretty_, "Future is received.");
   }
 
   CameraPort::~CameraPort() {
-    std::cout << "Camera Port " << port << " destructor is called!" << std::endl;
+    printer_->Print(name_pretty_, "Destructor is called!");
     CleanUp();
   }
 

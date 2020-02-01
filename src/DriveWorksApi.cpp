@@ -36,23 +36,25 @@
 
 namespace DriveWorks {
   DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
-                               ImageConfigPub pub_image_config) :
+                               ImageConfigPub pub_image_config,
+                               PrintEventHandler::Ptr print_event_handler) :
     device_arguments_(std::move(arguments)),
     pub_image_config_(std::move(pub_image_config)),
-    debug_mode_(false) {
-    std::cout << "DriveWorksApi::DriveWorksApi is called!" << std::endl;
-
-    print_event_handler_ = std::make_shared<PrintEventHandler>();
-
+    debug_mode_(false),
+    name_pretty_("DriveWorksApi"),
+    print_event_handler_(std::move(print_event_handler)) {
+    print_event_handler_->Print(name_pretty_, "Constructor is called.");
     InitializeContextHandle(context_handle_);
+    print_event_handler_->Print(name_pretty_, "context_handle_ is initialized!");
     InitializeSalHandle(sal_handle_, context_handle_);
+    print_event_handler_->Print(name_pretty_, "sal_handle_ is initialized!");
     InitializeCameraPorts(camera_ports_, count_camera_, sal_handle_, device_arguments_);
+    print_event_handler_->Print(name_pretty_, "camera_ports_ is initialized!");
     WorkIt();
-    std::cout << "DriveWorksApi constructor has finished." << std::endl;
+    print_event_handler_->Print(name_pretty_, "Constructor has finished.");
   }
 
   void DriveWorksApi::InitializeContextHandle(dwContextHandle_t &context_handle) {
-    std::cout << "InitializeContextHandle is called!" << std::endl;
     dwContextParameters context_parameters;
     memset(&context_parameters, 0, sizeof(dwContextParameters));
     dwInitialize(&context_handle, DW_VERSION, &context_parameters);
@@ -60,7 +62,6 @@ namespace DriveWorks {
 
   void DriveWorksApi::InitializeSalHandle(dwSALHandle_t &sal_handle,
                                           const dwContextHandle_t &context_handle) {
-    std::cout << "InitializeSalHandle is called!" << std::endl;
     dwStatus result;
     result = dwSAL_initialize(&sal_handle, context_handle);
     if (result != DW_SUCCESS) {
@@ -75,7 +76,7 @@ namespace DriveWorks {
                                        int &count_cameras,
                                        const dwSALHandle_t &sal,
                                        const DeviceArguments &device_arguments) {
-    std::cout << "InitializeCameras is called!" << std::endl;
+    print_event_handler_->Print(name_pretty_, "InitializeCameraPorts is called!");
     std::string selector = device_arguments.get("selector_mask");
     dwStatus result;
     // Identify active ports
@@ -161,6 +162,7 @@ namespace DriveWorks {
   }
 
   void DriveWorksApi::WorkIt() {
+    print_event_handler_->Print(name_pretty_, "WorkIt is called!");
     // Start Image Publisher Consumers
     for (auto &camera_port : camera_ports_) {
       camera_port->StartConsumers(is_running_);
@@ -174,14 +176,25 @@ namespace DriveWorks {
   }
 
   void DriveWorksApi::Shutdown() {
-    std::cout << "Driveworks Shutdown has started!" << std::endl;
+    print_event_handler_->Print(name_pretty_, "Shutdown is called!");
     is_running_ = false;
+    print_event_handler_->Print(name_pretty_, "is_running_ is false now!");
     for (auto &camera : camera_ports_) {
       camera.reset();
     }
+    print_event_handler_->Print(name_pretty_, "All camera_ports are reset.");
     dwSAL_release(sal_handle_);
+    print_event_handler_->Print(name_pretty_, "dwSAL_release");
     dwRelease(context_handle_);
+    print_event_handler_->Print(name_pretty_, "dwRelease");
     dwLogger_release();
+    print_event_handler_->Print(name_pretty_, "dwLogger_release");
+  }
+
+  DriveWorksApi::~DriveWorksApi() {
+    print_event_handler_->Print(name_pretty_, "Destructor is called!");
+    Shutdown();
+    print_event_handler_->Print(name_pretty_, "Destructor is finished!");
   }
 
 }
