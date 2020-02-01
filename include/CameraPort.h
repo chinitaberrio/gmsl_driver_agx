@@ -9,7 +9,8 @@
 #include <folly/ProducerConsumerQueue.h>
 #include <future>
 #include "cv_connection.hpp"
-#in
+#include "PrintEventHandler.h"
+
 
 namespace DriveWorks {
   class CameraPort {
@@ -29,20 +30,18 @@ namespace DriveWorks {
       uint8_t *JpegImage;
       std::shared_future<void> future;
       int Index;
+      std::string NamePretty;
     };
     std::vector<Camera> Cameras;
 
 
-    explicit CameraPort(dwSensorHandle_t sensor_handle,
-                        bool debug_mode,
-                        int port,
-                        const std::string &caminfo_folder);
+    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, int port, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
 
     dwStatus Start(const dwContextHandle_t &context_handle);
 
 
-    std::shared_future<void> StartProducer(std::atomic_bool &is_running,
-                                           const dwContextHandle_t &context_handle);
+    void StartProducer(std::atomic_bool &is_running,
+                       const dwContextHandle_t &context_handle);
 
     void ReadFramesPushImages(const dwContextHandle_t &context_handle, std::atomic_bool &is_running);
 
@@ -64,6 +63,9 @@ namespace DriveWorks {
     dwImageProperties image_properties_;
     dwCameraProperties camera_properties_;
     int port;
+    std::shared_future<void> future_;
+    PrintEventHandler::Ptr printer_;
+    std::string name_pretty_;
   };
 }
 

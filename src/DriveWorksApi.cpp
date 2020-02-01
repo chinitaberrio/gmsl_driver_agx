@@ -137,7 +137,8 @@ namespace DriveWorks {
       CameraPort::Ptr camera_port = std::make_shared<CameraPort>(sensor_handle,
                                                                  debug_mode_,
                                                                  p,
-                                                                 pub_image_config_.camerainfo_folder);
+                                                                 pub_image_config_.camerainfo_folder,
+                                                                 print_event_handler_);
       camera_ports.push_back(camera_port);
       count_cameras += camera_port->GetSiblingCount();
     }
@@ -167,20 +168,16 @@ namespace DriveWorks {
     // Start Camera Read Producer
     std::vector<std::shared_future<void>> future_producers;
     for (auto &camera_port  : camera_ports_) {
-      future_producers.push_back(camera_port->StartProducer(is_running_, context_handle_));
+      camera_port->StartProducer(is_running_, context_handle_);
     }
-
-    for (const auto &future : future_producers) {
-      future.wait();
-    }
-    std::cout << "Wait is over." << std::endl;
+    std::cout << "WorkIt is over." << std::endl;
   }
 
   void DriveWorksApi::Shutdown() {
     std::cout << "Driveworks Shutdown has started!" << std::endl;
     is_running_ = false;
     for (auto &camera : camera_ports_) {
-      camera->CleanUp();
+      camera.reset();
     }
     dwSAL_release(sal_handle_);
     dwRelease(context_handle_);
