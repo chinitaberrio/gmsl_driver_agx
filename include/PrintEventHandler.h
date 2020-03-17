@@ -1,7 +1,7 @@
 #ifndef SRC_PRINTEVENTHANDLER_H
 #define SRC_PRINTEVENTHANDLER_H
 
-#include <folly/io/async/EventBase.h>
+//#include <folly/io/async/EventBase.h>
 #include <atomic>
 #include <future>
 #include <memory>
@@ -21,7 +21,7 @@ public:
   virtual ~PrintEventHandler();
 
 private:
-  folly::EventBase base_;
+//  folly::EventBase base_;
   std::atomic_bool is_running_{};
   std::shared_future<void> future_;
 
