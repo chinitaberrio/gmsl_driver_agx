@@ -16,9 +16,10 @@ namespace DriveWorks {
     : debug_mode(debug_mode),
       sensor_handle_(sensor_handle),
       port(port),
-      printer_(std::move(printer)) {
+      printer_(printer) {
+
     name_pretty_ = "Port #" + std::to_string(port);
-    Cameras.resize(GetSiblingCount());
+
     auto report_status = [&](const std::string &subject, const dwStatus &status) {
       if (status != DW_SUCCESS) {
         std::string msg_error = subject + " status: " + dwGetStatusName(status);
@@ -35,6 +36,9 @@ namespace DriveWorks {
     status = dwSensorCamera_getSensorProperties(&camera_properties_, sensor_handle);
     report_status("dwSensorCamera_getSensorProperties", status);
 
+    std::cout << "GetSiblingCount(): " << GetSiblingCount() << std::endl;
+    Cameras.resize(GetSiblingCount());
+
     for (uint32_t ind_camera = 0; ind_camera < GetSiblingCount(); ind_camera++) {
       const std::string topic = "port_" + std::to_string(port) + "/camera_" + std::to_string(ind_camera);
       const std::string camera_frame_id = "port_" + std::to_string(port) + "/camera_" + std::to_string(ind_camera);
@@ -45,6 +49,7 @@ namespace DriveWorks {
       camera.OpenCvConnector = std::make_shared<OpenCVConnector>(topic, camera_frame_id, cam_info_file, 10);
       camera.QueueImageHandles = std::make_shared<folly::ProducerConsumerQueue<Camera::ImageWithStamp>>(10);
     }
+
   }
 
   dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
@@ -172,6 +177,9 @@ namespace DriveWorks {
         print_debug_for_cam("dwSensorCamera_returnFrame", ind_camera);
       }
     }
+
+    if (debug_mode)
+      printer_->Print(name_pretty_, "End of method ReadFramesPushImages()");
   }
 
   void CameraPort::StartConsumers(std::atomic_bool &is_running) {
@@ -223,7 +231,9 @@ namespace DriveWorks {
           print("Received messages since past "
                 + std::to_string(milliseconds_passed_since(time_last_successful_capture))
                 + " ms.");
-          break;
+          print("Failed. Shutting down.");
+          is_running = false;
+          return;
         }
       }
       time_last_successful_capture = Clock::now();
@@ -258,9 +268,10 @@ namespace DriveWorks {
 
       status = dwImage_destroy(image_with_stamp.image_handle);
       print_status_error("dwImage_destroy", status);
-      NvMediaImageDestroy(image_nvmedia->img);
+//      NvMediaImageDestroy(image_nvmedia->img);
       print_debug("dwImage_destroy");
     }
+    print("End of method ConsumeImagesPublishMessages()");
   }
 
   void CameraPort::CleanUp() {

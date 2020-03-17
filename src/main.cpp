@@ -27,8 +27,11 @@ int main(int argc, char **argv) {
 
   SekonixCamera sekonix_camera(nh, print_event_handler);
 
+  ros::AsyncSpinner spinner(1);
   print_event_handler->Print(name_pretty, "Spinning has started!");
-  ros::spin();
+  spinner.start();
+
+  ros::waitForShutdown();
   print_event_handler->Print(name_pretty, "Spinning has ended!");
 
   sekonix_camera.Shutdown();
