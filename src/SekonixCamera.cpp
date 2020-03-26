@@ -18,7 +18,7 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   nh_in.param<int>("/sekonix_camera_node/image_buffer", pub_buffer_, 5);
   nh_in.param<bool>("/sekonix_camera_node/image_compressed", img_compressed_, true);
   nh_in.param<int>("/sekonix_camera_node/image_compressed_quality", jpeg_quality_, 70);
-  nh_in.param<std::string>("calib_folder", calib_folder, "");
+  nh_in.param<std::string>("/sekonix_camera_node/calib_folder", calib_folder, "");
 
   DriveWorks::ImageConfigPub imageConfig = {
     (uint32_t) image_width_,

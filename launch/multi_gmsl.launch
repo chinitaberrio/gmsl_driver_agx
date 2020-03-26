@@ -48,7 +48,7 @@
     <param name="image_height" value="1208" />    <!-- image raw resize only -->
     <param name="image_buffer" value="10" />
     <param name="image_compressed" value="true" type="bool" />  <!-- publish compressed original size -->
-    <param name="calib_folder" value="$(arg cam_calib_folder)/" />
+    <param name="calib_folder" value="$(arg cam_calib_folder)" />
     <param name="type_a" value="ar0231-rccb-bae-sf3324" type="str" />
     <param name="type_b" value="ar0231-rccb-bae-sf3324" type="str" />
     <param name="type_c" value="ar0231-rccb-bae-sf3324" type="str" />
