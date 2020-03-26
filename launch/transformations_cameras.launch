@@ -34,7 +34,7 @@
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_orta_sag"
-        args="0 0 0 0 0 0 vlp32_01 cam_orta_sag 100"/>
+        args="-0.00933256 -0.525942 -0.264174 -3.12302 0.0158059 -1.72083 vlp32_01 cam_orta_sag 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_orta_sol"
