@@ -2,42 +2,42 @@
   
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_on_orta"
-        args="0.681 0 -0.376 -1.5707 0 -1.69296 vlp32_01 cam_on_orta 100"/>
+        args="0.681429 0.0407253 -0.358304 -1.56696 0.0115036 -1.68528 vlp32_01 cam_on_orta 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_on_sag"
-        args="0.583 -0.371 -0.374 -2.14675 0 -1.5707 vlp32_01 cam_on_sag 100"/>
+        args="0.568737 -0.294156 -0.302412 -2.14491 0.01141 -1.58474 vlp32_01 cam_on_sag 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_on_sol"
-        args="0.583 0.371 -0.374 -0.99483 0 -1.5707 vlp32_01 cam_on_sol 100"/>
+        args="0.541328 0.391266 -0.315733 -0.974675 -0.00987303 -1.56271 vlp32_01 cam_on_sol 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_ayna_sag"
-        args="0.977 -0.875 -0.741 -3.71755 0 -1.5707 vlp32_01 cam_ayna_sag 100"/>
+        args="0.940546 -0.877203 -0.76036 2.55392 -0.00264113 -1.59033 vlp32_01 cam_ayna_sag 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_ayna_sol"
-        args="0.977 0.875 -0.741 0.57595 0 -1.5707 vlp32_01 cam_ayna_sol 100"/>
+        args="0.944974 0.928708 -0.716428 0.598994 0.0384203 -1.58121 vlp32_01 cam_ayna_sol 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_arka_orta"
-        args="-0.865 0 -0.384 1.5707 0 -1.5707 vlp32_01 cam_arka_orta 100"/>
+        args="-0.887786 0.0502358 -0.187155 1.61679 0.0120065 -1.59153 vlp32_01 cam_arka_orta 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_arka_sag"
-        args="-0.788 -0.322 -0.407 2.32128 0 -1.5707 vlp32_01 cam_arka_sag 100"/>
+        args="-0.738189 -0.310509 -0.3656 2.30769 0.00207599 -1.56204 vlp32_01 cam_arka_sag 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_arka_sol"
-        args="-0.788 0.322 -0.407 0.82030 0 -1.5707 vlp32_01 cam_arka_sol 100"/>
+        args="-0.761898 0.324548 -0.345802 0.898199 0.016305 -1.53612 vlp32_01 cam_arka_sol 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_orta_sag"
-        args="0 -0.515 -0.309 3.1415 0 -1.74532 vlp32_01 cam_orta_sag 100"/>
+        args="0 0 0 0 0 0 vlp32_01 cam_orta_sag 100"/>
 
   <node pkg="tf" type="static_transform_publisher"
         name="transformation_vlp32_01_to_cam_orta_sol"
-        args="0 0.515 -0.309 0 0 -1.74532 vlp32_01 cam_orta_sol 100"/>
+        args="0.00740411 0.504308 -0.283893 0.0209373 0.0250877 -1.7382 vlp32_01 cam_orta_sol 100"/>
 
 </launch>
