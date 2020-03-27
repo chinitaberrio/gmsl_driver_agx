@@ -59,7 +59,5 @@
     <param name="slave" value="0" type="str" />
   </node>
 
-  <include file="$(find sekonix_camera)/launch/transformations_cameras.launch"/>
-
 </launch>
 
