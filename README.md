@@ -12,3 +12,13 @@ Whoever wrote what is not hidden from anyone with the internet history.
 
  * https://github.com/facebook/folly (v2019.12.30.00)
  
+## Function
+
+This driver creates a worker thread for each port(4 cameras), utilizes a producer consumer queue for each,
+compresses them to jpeg with hardware acceleration and publishes the images with hardware timestamps of AGX.
+
+We tried with 8 cameras (3+3+2+2 for ports) and it does its best.
+
+I think this driver squeezes out of AGX the most to get compressed jpeg images from it currently.
+
+The only better way to get more from the cameras in AGX would be some sort of h264/h265 compression but that would be video then.
