@@ -1,0 +1,37 @@
+<launch>
+  <!-- gmsl multiple cameras run -->
+
+  <remap from="/sekonix_camera_port_a/port_0/camera_0/camera_info" to="/cam_on_orta/camera_info"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_0/image_raw" to="/cam_on_orta/image_raw"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_0/image_raw/compressed" to="/cam_on_orta/image_raw/compressed"/>
+
+  <remap from="/sekonix_camera_port_a/port_0/camera_1/camera_info" to="/cam_on_sag/camera_info"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_1/image_raw" to="/cam_on_sag/image_raw"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_1/image_raw/compressed" to="/cam_on_sag/image_raw/compressed"/>
+
+  <remap from="/sekonix_camera_port_a/port_0/camera_2/camera_info" to="/cam_on_sol/camera_info"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_2/image_raw" to="/cam_on_sol/image_raw"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_2/image_raw/compressed" to="/cam_on_sol/image_raw/compressed"/>
+
+
+<group ns="sekonix_camera_port_a">
+  <arg name="cam_calib_folder" default="$(find sekonix_camera)/calib/" />
+  <node pkg="sekonix_camera" type="sekonix_camera_node" name="sekonix_camera_node" output="screen">
+    <param name="image_width" value="1920" />     <!-- image raw resize only -->
+    <param name="image_height" value="1208" />    <!-- image raw resize only -->
+    <param name="image_buffer" value="10" />
+    <param name="image_compressed" value="true" type="bool" />  <!-- publish compressed original size -->
+    <param name="calib_folder" value="$(arg cam_calib_folder)" />
+    <param name="type_a" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="type_b" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="type_c" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="type_d" value="ar0231-rccb-bae-sf3324" type="str" />
+    <param name="selector_mask" value="1110000000000000" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
+    <param name="cross_csi_sync" value="1" type="str" />
+    <param name="fifo_size" value="3" type="str" />
+    <param name="slave" value="0" type="str" />
+    <param name="port" value="a" type="str" />
+  </node>
+</group>
+</launch>
+
