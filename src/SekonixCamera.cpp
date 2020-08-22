@@ -4,9 +4,9 @@
 
 SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
                              PrintEventHandler::Ptr print_event_handler)
-  : nh_(nh_in),
-    print_event_handler_(std::move(print_event_handler)),
-    name_pretty_("SekonixCamera") {
+    : nh_(nh_in),
+      print_event_handler_(std::move(print_event_handler)),
+      name_pretty_("SekonixCamera") {
   int image_width_;
   int image_height_;
   int pub_buffer_;
@@ -40,24 +40,24 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   nh_in.param<std::string>("port", port, "a");
 
   DriveWorks::ImageConfigPub imageConfig = {
-    (uint32_t) image_width_,
-    (uint32_t) image_height_,
-    (uint32_t) pub_buffer_,
-    img_compressed_,
-    (uint32_t) jpeg_quality_,
-    calib_folder,
+      (uint32_t) image_width_,
+      (uint32_t) image_height_,
+      (uint32_t) pub_buffer_,
+      img_compressed_,
+      (uint32_t) jpeg_quality_,
+      calib_folder,
   };
 
   DriveWorks::DeviceArguments::VecPairStrStr options = {
-    std::make_pair("type-a", "ar0231-rccb"),
-    std::make_pair("type-b", "ar0231-rccb"),
-    std::make_pair("type-c", "ar0231-rccb"),
-    std::make_pair("type-d", "ar0231-rccb"),
-    std::make_pair("selector_mask", "1110111011001100"),
-    std::make_pair("cross_csi_sync", "1"),
-    std::make_pair("fifo_size", "3"),
-    std::make_pair("slave", "0"),
-    std::make_pair("port", "a")
+      std::make_pair("type-a", "ar0231-rccb"),
+      std::make_pair("type-b", "ar0231-rccb"),
+      std::make_pair("type-c", "ar0231-rccb"),
+      std::make_pair("type-d", "ar0231-rccb"),
+      std::make_pair("selector_mask", "1110111011001100"),
+      std::make_pair("cross_csi_sync", "1"),
+      std::make_pair("fifo_size", "3"),
+      std::make_pair("slave", "0"),
+      std::make_pair("port", "a")
   };
 
   DriveWorks::DeviceArguments camera_arguments(options);

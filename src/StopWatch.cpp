@@ -9,8 +9,8 @@ double StopWatch::ElapsedMilliSeconds() {
   if (is_running)
     time_point_end = Clock::now();
   std::chrono::duration<double, std::milli> elapsed_duration =
-    time_point_end.time_since_epoch() -
-    time_point_start.time_since_epoch();
+      time_point_end.time_since_epoch() -
+          time_point_start.time_since_epoch();
   return elapsed_duration.count();
 
 }
@@ -19,8 +19,8 @@ double StopWatch::ElapsedMicroSeconds() {
   if (is_running)
     time_point_end = Clock::now();
   std::chrono::duration<double, std::micro> elapsed_duration =
-    time_point_end.time_since_epoch() -
-    time_point_start.time_since_epoch();
+      time_point_end.time_since_epoch() -
+          time_point_start.time_since_epoch();
   return elapsed_duration.count();
 }
 

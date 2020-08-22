@@ -3,7 +3,6 @@
 #include "SekonixCamera.h"
 #include "PrintEventHandler.h"
 
-
 int main(int argc, char **argv) {
   std::cout << "------------------ main --------------------" << std::endl;
   ros::init(argc, argv, "sekonix_camera_node", ros::init_options::NoSigintHandler);

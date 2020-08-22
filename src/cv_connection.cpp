@@ -47,10 +47,10 @@ OpenCVConnector::OpenCVConnector(std::string topic_name,
                                  std::string camera_frame_id,
                                  std::string cam_info_file,
                                  int buffer)
-  : it_(nh_),
-    counter(0),
-    camera_id(camera_frame_id),
-    camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id) {
+    : it_(nh_),
+      counter(0),
+      camera_id(camera_frame_id),
+      camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id) {
   std::string topic_raw = topic_name + std::string("/image_raw");
   std::string topic_jpg = topic_name + std::string("/image_raw/compressed");
   pub = it_.advertise(topic_raw, buffer);
@@ -64,7 +64,6 @@ OpenCVConnector::OpenCVConnector(std::string topic_name,
     ROS_ERROR("ERROR READING CALIBRATION FILE: %s", cam_info_file.c_str());
   }
 }
-
 
 void OpenCVConnector::WriteToOpenCV(unsigned char *buffer, int width_in, int height_in, int width_pub, int height_pub) {
   cv::Mat mat_img(cv::Size(width_in, height_in), CV_8UC4, buffer);    // create a cv::Mat from rgbaImage

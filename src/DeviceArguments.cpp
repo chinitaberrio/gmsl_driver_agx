@@ -36,38 +36,37 @@
 
 namespace DriveWorks {
 
-    DeviceArguments::DeviceArguments(const VecPairStrStr &options) {
-    for (const PairStrStr &option: options) {
-      arguments.insert(option);
-    }
+DeviceArguments::DeviceArguments(const VecPairStrStr &options) {
+  for (const PairStrStr &option: options) {
+    arguments.insert(option);
   }
+}
 
-  void DeviceArguments::printArguments() {
-    for (auto arg: arguments) {
-      std::cout << arg.first << "    " << arg.second << std::endl;
-    }
+void DeviceArguments::printArguments() {
+  for (auto arg: arguments) {
+    std::cout << arg.first << "    " << arg.second << std::endl;
   }
+}
 
-  const std::string &DeviceArguments::get(const std::string &name) const {
-    auto it = arguments.find(name);
-    if (it == arguments.end()) {
-      std::cout << "Get error: Missing device argument: " << name << std::endl;
-      return empty_string;
-    } else {
-      return it->second;
-    }
+const std::string &DeviceArguments::get(const std::string &name) const {
+  auto it = arguments.find(name);
+  if (it == arguments.end()) {
+    std::cout << "Get error: Missing device argument: " << name << std::endl;
+    return empty_string;
+  } else {
+    return it->second;
   }
+}
 
-
-  bool DeviceArguments::set(const std::string &name, const std::string &new_value) {
-    auto it = arguments.find(name);
-    if (it == arguments.end()) {
-      std::cout << "Set error: Missing argument: " << name << std::endl;
-      return false;
-    } else {
-      arguments[name] = new_value;
-      return true;
-    }
+bool DeviceArguments::set(const std::string &name, const std::string &new_value) {
+  auto it = arguments.find(name);
+  if (it == arguments.end()) {
+    std::cout << "Set error: Missing argument: " << name << std::endl;
+    return false;
+  } else {
+    arguments[name] = new_value;
+    return true;
   }
+}
 
 }

@@ -1,11 +1,11 @@
 <launch>
 
-  <include file="$(find sekonix_camera_new)/launch/multi_gmsl_new_porta.launch"/>
+  <include file="$(find sekonix_camera)/launch/multi_gmsl_port_a.launch"/>
 
-  <include file="$(find sekonix_camera_new)/launch/multi_gmsl_new_portb.launch"/>
+  <include file="$(find sekonix_camera)/launch/multi_gmsl_port_b.launch"/>
 
-  <include file="$(find sekonix_camera_new)/launch/multi_gmsl_new_portc.launch"/>
+  <include file="$(find sekonix_camera)/launch/multi_gmsl_port_c.launch"/>
 
-  <include file="$(find sekonix_camera_new)/launch/multi_gmsl_new_portd.launch"/>
+  <include file="$(find sekonix_camera)/launch/multi_gmsl_port_d.launch"/>
 
 </launch>
