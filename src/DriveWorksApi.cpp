@@ -72,17 +72,20 @@ namespace DriveWorks {
   }
 
   void
-  DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
+  DriveWorksApi::InitializeCameraPorts(std::vector <CameraPort::Ptr> &camera_ports,
                                        int &count_cameras,
                                        const dwSALHandle_t &sal,
                                        const DeviceArguments &device_arguments) {
     print_event_handler_->Print(name_pretty_, "InitializeCameraPorts is called!");
-    std::string selector = device_arguments.get("selector_mask");
+
     dwStatus result;
-    // Identify active ports
+
     int idx = 0;
     int cnt[4] = {0, 0, 0, 0};
-    std::string port[4] = {"a", "b", "c", "d"};
+
+    std::string selector = device_arguments.get("selector_mask");
+    std::string port = device_arguments.get("port");
+
     for (size_t i = 0; i < selector.length() && i < 16; i++, idx++) {
       const char s = selector[i];
       if (s == '1') {
@@ -91,58 +94,61 @@ namespace DriveWorks {
     }
 
     count_cameras = 0;
-    // Iterate through camera ports
-    for (size_t p = 0; p < 4; p++) {
-      if (cnt[p] <= 0) {
-        std::cout << "GMSL port #" << p << "is empty." << std::endl;
-        continue;
-      }
 
-      std::string params;
-      params += "camera-group=" + port[p];
-      params += ",camera-type=" +
-                device_arguments.get("type-" + port[p]);
-      params += ",camera-count=4"; // when using the mask, just ask for all cameras, mask will select properly
+    int pp = 0;
+    if (port == "a")
+      pp = 0;
+    else if (port == "b")
+      pp = 1;
+    else if (port == "c")
+      pp = 2;
+    else if (port == "d")
+      pp = 3;
 
-      if (selector.size() >= p * 4) {
-        params += ",camera-mask=" + selector.substr(p * 4, std::min(
-          selector.size() - p * 4, size_t{4}));
-      }
+    std::string params;
+    params += "camera-group=" + port;
+    params += ",camera-type=" + device_arguments.get("type-" + port);
+    params += ",camera-count=4"; // when using the mask, just ask for all cameras, mask will select properly
 
-      params += ",slave=" + device_arguments.get("slave");
-      params += ",cross-csi-sync=" + device_arguments.get("cross_csi_sync");
-      params += ",fifo-size=" + device_arguments.get("fifo_size");
-
-      std::cout << "DEBUG ARGS PORT:  " << p << std::endl;
-      std::cout << params << std::endl;
-
-      dwSensorHandle_t sensor_handle = DW_NULL_HANDLE;
-      dwSensorParams sensor_params;
-      sensor_params.parameters = params.c_str();
-      sensor_params.protocol = "camera.gmsl";
-      result = dwSAL_createSensor(&sensor_handle, sensor_params, sal);
-
-      if (result != DW_SUCCESS) {
-        std::cerr << "Cannot create driver: " << sensor_params.protocol
-                  << " with params: " << sensor_params.parameters << std::endl
-                  << "Error: " << dwGetStatusName(result) << std::endl;
-
-        if (result == DW_INVALID_ARGUMENT) {
-          std::cerr << "It is possible the given camera is not supported. "
-                    << "Please refer to the documentation for this sample."
-                    << std::endl;
-        }
-        continue;
-      }
-
-      CameraPort::Ptr camera_port = std::make_shared<CameraPort>(sensor_handle,
-                                                                 debug_mode_,
-                                                                 p,
-                                                                 pub_image_config_.camerainfo_folder,
-                                                                 print_event_handler_);
-      camera_ports.push_back(camera_port);
-      count_cameras += camera_port->GetSiblingCount();
+    if (selector.size() >= pp * 4) {
+      params += ",camera-mask=" +
+                selector.substr(pp * 4, std::min(selector.size() - pp * 4, size_t{4}));
     }
+
+    params += ",slave=" + device_arguments.get("slave");
+    params += ",cross-csi-sync=" + device_arguments.get("cross_csi_sync");
+    params += ",fifo-size=" + device_arguments.get("fifo_size");
+
+    std::cout << "DEBUG ARGS PORT:  " << pp << std::endl;
+    std::cout << "Params: " << params << std::endl;
+
+    dwSensorHandle_t sensor_handle = DW_NULL_HANDLE;
+    dwSensorParams sensor_params;
+    sensor_params.parameters = params.c_str();
+    sensor_params.protocol = "camera.gmsl";
+
+    result = dwSAL_createSensor(&sensor_handle, sensor_params, sal);
+    if (result != DW_SUCCESS) {
+      std::cerr << "Cannot create driver: " << sensor_params.protocol
+                << " with params: " << sensor_params.parameters << std::endl
+                << "Error: " << dwGetStatusName(result) << std::endl;
+
+      if (result == DW_INVALID_ARGUMENT) {
+        std::cerr << "It is possible the given camera is not supported. "
+                  << "Please refer to the documentation for this sample."
+                  << std::endl;
+      }
+      exit(-1);
+    }
+
+    CameraPort::Ptr camera_port =
+      std::make_shared<CameraPort>(sensor_handle,
+                                   debug_mode_,
+                                   pp,
+                                   pub_image_config_.camerainfo_folder,
+                                   print_event_handler_);
+    camera_ports.push_back(camera_port);
+    count_cameras += camera_port->GetSiblingCount();
     std::cout << "Camera count: " << count_cameras << std::endl;
 
     if (camera_ports.empty()) {
@@ -158,35 +164,44 @@ namespace DriveWorks {
       }
     }
     std::cout << "camera_ports Start succeded" << std::endl;
-    is_running_ = true;
   }
 
   void DriveWorksApi::WorkIt() {
     print_event_handler_->Print(name_pretty_, "WorkIt is called!");
-    // Start Image Publisher Consumers
-    for (auto &camera_port : camera_ports_) {
-      camera_port->StartConsumers(is_running_);
-    }
-    // Start Camera Read Producer
-    std::vector<std::shared_future<void>> future_producers;
-    for (auto &camera_port  : camera_ports_) {
-      camera_port->StartProducer(is_running_, context_handle_);
-    }
+
+    auto ProcessCameraStreams = [&]() {
+      while (is_running_) {
+        for (auto &camera_port  : camera_ports_) {
+          camera_port->ProcessCameraStreams(std::ref(is_running_), context_handle_);
+        }
+      }
+    };
+
+    cameraStreamsFuture_ = std::async(std::launch::async,
+                                      ProcessCameraStreams);
+
     std::cout << "WorkIt is over." << std::endl;
   }
 
   void DriveWorksApi::Shutdown() {
     print_event_handler_->Print(name_pretty_, "Shutdown is called!");
+
     is_running_ = false;
     print_event_handler_->Print(name_pretty_, "is_running_ is false now!");
+
+    cameraStreamsFuture_.get();
+
     for (auto &camera : camera_ports_) {
       camera.reset();
     }
     print_event_handler_->Print(name_pretty_, "All camera_ports are reset.");
+
     dwSAL_release(sal_handle_);
     print_event_handler_->Print(name_pretty_, "dwSAL_release");
+
     dwRelease(context_handle_);
     print_event_handler_->Print(name_pretty_, "dwRelease");
+
     dwLogger_release();
     print_event_handler_->Print(name_pretty_, "dwLogger_release");
   }
@@ -196,5 +211,4 @@ namespace DriveWorks {
     Shutdown();
     print_event_handler_->Print(name_pretty_, "Destructor is finished!");
   }
-
 }

@@ -113,7 +113,6 @@ namespace DriveWorks {
     void WorkIt();
 
   private:
-    std::atomic_bool is_running_{false};
     int count_camera_{0};
     bool debug_mode_{false};
 
@@ -125,6 +124,8 @@ namespace DriveWorks {
     PrintEventHandler::Ptr print_event_handler_;
     std::string name_pretty_;
 
+    std::shared_future<void> cameraStreamsFuture_;
+    std::atomic_bool is_running_{true};
   };
 
 };

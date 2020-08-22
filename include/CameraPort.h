@@ -40,15 +40,13 @@ namespace DriveWorks {
     dwStatus Start(const dwContextHandle_t &context_handle);
 
 
-    void StartProducer(std::atomic_bool &is_running,
-                       const dwContextHandle_t &context_handle);
-
-    void ReadFramesPushImages(const dwContextHandle_t &context_handle, std::atomic_bool &is_running);
-
+    void StartProducer(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
     void StartConsumers(std::atomic_bool &is_running);
 
-    void ConsumeImagesPublishMessages(std::atomic_bool &is_running,
-                                      int ind_camera);
+    void ReadFramesPushImages(const dwContextHandle_t &context_handle, std::atomic_bool &is_running);
+    void ConsumeImagesPublishMessages(std::atomic_bool &is_running, int ind_camera);
+
+    void ProcessCameraStreams(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
 
     int GetSiblingCount();
 
@@ -63,7 +61,7 @@ namespace DriveWorks {
     dwImageProperties image_properties_;
     dwCameraProperties camera_properties_;
     int port;
-    std::shared_future<void> future_;
+//    std::shared_future<void> future_;
     PrintEventHandler::Ptr printer_;
     std::string name_pretty_;
   };

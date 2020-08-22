@@ -5,11 +5,14 @@
 
 
 int main(int argc, char **argv) {
+  std::cout << "------------------ main --------------------" << std::endl;
   ros::init(argc, argv, "sekonix_camera_node", ros::init_options::NoSigintHandler);
   ros::NodeHandle nh;
+  ros::NodeHandle nh_p("~");
 
   auto signal_handler = [](int sig) {
     (void) sig;
+    std::cout << "Signal handler calling...." << std::endl;
     ros::shutdown();
   };
 
@@ -25,7 +28,7 @@ int main(int argc, char **argv) {
   PrintEventHandler::Ptr print_event_handler = std::make_shared<PrintEventHandler>();
   print_event_handler->Print(name_pretty, "sekonix_camera_node started!");
 
-  SekonixCamera sekonix_camera(nh, print_event_handler);
+  SekonixCamera sekonix_camera(nh_p, print_event_handler);
 
   ros::AsyncSpinner spinner(1);
   print_event_handler->Print(name_pretty, "Spinning has started!");
@@ -37,5 +40,6 @@ int main(int argc, char **argv) {
   sekonix_camera.Shutdown();
 
   print_event_handler->Print(name_pretty, "Just before return 0;");
+  std::cout << "------------------ end main --------------------" << std::endl;
   return 0;
 }
