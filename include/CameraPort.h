@@ -4,10 +4,7 @@
 #include <dw/sensors/Sensors.h>
 #include <dw/image/Image.h>
 #include <dw/sensors/camera/Camera.h>
-#include <queue>
 #include <drive-t186ref-linux/include/nvmedia_ijpe.h>
-#include <folly/ProducerConsumerQueue.h>
-#include <future>
 #include "cv_connection.hpp"
 #include "PrintEventHandler.h"
 
@@ -22,7 +19,6 @@ namespace DriveWorks {
         dwImageHandle_t image_handle;
         ros::Time time_stamp;
       };
-      std::shared_ptr<folly::ProducerConsumerQueue<ImageWithStamp>> QueueImageHandles;
       OpenCVConnector::Ptr OpenCvConnector;
       NvMediaIJPE *NvMediaIjpe;
       NvMediaDevice *NvmediaDevice;
@@ -39,13 +35,6 @@ namespace DriveWorks {
 
     dwStatus Start(const dwContextHandle_t &context_handle);
 
-
-    void StartProducer(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
-    void StartConsumers(std::atomic_bool &is_running);
-
-    void ReadFramesPushImages(const dwContextHandle_t &context_handle, std::atomic_bool &is_running);
-    void ConsumeImagesPublishMessages(std::atomic_bool &is_running, int ind_camera);
-
     void ProcessCameraStreams(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
 
     int GetSiblingCount();
@@ -61,7 +50,6 @@ namespace DriveWorks {
     dwImageProperties image_properties_;
     dwCameraProperties camera_properties_;
     int port;
-//    std::shared_future<void> future_;
     PrintEventHandler::Ptr printer_;
     std::string name_pretty_;
   };
