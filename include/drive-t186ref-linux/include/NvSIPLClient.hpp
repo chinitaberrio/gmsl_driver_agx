@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -8,13 +8,19 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
-#ifndef _NVSIPLCLIENT_HPP_
-#define _NVSIPLCLIENT_HPP_
+#ifndef NVSIPLCLIENT_HPP
+#define NVSIPLCLIENT_HPP
 
 #include "NvSIPLCommon.hpp"
 
 #include "nvmedia_image.h"
-#include "nvmedia_isc.h"
+#include "devblk_cdi.h"
+#include "nvmedia_isp_stat.h"
+
+#ifdef NVMEDIA_NVSCI_ENABLE
+#include "nvscisync.h"
+#include "nvscistream.h"
+#endif // NVMEDIA_NVSCI_ENABLE
 
 #include <cstdint>
 #include <string>
@@ -23,11 +29,11 @@
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Client Interface - @ref NvSIPLClient_API </b>
+ * @brief <b> NVIDIA SIPL: Client Interface - @ref NvSIPLClient_API </b>
  *
  */
 
-/** @defgroup NvSIPLClient_API NvSIPL Client (libnvsipl.so)
+/** @defgroup NvSIPLClient_API NvSIPL Client
  *
  * @brief Provides interfaces to retrieve the output of the SIPL Pipeline Manager.
  *
@@ -56,55 +62,25 @@ class INvSIPLClient
         /** Holds the TSC timestamp of the frame capture. */
         std::uint64_t frameCaptureTSC;
         /** Holds the parsed embedded data frame number of exposures info for the captured frame.*/
-        uint32_t numExposures;
+        std::uint32_t numExposures;
         /** Holds the parsed embedded data sensor exposure info for the captured frame. */
-        NvMediaISCExposure sensorExpInfo;
+        DevBlkCDIExposure sensorExpInfo;
         /** Holds the parsed embedded data sensor white balance info for the captured frame. */
-        NvMediaISCWhiteBalance sensorWBInfo;
+        DevBlkCDIWhiteBalance sensorWBInfo;
         /** Holds the parsed embedded data sensor PWL info for the captured frame. */
-        NvMediaISCPWL sensorPWLInfo;
+        DevBlkCDIPWL sensorPWLInfo;
         /** Holds the parsed embedded data sensor crc info for the captured frame. */
-        NvMediaISCCRC sensorCRCInfo;
+        DevBlkCDICRC sensorCRCInfo;
         /** Holds the parsed embedded data frame report info for the captured frame. */
-        NvMediaISCFrameReport sensorReportInfo;
+        DevBlkCDIFrameReport sensorReportInfo;
         /** Holds the parsed embedded data sensor temperature info for the captured frame. */
-        NvMediaISCTemperature sensorTempInfo;
-        /** Holds parsed embedded data frame sequence number info for the captured frame. */
-        NvMediaISCFrameSeqNum frameSeqNumInfo;
-    };
-
-    /** @brief Defines a consumer of the output of the SIPL pipeline.
-     *
-     * This object must be allocated and set by the user of @ref NvSIPLCamera_API to specify
-     * the properties of the intended consumers of the pipeline output(s). */
-    struct ConsumerDesc
-    {
-        /** @brief Defines the types of the SIPL pipeline output. */
-        enum class OutputType
-        {
-            ICP,  /**< Indicates the unprocessed output of the image sensor. */
-            ISP0, /**< Indicates the first output of NvMediaISP. */
-            ISP1, /**< Indicates the second output of NvMediaISP. */
-        };
-
-        /** Holds the name of the consumer. */
-        std::string sName;
-        /** Holds the ID of the sensor. This must be one of the IDs in PlatformCfg. */
-        std::uint32_t uSensorIndex;
-        /** Holds the OutputType. */
-        OutputType eOutputType;
-    };
-
-    /** @brief Describes a client of the pipeline.
-     *
-     * This is returned by @ref NvSIPLCamera_API after initialization.
-     * and needed to create the consumer. */
-    struct ClientDesc
-    {
-        /** @ref ConsumerDesc */
-        ConsumerDesc oConsDesc;
-
-        virtual ~ClientDesc() = default;
+        DevBlkCDITemperature sensorTempInfo;
+        /** Holds the parsed embedded data frame sequence number info for the captured frame. */
+        DevBlkCDIFrameSeqNum frameSeqNumInfo;
+        /** Holds a flag indicating if the ISP bad pixel statistics are valid. */
+        bool badPixelStatsValid;
+        /** Holds the ISP bad pixel statistics for the previous ISP output frame. */
+        NvMediaISPBadPixelStatsData badPixelStats;
     };
 
     /** @class INvSIPLBuffer
@@ -118,18 +94,42 @@ class INvSIPLClient
         /** @brief Adds a reference.
          *
          * Adding a reference to the buffer ensures that this buffer is not re-used by another
-         * producer/consumer of the buffer.
-         *
-         * @returns Ref count after the increment. */
-        virtual std::uint32_t AddRef(void) = 0;
+         * producer/consumer of the buffer. */
+        virtual void AddRef(void) = 0;
 
         /** @brief Release a reference.
          *
          * Releasing reference implies that the user has finished working with the buffer and
          * the buffer is available for re-use.
          *
-         * @returns Ref count after the decrement. */
-        virtual std::uint32_t Release(void) = 0;
+         * @returns::SIPLStatus The completion status of the operation. */
+        virtual SIPLStatus Release(void) = 0;
+
+#ifdef NVMEDIA_NVSCI_ENABLE
+        /** @brief Add an NvSciSync prefence.
+         *
+         * Add an NvSciSync prefence to be used with the next ISP or ICP operation. This function
+         * creates its own duplicate of the fence, so the caller must clear their copy of the fence
+         * by calling @ref NvSciSyncFenceClear().
+         *
+         * @param[in] prefence Prefence to be added.
+         *
+         * @returns::SIPLStatus The completion status of the operation. */
+        virtual SIPLStatus AddNvSciSyncPrefence(NvSciSyncFence &prefence) = 0;
+
+        /** @brief Retrieve the latest NvSciSync EOF fence.
+         *
+         * Retrieve the buffer's latest NvSciSync EOF fence associated with the engine's set
+         * NvSciSync EOF object. The caller must clear the returned fence by calling
+         * @ref NvSciSyncFenceClear().
+         *
+         * This method should only be called after @ref nvsipl::INvSIPLCamera::Start().
+         *
+         * @param[out] postfence EOF fence being returned.
+         *
+         * @returns::SIPLStatus The completion status of the operation. */
+        virtual SIPLStatus GetEOFNvSciSyncFence(NvSciSyncFence *postfence) = 0;
+#endif // NVMEDIA_NVSCI_ENABLE
     };
 
     /** @class INvSIPLNvMBuffer
@@ -180,65 +180,24 @@ class INvSIPLClient
          *
          * @returns::SIPLStatus Indicates if the frame was consumed correctly. */
         virtual SIPLStatus OnFrameAvailable(INvSIPLBuffer* pBuffer) = 0;
-
-        /** @brief An error occurred in the image processing pipeline.
-         *
-         * This method is overridden by the implementation of the consumer.
-         * This function is called by SIPL pipeline thread.
-         *
-         * TODO: Update this to include the error information and corrective action.
-         *
-         * @returns::SIPLStatus. The status of the operation. */
-        virtual SIPLStatus OnError(void) = 0;
-
-        /** @brief Default destructor. */
-        virtual ~INvMCallback(void) = default;
     };
 
-    /** @brief Create an instance of @ref NvSIPLClient_API.
-     *
-     * Static function to create an instance of implementation class and return handle. The object
-     * is automatically destroyed when the variable holding the return value goes out of scope.
-     *
-     * @returns unique_ptr A handle to an INvSIPLClient instance. */
-    static std::unique_ptr<INvSIPLClient> Create();
+    /** @brief Describes a client of the pipeline. */
+    struct ConsumerDesc
+    {
+        /** @brief Defines the types of the SIPL pipeline output. */
+        enum class OutputType
+        {
+            ICP,  /**< Indicates the unprocessed output of the image sensor. */
+            ISP0, /**< Indicates the first output of NvMediaISP. */
+            ISP1, /**< Indicates the second output of NvMediaISP. */
+        };
 
-    /** @brief Initializes @ref NvSIPLClient_API.
-     *
-     * @param[in] pDesc Pointer @ref ClientDesc returned by @ref INvSIPLCamera::GetClientDesc
-     * @param[in] pCallback A pointer to user implemented object of a class inheriting
-     * @ref INvMCallback
-     *
-     * @returns::SIPLStatus. The completion status of the operation. */
-    virtual SIPLStatus Init(ClientDesc* pDesc, INvMCallback* pCallback) = 0;
-
-    /** @brief Starts @ref NvSIPLClient_API.
-     *
-     * The function is a placeholder for any operations that are necessary before
-     * @ref NvSIPLClient_API starts streaming out the buffer.
-     *
-     * Currently there is no impact of calling this API.
-     *
-     * @returns::SIPLStatus. The completion status of the operation. */
-    virtual SIPLStatus Start(void) = 0;
-
-    /** @brief Stops @ref NvSIPLClient_API.
-     *
-     * The function is a placeholder for any operations that are necessary before
-     * @ref NvSIPLClient_API stops streaming out the buffer.
-     *
-     * Currently there is no impact of calling this API.
-     *
-     * @returns::SIPLStatus. The completion status of the operation.*/
-    virtual SIPLStatus Stop(void) = 0;
-
-    /** @brief De-initializes @ref NvSIPLClient_API.
-     *
-     * @returns::SIPLStatus. The completion status of the operation. */
-    virtual SIPLStatus Deinit(void) = 0;
-
-    /** @brief Default destructor. */
-    virtual ~INvSIPLClient(void) = default;
+        /** Holds an @ref OutputType. */
+        OutputType eOutputType;
+        /** Holds a pointer to a user-implemented class object inheriting from @ref INvMCallback. */
+        INvMCallback* callback;
+    };
 };
 
 /** @} */
@@ -247,4 +206,4 @@ class INvSIPLClient
 
 
 
-#endif //_NVSIPLCLIENT_HPP_
+#endif // NVSIPLCLIENT_HPP

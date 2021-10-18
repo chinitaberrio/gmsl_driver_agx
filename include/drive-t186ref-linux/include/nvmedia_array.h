@@ -22,22 +22,31 @@ extern "C" {
 #endif
 
 #include "nvmedia_core.h"
-
 /**
- * \defgroup array_api NvMedia Array
+ * \defgroup nvmedia_array_top NvMedia Array
  *
- * The NvMedia Array API encompasses all NvMedia
+ * The NvMedia Array and NvSciBuf API encompasses all NvMedia
  * functions that create, destroy, access and update arrays
  * used in media processing and computer vision applications.
  *
  * @ingroup nvmedia_top
  * @{
  */
+/**
+ * \defgroup nvmedia_array_api NvMedia Array
+ *
+ * The NvMedia Array API encompasses all NvMedia
+ * functions that create, destroy, access and update arrays
+ * used in media processing and computer vision applications.
+ *
+ * @ingroup nvmedia_array_top
+ * @{
+ */
 
 /** \brief Major version number. */
-#define NVMEDIA_ARRAY_VERSION_MAJOR   2
+#define NVMEDIA_ARRAY_VERSION_MAJOR   (2u)
 /** \brief Minor version number. */
-#define NVMEDIA_ARRAY_VERSION_MINOR   1
+#define NVMEDIA_ARRAY_VERSION_MINOR   (2u)
 
 /**
  * \hideinitializer
@@ -188,7 +197,8 @@ NvMediaArrayGetElemSizeForType(
  * \retval  NVMEDIA_STATUS_OK indicates that the call is successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a handle or
  *  @c numElementsPtr is NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that the array is not locked.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the array cannot be locked to
+ * retrieve the size information.
  */
 NvMediaStatus
 NvMediaArrayGetSize(
@@ -211,7 +221,8 @@ NvMediaArrayGetSize(
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a handle is NULL.
  * \retval  NVMEDIA_STATUS_INVALID_SIZE indicates that numElements is greater
  *  than the array's initial size.
- * \retval  NVMEDIA_STATUS_ERROR indicates that the array is not locked.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the array cannot be locked to
+ * set the size information.
  */
 NvMediaStatus
 NvMediaArraySetSize(
@@ -306,6 +317,7 @@ void
 NvMediaArrayUnlock(
     NvMediaArray *handle
 );
+/**@} <!-- Ends nvmedia_array_api --> */
 
 /*
  * \defgroup history_nvmedia_array History
@@ -321,9 +333,13 @@ NvMediaArrayUnlock(
  *
  * <b> Version 2.1 </b> July 9, 2018
  * - Add version query API.
+ *
+ * <b> Version 2.2 </b> June 18, 2019
+ * - Notes to Deprecate the NvMediaArrayCreate API
+ *   in support of NvSciBuf APIs.
  */
 
-/** @} */
+/**@} <!-- Ends nvmedia_array_top --> */
 
 #ifdef __cplusplus
 };     /* extern "C" */

@@ -41,10 +41,10 @@
  */
 class WindowEGL : public WindowBase
 {
-  public:
+public:
     // Factory
-    static WindowEGL *create(int32_t width, int32_t height, bool offscreen, int32_t samples);
-    static WindowEGL *create(int32_t width, int32_t height, bool offscreen);
+    static WindowEGL* create(int32_t width, int32_t height, bool offscreen, int32_t samples);
+    static WindowEGL* create(int32_t width, int32_t height, bool offscreen);
 
     virtual ~WindowEGL();
 
@@ -63,12 +63,19 @@ class WindowEGL : public WindowBase
 
     bool makeCurrent() override;
     bool resetCurrent() override;
+
+    // poll events and swap back and front buffers
     bool swapBuffers() override;
+
+    // swap back and front buffers ONLY, does not poll events
+    bool swapBuffersOnly() override;
     bool releaseContext() override;
     void resetContext() override;
+    bool isOffscreen() const override { return m_offscreen; };
+    bool isEGLEnabled() const override { return true; }
     EGLContext createSharedContext() const override;
 
-  protected:
+protected:
     WindowEGL(int32_t width, int32_t height, bool offscreen);
     bool initEGL();
 
@@ -81,14 +88,14 @@ class WindowEGL : public WindowBase
     bool m_offscreen;
 
     // EGL Function Pointers
-    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = nullptr;
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT                   = nullptr;
     PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC eglCreatePlatformWindowSurfaceEXT = nullptr;
     PFNEGLCREATEPLATFORMPIXMAPSURFACEEXTPROC eglCreatePlatformPixmapSurfaceEXT = nullptr;
-    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = nullptr;
-    PFNEGLQUERYDEVICESTRINGEXTPROC eglQueryDeviceStringEXT = nullptr;
+    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT                               = nullptr;
+    PFNEGLQUERYDEVICESTRINGEXTPROC eglQueryDeviceStringEXT                     = nullptr;
 
-    PFNEGLCREATESTREAMKHRPROC eglCreateStreamKHR = nullptr;
-    PFNEGLDESTROYSTREAMKHRPROC eglDestroyStreamKHR = nullptr;
+    PFNEGLCREATESTREAMKHRPROC eglCreateStreamKHR                               = nullptr;
+    PFNEGLDESTROYSTREAMKHRPROC eglDestroyStreamKHR                             = nullptr;
     PFNEGLCREATESTREAMPRODUCERSURFACEKHRPROC eglCreateStreamProducerSurfaceKHR = nullptr;
 };
 

@@ -8,13 +8,13 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
-#ifndef _NVSIPLCOMMON_HPP_
-#define _NVSIPLCOMMON_HPP_
+#ifndef NVSIPLCOMMON_HPP
+#define NVSIPLCOMMON_HPP
 
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Common Data Structures  - @ref NvSIPL </b>
+ * @brief <b> NVIDIA SIPL: Common Data Structures  - @ref NvSIPL </b>
  *
  */
 
@@ -23,7 +23,7 @@
  */
 namespace nvsipl
 {
-/** @defgroup NvSIPL Sensor Input Processing Library (SIPL)
+/** @defgroup NvSIPL SIPL
  *
  * @brief  SIPL provides abstract and simple API to capture the output of image sensors
  * with optional image processing. SIPL is implemented on top of NvMedia API.
@@ -49,12 +49,19 @@ enum SIPLStatus
     NVSIPL_STATUS_NOT_SUPPORTED,
     /** Indicates an out of memory or other system resource error was encountered. */
     NVSIPL_STATUS_OUT_OF_MEMORY,
+    /** Indicates a resource error was encountered. */
+    NVSIPL_STATUS_RESOURCE_ERROR,
     /** Indicates an operation timed out. */
     NVSIPL_STATUS_TIMED_OUT,
-    /** Indicates a module was not initialized. */
-    NVSIPL_STATUS_NOT_INITIALIZED,
     /** Indicates a module is in an invalid state. */
     NVSIPL_STATUS_INVALID_STATE,
+    /** Indicates that end of file has been reached. */
+    NVSIPL_STATUS_EOF,
+
+    /** Indicates a module was not initialized.
+     * @note This enum will be deprecated in the future.
+     */
+    NVSIPL_STATUS_NOT_INITIALIZED,
 
     /** Indicates an unspecified error that is used when no other error code applies. */
     NVSIPL_STATUS_ERROR=127 // Assuming that we would not need more than 127 codes.
@@ -65,4 +72,4 @@ enum SIPLStatus
 }  // namespace nvsipl
 
 
-#endif //_NVSIPLCOMMON_HPP_
+#endif // NVSIPLCOMMON_HPP

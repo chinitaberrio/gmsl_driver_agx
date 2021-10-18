@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_PIDL_PI_INCLUDEC_RX33GT_H_
-#define _TAO_PIDL_PI_INCLUDEC_RX33GT_H_
+#ifndef _TAO_PIDL_PI_INCLUDEC_37VBXX_H_
+#define _TAO_PIDL_PI_INCLUDEC_37VBXX_H_
 
 #include /**/ "ace/pre.h"
 

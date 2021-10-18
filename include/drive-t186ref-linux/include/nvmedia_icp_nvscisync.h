@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -18,7 +18,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "nvmedia_core.h"
 #include "nvscisync.h"
@@ -37,18 +37,18 @@ extern "C" {
 /** \brief Major version number. */
 #define NVMEDIA_ICP_NVSCISYNC_VERSION_MAJOR   1
 /** \brief Minor version number. */
-#define NVMEDIA_ICP_NVSCISYNC_VERSION_MINOR   0
+#define NVMEDIA_ICP_NVSCISYNC_VERSION_MINOR   2
 
 /** Maximum number of times NvMediaICPInsertPreNvSciSyncFence() may be called
  before each NvMediaICPFeedImageGroup call. */
-#define NVMEDIA_ICP_MAX_PRENVSCISYNCFENCES  (3)
+#define NVMEDIA_ICP_MAX_PRENVSCISYNCFENCES    3
 
 /**
  * \brief Returns version information for the NvMedia ICP NvSciSync library.
  * \param[out] version  A pointer to a structure to be filled with version
  *                       information.
  * \return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful, or
- * \ref NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
+ * \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @a version was NULL.
  */
 NvMediaStatus
 NvMediaICPNvSciSyncGetVersion(
@@ -72,23 +72,25 @@ NvMediaICPNvSciSyncGetVersion(
  *                               requested for an NvMediaICP signaler or
  *                               an NvMediaICP waiter.
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a attrlist was NULL, or
- *  any of the public attributes listed above were already set.
- * \retval  NVMEDIA_STATUS_OUT_OF_MEMORY indicates that there was not enough
- *  memory for the requested operation.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object or @a attrlist was NULL, or any of the public attributes listed above were already set.
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function is not supported for the
+ *  given hardware configuration.
  */
 NvMediaStatus
 NvMediaICPFillNvSciSyncAttrList(
-    NvMediaICP                 *icp,
-    NvSciSyncAttrList          attrlist,
-    NvMediaNvSciSyncClientType clienttype
+    const NvMediaICP             *icp,
+    NvSciSyncAttrList            attrlist,
+    NvMediaNvSciSyncClientType   clienttype
 );
 
 /**
  * \brief Registers an \ref NvSciSyncObj with \ref NvMediaICP.
  *
- * Every \ref NvSciSyncObj used by NvMediaICP (including duplicate objects)
- * must be registered in advance by a call to this function.
+ * Every \ref NvSciSyncObj used by NvMediaICP
+ * must be registered in advance by a call to this function. If the same object
+ * is used for multiple virtual channels, it must be registered once for each
+ * virtual channel.
  * Only the exact same registered NvSciSyncObj can be used as an argument in
  * NvMediaICPSetNvSciSyncObjforEOF(), NvMediaICPGetEOFNvSciSyncFence(),
  * and NvMediaICPUnregisterNvSciSyncObj().
@@ -102,10 +104,12 @@ NvMediaICPFillNvSciSyncAttrList(
  * \param[in] channelId   Channel ID for HDR capture.
  *
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL, or
- *  @a syncobjtype was not a valid NvMediaSciSyncObjType.
- * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that @a syncobj was not a
- *  compatible NvSciSyncObj which NvMediaICP could support.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object or @a syncobjtype was not a valid NvMediaSciSyncObjType or @a channelId is greater than
+ *  or equal to numVirtualChannels in the image group.
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that indicates that this function is not
+ *  supported for the given hardware configuration or @a syncobj was not a compatible NvSciSyncObj
+ *  which NvMediaICP could support.
  * \retval  NVMEDIA_STATUS_ERROR indicates that the maximum allowed number of
  *  NvSciScynObj objects were already registered for the given @a syncobjtype,
  *  or that @a syncobj was already registered with the same ICP handle for a
@@ -113,10 +117,10 @@ NvMediaICPFillNvSciSyncAttrList(
  */
 NvMediaStatus
 NvMediaICPRegisterNvSciSyncObj(
-    NvMediaICP              *icp,
-    NvMediaNvSciSyncObjType syncobjtype,
-    NvSciSyncObj            syncobj,
-    uint32_t                channelId
+    const NvMediaICP          *icp,
+    NvMediaNvSciSyncObjType   syncobjtype,
+    NvSciSyncObj              syncobj,
+    uint32_t                  channelId
 );
 
 /**
@@ -134,15 +138,18 @@ NvMediaICPRegisterNvSciSyncObj(
  * \param[in] channelId A channel ID for HDR capture.
  *
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL, or that
- *  @a syncobj was not registered.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object or that @a syncobj was not registered or @a channelId is greater than or equal to
+ *  numVirtualChannels in the image group.
  * \retval  NVMEDIA_STATUS_ERROR indicates that @a icp has been destroyed.
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function is not supported for the
+ *  given hardware configuration.*
  */
 NvMediaStatus
 NvMediaICPUnregisterNvSciSyncObj(
-    NvMediaICP        *icp,
-    NvSciSyncObj      syncobj,
-    uint32_t          channelId
+    const NvMediaICP      *icp,
+    NvSciSyncObj          syncobj,
+    uint32_t              channelId
 );
 
 /**
@@ -161,15 +168,18 @@ NvMediaICPUnregisterNvSciSyncObj(
  * \param[in] channelId    A channel ID for HDR capture.
  *
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL, or that
- *  @a nvscisyncEOF was not registered with ICP as either type
- *  \ref NVMEDIA_EOFSYNCOBJ or type \ref NVMEDIA_EOF_PRESYNCOBJ.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object or that @a nvscisyncEOF was not registered with ICP as either type
+ *  \ref NVMEDIA_EOFSYNCOBJ or type \ref NVMEDIA_EOF_PRESYNCOBJ or @a channelId is greater than or
+ *  equal to numVirtualChannels in the image group.
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function is not supported for the
+ *  given hardware configuration.
  */
 NvMediaStatus
 NvMediaICPSetNvSciSyncObjforEOF(
-    NvMediaICP     *icp,
-    NvSciSyncObj    nvscisyncEOF,
-    uint32_t        channelId
+    const NvMediaICP     *icp,
+    NvSciSyncObj         nvscisyncEOF,
+    uint32_t             channelId
 );
 
 /**
@@ -183,9 +193,6 @@ NvMediaICPSetNvSciSyncObjforEOF(
  * with the last %NvMediaICPFeedImageGroup() call.
  * %NvMediaICPGetEOFNvSciSyncFence() must be called after
  * %NvMediaICPFeedImageGroup(). For example, in the below sequence of code:
- * the last %NvMediaICPFeedImageGroup() call. %NvMediaICPGetEOFNvSciSyncFence()
- * must be called after an %NvMediaICPFeedImageGroup() call. For example,
- * in the below sequence of code,
  *
  * \code
  * nvmstatus = NvMediaICPFeedImageGroup(icp, imageGrp, timeout);
@@ -203,17 +210,20 @@ NvMediaICPSetNvSciSyncObjforEOF(
  * \param[out] eofnvscisyncfence    A pointer to eof NvSciSyncFence.
  *
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was not a valid
- *  \ref NvMediaICP handle, or that @a eofnvscisyncfence was NULL.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to
+ *  non-icp object or that @a eofnvscisyncfence was NULL or @a channelId is greater than
+ *  or equal to numVirtualChannels in the image group.
  * \retval  NVMEDIA_STATUS_ERROR indicates that the function was called before
  *  %NvMediaICPFeedImageGroup().
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function is not supported for the
+ *  given hardware configuration.
  */
 NvMediaStatus
 NvMediaICPGetEOFNvSciSyncFence(
-    NvMediaICP          *icp,
-    const NvSciSyncObj  eofnvscisyncobj,
-    uint32_t            channelId,
-    NvSciSyncFence      *eofnvscisyncfence
+    const NvMediaICP          *icp,
+    const NvSciSyncObj        eofnvscisyncobj,
+    uint32_t                  channelId,
+    NvSciSyncFence            *eofnvscisyncfence
 );
 
 /**
@@ -231,17 +241,19 @@ NvMediaICPGetEOFNvSciSyncFence(
  *                          SOFfence.
  * \param[in] channelId    Channel ID for HDR capture.
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL, or that
- *  @a nvscisyncSOF was not registered with ICP as either type
- *  NVMEDIA_SOFSYNCOBJ or type NVMEDIA_SOF_PRESYNCOBJ.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object or that @a nvscisyncSOF was not registered with ICP as either type NVMEDIA_SOFSYNCOBJ or
+ *  type NVMEDIA_SOF_PRESYNCOBJ or @a channelId is greater than or equal to numVirtualChannels in
+ *  the image group.
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function is not supported for the
+ *  given hardware configuration.
  */
 NvMediaStatus
 NvMediaICPSetNvSciSyncObjforSOF(
-    NvMediaICP      *icp,
-    NvSciSyncObj    nvscisyncSOF,
-    uint32_t        channelId
+    const NvMediaICP      *icp,
+    NvSciSyncObj          nvscisyncSOF,
+    uint32_t              channelId
 );
-
 
 /**
  * \brief Gets SOF \ref NvSciSyncFence for an NvMediaFeedImageGroup()
@@ -271,21 +283,22 @@ NvMediaICPSetNvSciSyncObjforSOF(
  *                                   SOFfence will be stored.
  *
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp is not a valid
- *           NvMediaICP handle, @a sofnvscisyncfence was NULL, or
- *           @a sofnvscisyncobj was not registered with icp as type
- *           \ref NVMEDIA_SOFSYNCOBJ or type \ref NVMEDIA_SOF_PRESYNCOBJ.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object or @a sofnvscisyncfence was NULL or sofnvscisyncobj was not registered with icp as type
+ * \ref NVMEDIA_SOFSYNCOBJ or type \ref NVMEDIA_SOF_PRESYNCOBJ or @a channelId is greater than
+ *  or equal to numVirtualChannels in the image group.
  * \retval  NVMEDIA_STATUS_ERROR indicates that this function was called before
  *           %NvMediaICPFeedImageGroup().
+ * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function is not supported for the
+ *  given hardware configuration.
  */
 NvMediaStatus
 NvMediaICPGetSOFNvSciSyncFence(
-    NvMediaICP          *icp,
-    const NvSciSyncObj  sofnvscisyncobj,
-    uint32_t            channelId,
-    NvSciSyncFence      *sofnvscisyncfence
+    const NvMediaICP          *icp,
+    const NvSciSyncObj        sofnvscisyncobj,
+    uint32_t                  channelId,
+    NvSciSyncFence            *sofnvscisyncfence
 );
-
 
 /**
  * \brief Sets an \ref NvSciSyncFence as a prefence for an
@@ -316,8 +329,9 @@ NvMediaICPGetSOFNvSciSyncFence(
  * \param[in] channelId         Channel ID for HDR capture.
  *
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was not a valid
- *  NvMediaICP handle, or that @a prenvscisyncfence was NULL.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to non-icp
+ *  object, or that @a prenvscisyncfence was NULL or @a channelId is greater than or equal to
+ *  numVirtualChannels in the image group.
  * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that
  *  %NvMediaICPInsertPreNvSciSyncFence() has already been called
  *  \ref NVMEDIA_ICP_MAX_PRENVSCISYNCFENCES or more times with the same
@@ -325,11 +339,10 @@ NvMediaICPGetSOFNvSciSyncFence(
  */
 NvMediaStatus
 NvMediaICPInsertPreNvSciSyncFence(
-    NvMediaICP               *icp,
+    const NvMediaICP         *icp,
     const NvSciSyncFence     *prenvscisyncfence,
     uint32_t                 channelId
 );
-
 
 /*
  * \defgroup history_nvmedia_icp_nvscisync History
@@ -340,10 +353,27 @@ NvMediaICPInsertPreNvSciSyncFence(
  * <b> Version 1.0 </b> March 11, 2019
  * - Initial release
  *
+ * <b> Version 1.1 </b> October 21, 2019
+ * Added const keyword to the following:
+ * - \ref NvMediaICPFillNvSciSyncAttrList
+ * - \ref NvMediaICPRegisterNvSciSyncObj
+ * - \ref NvMediaICPUnregisterNvSciSyncObj
+ * - \ref NvMediaICPSetNvSciSyncObjforEOF
+ * - \ref NvMediaICPGetEOFNvSciSyncFence
+ * - \ref NvMediaICPSetNvSciSyncObjforSOF
+ * - \ref NvMediaICPGetSOFNvSciSyncFence
+ * - \ref NvMediaICPInsertPreNvSciSyncFence
+ * Added comments for the following value of \ref NvMediaStatus:
+ * - \ref NVMEDIA_STATUS_NOT_INITIALIZED
+ * - \ref NVMEDIA_STATUS_NOT_SUPPORTED
+ *
+ * <b> Version 1.2 </b> January 22, 2020
+ * Remove the return value NVMEDIA_STATUS_NOT_INITIALIZED
+ * Add \ref NVMEDIA_STATUS_NOT_SUPPORTED return value to all functions.
  */
 /** @} <!-- Ends nvmedia_icp_nvscisync_api NvMedia ICP NvSciSync --> */
 #ifdef __cplusplus
 };     /* extern "C" */
-#endif
+#endif /* __cplusplus */
 
 #endif /* NVMEDIA_ICP_NVSCISYNC_H */

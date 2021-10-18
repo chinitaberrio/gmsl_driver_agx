@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -35,7 +35,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_IDP_VERSION_MAJOR   3
 /** \brief Minor Version number */
-#define NVMEDIA_IDP_VERSION_MINOR   0
+#define NVMEDIA_IDP_VERSION_MINOR   1
 
 /**
  * \brief Image display object created by \ref NvMediaIDPCreate.
@@ -174,6 +174,8 @@ NvMediaIDPQuery(
  * \brief Displays an image on the display device.
  * \param[in] idp The display device object.
  * \param[in] image The image to be displayed.
+ * <b> Note: </b> NvMediaIDPFlip suppports YUV 420,422 planar/semi-planar 8 bit
+ *                and RGBA,ARGB,BGRA 8 bit surface types
  * \param[in] srcRect Source rectangle. If NULL, a rectangle of the full size of the \ref NvMediaImage
  *        is implied.
  * \param[in] dstRect Destination rectangle on the display. If NULL, a rectangle of the full size of
@@ -230,6 +232,8 @@ NvMediaIDPFlip(
  * - Deprecated brightness, hue, saturation, contrast, limitedRGB and
  *   colorStandard support from \ref NvMediaIDPSetAttributes.
  *
+ * <b> Version 3.1 </b> April 28, 2020
+ * - Added supported surface format types description in NvMediaIDPFlip API.
  */
 /** @} */
 

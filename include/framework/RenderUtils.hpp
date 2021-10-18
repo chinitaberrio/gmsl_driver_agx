@@ -32,7 +32,7 @@
 #define SAMPLES_COMMON_RENDERUTILS_HPP_
 
 #include <dw/core/Types.h>
-#include <dw/visualization/RenderEngine.h>
+#include <dwvisualization/core/RenderEngine.h>
 #include "Checks.hpp"
 
 #include <fstream>
@@ -40,5 +40,10 @@
 namespace renderutils
 {
 void renderFPS(dwRenderEngineHandle_t renderEngine, const float32_t fps);
+
+void renderText(const char* textBuff,
+                const dwVector2f& textPos,
+                const dwVector2f& range,
+                dwRenderEngineHandle_t renderEngine);
 }
 #endif // SAMPLES_COMMON_RENDERUTILS_HPP_

@@ -41,15 +41,15 @@
  */
 class WindowLinuxEGL : public WindowEGL
 {
-  public:
+public:
     WindowLinuxEGL(int width, int height, bool offscreen, int samples);
     virtual ~WindowLinuxEGL();
 
-  private:
-    bool initDrm(const char *name, EGLAttrib *layerAttribs, int &dispWidth, int &dispHeight);
+private:
+    bool initDrm(const char* name, EGLAttrib* layerAttribs, int& dispWidth, int& dispHeight);
 
     PFNEGLSTREAMCONSUMEROUTPUTEXTPROC eglStreamConsumerOutputEXT = nullptr;
-    PFNEGLGETOUTPUTLAYERSEXTPROC eglGetOutputLayersEXT = nullptr;
+    PFNEGLGETOUTPUTLAYERSEXTPROC eglGetOutputLayersEXT           = nullptr;
 };
 
 #endif // SAMPLES_COMMON_WINDOW_LINUX_EGL_HPP_

@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#include "nvmedia_common.h"
+#include "nvmedia_common_encode_decode.h"
 #include "nvmedia_core.h"
 #include "nvmedia_image.h"
 
@@ -35,7 +35,7 @@ extern "C" {
 /** \brief Major version number */
 #define NVMEDIA_IJPD_VERSION_MAJOR   1
 /** \brief Minor version number */
-#define NVMEDIA_IJPD_VERSION_MINOR   6
+#define NVMEDIA_IJPD_VERSION_MINOR   7
 
 /**
  * \hideinitializer
@@ -458,6 +458,9 @@ NvMediaIJPDRenderYUV(
  *
  * <b> Version 1.6 </b> February 28, 2019
  * - Add dependent header include nvmedia_core and nvmedia_image.h
+ *
+ * <b> Version 1.7 </b> July 10, 2019
+ * - Header include nvmedia_common.h is replaced with nvmedia_common_encode_decode.h
  */
 
 /** @} */

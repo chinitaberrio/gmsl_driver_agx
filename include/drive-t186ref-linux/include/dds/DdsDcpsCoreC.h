@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_IDL_DDSDCPSCOREC_ABICK8_H_
-#define _TAO_IDL_DDSDCPSCOREC_ABICK8_H_
+#ifndef _TAO_IDL_DDSDCPSCOREC_LMERDT_H_
+#define _TAO_IDL_DDSDCPSCOREC_LMERDT_H_
 
 #include /**/ "ace/pre.h"
 

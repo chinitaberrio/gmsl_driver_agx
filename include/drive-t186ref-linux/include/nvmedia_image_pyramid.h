@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 - 2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -13,8 +13,8 @@
  *    \ref nvmedia_image_pyramid_top "Image Pyramid Processing API."
  */
 
-#ifndef _NVMEDIA_IMAGE_PYRAMID_H
-#define _NVMEDIA_IMAGE_PYRAMID_H
+#ifndef NVMEDIA_IMAGE_PYRAMID_H
+#define NVMEDIA_IMAGE_PYRAMID_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,13 +34,21 @@ extern "C" {
  * @{
  */
 
+/**
+ * \defgroup nvmedia_image_pyramid_api Image Pyramid
+ *
+ * Image Pyramid Processing API
+ *
+ * @ingroup nvmedia_image_pyramid_top
+ * @{
+ */
 /** \brief Major version number. */
-#define NVMEDIA_IMAGE_PYRAMID_VERSION_MAJOR   1
+#define NVMEDIA_IMAGE_PYRAMID_VERSION_MAJOR   (1u)
 /** \brief Minor version number. */
-#define NVMEDIA_IMAGE_PYRAMID_VERSION_MINOR   1
+#define NVMEDIA_IMAGE_PYRAMID_VERSION_MINOR   (3u)
 
 /** \brief Maximum number of levels allowed in a pyramid. */
-#define MAX_PYRAMID_LEVELS (10)
+#define MAX_PYRAMID_LEVELS (10u)
 
 /**
  * \brief A handle representing an image pyramid object.
@@ -67,9 +75,9 @@ NvMediaImagePyramid *
 NvMediaImagePyramidCreate(
     NvMediaDevice *device,
     NvMediaSurfaceType type,
-    NvMediaSurfAllocAttr *attrs,
+    const NvMediaSurfAllocAttr *attrs,
     uint32_t numLevels,
-    float scale,
+    float_t scale,
     uint32_t numAttrs,
     uint32_t flags
 );
@@ -103,7 +111,7 @@ NvMediaImagePyramidDestroy(
  */
 NvMediaStatus
 NvMediaImagePyramidLock(
-    NvMediaImagePyramid *pyramid,
+    const NvMediaImagePyramid *pyramid,
     uint32_t lockAccessType,
     NvMediaImageSurfaceMap *surfaceMap
 );
@@ -117,7 +125,7 @@ NvMediaImagePyramidLock(
  */
 void
 NvMediaImagePyramidUnlock(
-    NvMediaImagePyramid *pyramid
+    const NvMediaImagePyramid *pyramid
 );
 
 /**
@@ -138,7 +146,7 @@ NvMediaImagePyramidUnlock(
  */
 NvMediaStatus
 NvMediaImagePyramidGetStatus(
-    NvMediaImagePyramid *pyramid,
+    const NvMediaImagePyramid *pyramid,
     uint32_t millisecondWait,
     NvMediaTaskStatus *status
 );
@@ -151,7 +159,7 @@ NvMediaImagePyramidGetStatus(
  */
 NvMediaImage *
 NvMediaImagePyramidGetImageForLevel(
-    NvMediaImagePyramid * pyramid,
+    const NvMediaImagePyramid * pyramid,
     uint32_t level
 );
 
@@ -162,7 +170,7 @@ NvMediaImagePyramidGetImageForLevel(
  */
 uint32_t
 NvMediaImagePyramidGetNumLevels(
-    NvMediaImagePyramid * pyramid
+    const NvMediaImagePyramid * pyramid
 );
 
 /**
@@ -170,9 +178,9 @@ NvMediaImagePyramidGetNumLevels(
  * \param[in] pyramid A handle to the image pyramid.
  * \return The scale factor if successful, or 0 otherwise.
  */
-float
+float_t
 NvMediaImagePyramidGetScale(
-    NvMediaImagePyramid * pyramid
+    const NvMediaImagePyramid * pyramid
 );
 
 /*
@@ -187,12 +195,19 @@ NvMediaImagePyramidGetScale(
  * <b> Version 1.1 </b> February 6, 2019
  * - Added required header includes nvmedia_core.h and nvmedia_surface.h
  *
+ * <b> Version 1.2 </b> April 13, 2020
+ * - Fixed minor MISRA violations for VPI
+ *
+ * <b> Version 1.3 </b> April 22, 2020
+ * - Fixed minor MISRA violations for ImagePyramid
+ *
  */
 
+/** @} */
 /** @} */
 
 #ifdef __cplusplus
 };     /* extern "C" */
 #endif
 
-#endif /* _NVMEDIA_IMAGE_PYRAMID_H */
+#endif /* NVMEDIA_IMAGE_PYRAMID_H */

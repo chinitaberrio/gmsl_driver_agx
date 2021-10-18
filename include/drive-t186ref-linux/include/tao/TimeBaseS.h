@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_TIMEBASES_UPA0G3_H_
-#define _TAO_IDL_TIMEBASES_UPA0G3_H_
+#ifndef _TAO_IDL_TIMEBASES_B75IRT_H_
+#define _TAO_IDL_TIMEBASES_B75IRT_H_
 
 #include /**/ "ace/pre.h"
 

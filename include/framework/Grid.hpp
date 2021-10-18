@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2018 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -32,7 +32,7 @@
 #define SAMPLES_COMMON_GRID_HPP_
 
 #include <stdint.h>
-#include <dw/visualization/Renderer.h>
+#include <dwvisualization/core/Renderer.h>
 
 struct GridData_t
 {
@@ -44,15 +44,15 @@ struct GridData_t
     uint32_t cellHeight;
 };
 
-void configureGrid(GridData_t *grid,
+void configureGrid(GridData_t* grid,
                    uint32_t windowWidth,
                    uint32_t windowHeight,
                    uint32_t imageWidth,
                    uint32_t imageHeight,
                    uint32_t cellCount);
 
-void gridCellRect(dwRect *rect,
-              const GridData_t &grid,
-              uint32_t cellIdx);
+void gridCellRect(dwRect* rect,
+                  const GridData_t& grid,
+                  uint32_t cellIdx);
 
 #endif // SAMPLES_COMMON_GRID_HPP_

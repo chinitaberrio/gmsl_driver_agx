@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_BOUNDSS_Y3KRYV_H_
-#define _TAO_IDL_BOUNDSS_Y3KRYV_H_
+#ifndef _TAO_IDL_BOUNDSS_UK8JYD_H_
+#define _TAO_IDL_BOUNDSS_UK8JYD_H_
 
 #include /**/ "ace/pre.h"
 

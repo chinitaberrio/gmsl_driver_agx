@@ -11,8 +11,10 @@
 
 #include <framework/Checks.hpp>
 
-#include <dw/visualization/Renderer.h>
+#include <dwvisualization/core/Renderer.h>
+#include <dwvisualization/core/Visualization.h>
 #include <dw/image/Image.h>
+#include <dwvisualization/image/Image.h>
 
 #include <vector>
 
@@ -23,12 +25,13 @@ namespace common
 
 class SimpleRenderer
 {
-public :
-    SimpleRenderer(dwRendererHandle_t renderer, dwContextHandle_t ctx);
+public:
+    SimpleRenderer(dwRendererHandle_t renderer, dwVisualizationContextHandle_t ctx);
     ~SimpleRenderer();
 
     /// Specifies a 2D line segment between point a and point b, in floating point coordinates
-    typedef struct {
+    typedef struct
+    {
         dwVector2f a;
         dwVector2f b;
     } dwLineSegment2Df;
@@ -39,35 +42,35 @@ public :
 
     void setColor(const dwVector4f color);
 
-    void render(float32_t const *vertices2D, uint32_t numVertices, dwRenderBufferPrimitiveType type);
+    void render(float32_t const* vertices2D, uint32_t numVertices, dwRenderBufferPrimitiveType type);
 
-    void renderQuad(dwImageGL *input);
+    void renderQuad(dwImageGL* input);
 
     void renderText(uint32_t textX, uint32_t textY, const dwVector4f color, std::string text,
-    dwRendererFonts font = DW_RENDER_FONT_VERDANA_20);
+                    dwRendererFonts font = DW_RENDER_FONT_VERDANA_20);
 
     void setRectangleCoords(float32_t* coords, dwRect rectangle, uint32_t vertexStride);
 
-    void renderRectangle(const dwRect &rectangle, const dwVector4f color);
+    void renderRectangle(const dwRect& rectangle, const dwVector4f color);
 
     void renderRectangles(const dwRect* rectangles, uint32_t numBoxes);
 
-    void renderRectangles(const std::vector<dwRect> &rectangles);
+    void renderRectangles(const std::vector<dwRect>& rectangles);
 
-    void renderRectanglesWithLabels(const std::vector<std::pair<dwRect, std::string>> &rectanglesWithLabels,
+    void renderRectanglesWithLabels(const std::vector<std::pair<dwRect, std::string>>& rectanglesWithLabels,
                                     float32_t normalizationWidth, float32_t normalizationHeight);
 
-    void renderLineSegments(const std::vector<dwLineSegment2Df> &segments, float32_t lineWidth, const dwVector4f color);
+    void renderLineSegments(const std::vector<dwLineSegment2Df>& segments, float32_t lineWidth, const dwVector4f color);
 
-    void renderPolyline(const std::vector<dwVector2f> &points, float32_t lineWidth, const dwVector4f color);
+    void renderPolyline(const std::vector<dwVector2f>& points, float32_t lineWidth, const dwVector4f color);
 
-    void renderPoints(const std::vector<dwVector2f> &points, float32_t pointSize, const dwVector4f color);
+    void renderPoints(const std::vector<dwVector2f>& points, float32_t pointSize, const dwVector4f color);
 
 private:
     static constexpr auto m_maxVertexCount = 20000u;
 
     // one render buffer per primitive
-    void fillBuffer(float32_t const *vertices2D, uint32_t numVertices, dwRenderBufferPrimitiveType type) const;
+    void fillBuffer(float32_t const* vertices2D, uint32_t numVertices, dwRenderBufferPrimitiveType type) const;
     dwRenderBufferHandle_t m_renderBuffer[5];
 
     // handle to a renderer, not owned by this class
@@ -78,4 +81,3 @@ private:
 } // namespace dw_samples
 
 #endif
-

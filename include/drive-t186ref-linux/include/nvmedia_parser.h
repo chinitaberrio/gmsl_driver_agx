@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2017-2020, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "nvmedia_common.h"
+#include "nvmedia_common_decode.h"
 #include "nvmedia_core.h"
 #include "nvmedia_drm.h"
 
@@ -408,6 +408,10 @@ typedef struct
     NvMediaBool bContentLightLevelInfoPresent;
     /** Color info: Specifies Only: Content Light Level data if present */
     NvMediaContentLightLevelInfo ContentLightLevelInfo;
+    /** chroma info: chroma_sample_loc_type_top_field */
+    uint8_t uChromaLocTopField;
+    /** chroma info: chroma_sample_loc_type_bottom_field */
+    uint8_t uChromaLocBottomField;
 } NvMediaParserSeqInfo;
 
 
@@ -494,6 +498,10 @@ typedef struct
         NvMediaPictureInfoH265 hevc;
         /** picture parameter information for vp9 \ref NvMediaPictureInfoVP9 */
         NvMediaPictureInfoVP9 vp9;
+#if NV_BUILD_CONFIGURATION_EXPOSING_T23X
+        /* picture parameter information for av1 \ref NvMediaPictureInfoAV1*/
+        NvMediaPictureInfoAV1 av1;
+#endif
     } CodecSpecificInfo;
 
     /** Pass slice level data if slice level decoding enabled */

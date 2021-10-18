@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_LONGLONGSEQS_3AWCTU_H_
-#define _TAO_IDL_LONGLONGSEQS_3AWCTU_H_
+#ifndef _TAO_IDL_LONGLONGSEQS_XTSQH1_H_
+#define _TAO_IDL_LONGLONGSEQS_XTSQH1_H_
 
 #include /**/ "ace/pre.h"
 

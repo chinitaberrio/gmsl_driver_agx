@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2019 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -52,7 +52,7 @@
 // The define below enables the profiler!
 #define ENABLE_PROFILER
 
-namespace dw
+namespace dw_samples
 {
 namespace common
 {
@@ -72,25 +72,25 @@ class ProfilerCUDA
 public:
     ProfilerCUDA();
 
-    inline void tic(const std::string &sectionKey, bool isTopLevelSection);
+    inline void tic(const std::string& sectionKey, bool isTopLevelSection);
     inline void toc();
 
     /// Determines whether to show average or total timings
-    void setShowTotals(bool value) {m_showTotals = value;}
-    bool getShowTotals() const {return m_showTotals;}
+    void setShowTotals(bool value) { m_showTotals = value; }
+    bool getShowTotals() const { return m_showTotals; }
 
     /// If total timings are shown, they will be divided by this constant factor
     int getTotalsFactor() const { return m_totalsFactor; }
     void setTotalsFactor(int value) { m_totalsFactor = value; }
 
     // Log all timings directly to a stream
-    template<typename T>
-    T &logStats(T &stream);
+    template <typename T>
+    T& logStats(T& stream);
 
     bool empty();
     void reset();
 
-    void setCurrentThreadName(const std::string &name);
+    void setCurrentThreadName(const std::string& name);
 
     void collectTimers();
 
@@ -102,34 +102,34 @@ public:
     class SectionData
     {
     public:
-        SectionData(ThreadData *threadData, SectionData *parent, const std::string &key);
+        SectionData(ThreadData* threadData, SectionData* parent, const std::string& key);
 
-        SectionData *getParent() const {return m_parent;}
-        const std::string &getKey() const {return m_key;}
+        SectionData* getParent() const { return m_parent; }
+        const std::string& getKey() const { return m_key; }
 
-        const std::map<std::string, std::unique_ptr<SectionData>> &getSubsections() const {return m_childSections;}
+        const std::map<std::string, std::unique_ptr<SectionData>>& getSubsections() const { return m_childSections; }
 
-        inline SectionData *getSubsection(const std::string &subkey);
+        inline SectionData* getSubsection(const std::string& subkey);
 
-        void addTiming(dwTime_t timeCPU, CudaTimer *timer);
+        void addTiming(dwTime_t timeCPU, CudaTimer* timer);
         std::vector<CudaTimer*> collectTimers();
-        
+
         bool empty() const { return (m_statsGPU.getSampleCount() == 0) && m_pendingTimers.empty(); }
         void reset();
 
-        const StatsCounter &getStatsCPU() const {return m_statsCPU;}
-        const StatsCounter &getStatsGPU() const {return m_statsGPU;}
+        const StatsCounter& getStatsCPU() const { return m_statsCPU; }
+        const StatsCounter& getStatsGPU() const { return m_statsGPU; }
 
-        template<typename T>
-        T &logTotals(T &stream, const std::string &prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU);
+        template <typename T>
+        T& logTotals(T& stream, const std::string& prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU);
 
-        template<typename T>
-        T &logStats(T &stream, const std::string &prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU);
+        template <typename T>
+        T& logStats(T& stream, const std::string& prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU);
 
     protected:
-        ThreadData *m_threadData;
-        SectionData *m_parent;
-        
+        ThreadData* m_threadData;
+        SectionData* m_parent;
+
         std::string m_key;
         StatsCounter m_statsGPU;
         StatsCounter m_statsCPU;
@@ -142,32 +142,32 @@ public:
     class ThreadData
     {
     public:
-        ThreadData(ProfilerCUDA *profiler, std::thread::id id);
+        ThreadData(ProfilerCUDA* profiler, std::thread::id id);
 
-        const std::thread::id &getId() const {return m_id;}
-        void setId(const std::thread::id &newId) {m_id = newId;}
+        const std::thread::id& getId() const { return m_id; }
+        void setId(const std::thread::id& newId) { m_id = newId; }
 
-        const std::string &getName() const {return m_name;}
-        void setName(const std::string &name) {m_name = name;}
+        const std::string& getName() const { return m_name; }
+        void setName(const std::string& name) { m_name = name; }
 
-        ProfilerCUDA *getProfiler() const { return m_profiler; }
-        SectionData *getRootSection() {return &m_rootSection;}
-        const SectionData *getRootSection() const {return &m_rootSection;}
+        ProfilerCUDA* getProfiler() const { return m_profiler; }
+        SectionData* getRootSection() { return &m_rootSection; }
+        const SectionData* getRootSection() const { return &m_rootSection; }
 
-        CudaTimer *getTimer();
+        CudaTimer* getTimer();
         void collectTimers();
-        void collectTimers(SectionData *section);
+        void collectTimers(SectionData* section);
 
-        inline void tic(const std::string &sectionKey, bool isTopLevelSection);
+        inline void tic(const std::string& sectionKey, bool isTopLevelSection);
         inline void toc();
 
-        template<typename T>
-        T &logStats(T &stream);
+        template <typename T>
+        T& logStats(T& stream);
 
         void reset();
 
     protected:
-        ProfilerCUDA *m_profiler;
+        ProfilerCUDA* m_profiler;
         std::thread::id m_id;
         std::string m_name;
 
@@ -175,9 +175,9 @@ public:
 
         struct ActiveTimingData
         {
-            SectionData *section;
+            SectionData* section;
             std::chrono::time_point<std::chrono::steady_clock> startTime;
-            CudaTimer *timer;
+            CudaTimer* timer;
         };
         std::stack<ActiveTimingData> m_activeSections;
 
@@ -187,10 +187,10 @@ public:
 
     ///////////////////////////////////////////////////////////
     // ProfilerCUDA member methods
-    ThreadData *getThreadData();
+    ThreadData* getThreadData();
 
     /// Note: The map returned is used by different threads and is therefore not thread-safe to use
-    const std::map<std::thread::id, std::unique_ptr<ThreadData>> &getAllThreadData() const
+    const std::map<std::thread::id, std::unique_ptr<ThreadData>>& getAllThreadData() const
     {
         return m_threads;
     }
@@ -204,8 +204,8 @@ protected:
     int m_totalsFactor;
 };
 
-template<typename T>
-T &operator <<(T &stream, ProfilerCUDA &profiler)
+template <typename T>
+T& operator<<(T& stream, ProfilerCUDA& profiler)
 {
     return profiler.logStats(stream);
 }
@@ -221,7 +221,7 @@ T &operator <<(T &stream, ProfilerCUDA &profiler)
 class ProfileCUDASection
 {
 public:
-    ProfileCUDASection(ProfilerCUDA *profiler, const std::string &sectionKey, bool isTopLevel)
+    ProfileCUDASection(ProfilerCUDA* profiler, const std::string& sectionKey, bool isTopLevel)
         : m_profiler(profiler)
         , m_running(true)
     {
@@ -233,15 +233,15 @@ public:
         //cudaDeviceSynchronize();
         m_profiler->tic(sectionKey, isTopLevel);
 #else
-        (void) sectionKey;
-        (void) isTopLevel;
+        (void)sectionKey;
+        (void)isTopLevel;
 #endif
     }
-    ProfileCUDASection(ProfilerCUDA *profiler, const std::string &sectionKey)
+    ProfileCUDASection(ProfilerCUDA* profiler, const std::string& sectionKey)
         : ProfileCUDASection(profiler, sectionKey, false)
     {
     }
-    ProfileCUDASection(ProfilerCUDA &profiler, const std::string &sectionKey)
+    ProfileCUDASection(ProfilerCUDA& profiler, const std::string& sectionKey)
         : ProfileCUDASection(&profiler, sectionKey)
     {
     }
@@ -263,7 +263,7 @@ public:
     }
 
 private:
-    ProfilerCUDA *m_profiler;
+    ProfilerCUDA* m_profiler;
     bool m_running;
 };
 
@@ -272,12 +272,12 @@ private:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-ProfilerCUDA::SectionData *ProfilerCUDA::SectionData::getSubsection(const std::string &subkey)
+ProfilerCUDA::SectionData* ProfilerCUDA::SectionData::getSubsection(const std::string& subkey)
 {
     auto itSection = m_childSections.find(subkey);
-    if(itSection==m_childSections.end())
+    if (itSection == m_childSections.end())
     {
-        SectionData *data;
+        SectionData* data;
         data = new SectionData(m_threadData, this, subkey);
         m_childSections.insert(std::make_pair(subkey, std::unique_ptr<ProfilerCUDA::SectionData>(data)));
         return data;
@@ -287,16 +287,16 @@ ProfilerCUDA::SectionData *ProfilerCUDA::SectionData::getSubsection(const std::s
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename T>
-T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU)
+template <typename T>
+T& ProfilerCUDA::SectionData::logTotals(T& stream, const std::string& prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU)
 {
     auto profiler = m_threadData->getProfiler();
-    
+
     const float32_t factor = static_cast<float32_t>(profiler->getTotalsFactor());
 
     float32_t timeCPU = m_statsCPU.getSum();
     float32_t timeGPU = m_statsGPU.getSum();
-    const char *units = "us";
+    const char* units = "us";
     if (factor > 1)
     {
         timeCPU /= factor;
@@ -310,7 +310,7 @@ T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, co
            << " CPU: " << std::setw(5) << timeCPU << units;
     if (parentTimeCPU > 0)
     {
-        int percent = static_cast<int>(100*timeCPU/parentTimeCPU);
+        int percent = static_cast<int>(100 * timeCPU / parentTimeCPU);
         stream << " (" << std::setw(2) << percent << "%)";
     }
     else
@@ -323,7 +323,7 @@ T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, co
     stream << " | GPU: " << std::setw(5) << timeGPU << units;
     if (parentTimeGPU > 0)
     {
-        int percent = static_cast<int>(100*timeGPU/parentTimeGPU);
+        int percent = static_cast<int>(100 * timeGPU / parentTimeGPU);
         stream << " (" << std::setw(2) << percent << "%)";
     }
     else
@@ -333,19 +333,18 @@ T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, co
     }
     stream << "\n";
 
-
     std::string newPrefix = prefix + "-";
-    for(auto &child : m_childSections)
+    for (auto& child : m_childSections)
     {
         child.second->logTotals(stream, newPrefix, timeCPU, timeGPU);
     }
 
     // Display "other" time
-    if(m_childSections.size() > 1)
+    if (m_childSections.size() > 1)
     {
-        float32_t otherCPU=timeCPU;
-        float32_t otherGPU=timeGPU;
-        for(auto &child : m_childSections)
+        float32_t otherCPU = timeCPU;
+        float32_t otherGPU = timeGPU;
+        for (auto& child : m_childSections)
         {
             otherCPU -= child.second->getStatsCPU().getSum() / factor;
             otherGPU -= child.second->getStatsGPU().getSum() / factor;
@@ -355,7 +354,7 @@ T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, co
                << " CPU: " << std::setw(5) << otherCPU << units;
         if (timeCPU > 0)
         {
-            int percent = static_cast<int>(100*otherCPU/timeCPU);
+            int percent = static_cast<int>(100 * otherCPU / timeCPU);
             stream << " (" << std::setw(2) << percent << "%)";
         }
         else
@@ -368,7 +367,7 @@ T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, co
         stream << " | GPU: " << std::setw(5) << otherGPU << units;
         if (timeGPU > 0)
         {
-            int percent = static_cast<int>(100*otherGPU/timeGPU);
+            int percent = static_cast<int>(100 * otherGPU / timeGPU);
             stream << " (" << std::setw(2) << percent << "%)";
         }
         else
@@ -384,8 +383,8 @@ T &ProfilerCUDA::SectionData::logTotals(T &stream, const std::string &prefix, co
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename T>
-T &ProfilerCUDA::SectionData::logStats(T &stream, const std::string &prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU)
+template <typename T>
+T& ProfilerCUDA::SectionData::logStats(T& stream, const std::string& prefix, const float32_t parentTimeCPU, const float32_t parentTimeGPU)
 {
     float32_t timeCPU = m_statsCPU.getMedian();
     float32_t timeGPU = m_statsGPU.getMedian();
@@ -394,7 +393,7 @@ T &ProfilerCUDA::SectionData::logStats(T &stream, const std::string &prefix, con
            << " CPU: " << std::setw(5) << timeCPU << "us, std=" << std::setw(4) << m_statsCPU.getStdDev();
     if (parentTimeCPU > 0)
     {
-        int percent = static_cast<int>(100*timeCPU/parentTimeCPU);
+        int percent = static_cast<int>(100 * timeCPU / parentTimeCPU);
         stream << " (" << std::setw(2) << percent << "%)";
     }
     else
@@ -406,7 +405,7 @@ T &ProfilerCUDA::SectionData::logStats(T &stream, const std::string &prefix, con
     stream << " | GPU: " << std::setw(5) << timeGPU << "us, std=" << std::setw(4) << m_statsGPU.getStdDev();
     if (parentTimeGPU > 0)
     {
-        int percent = static_cast<int>(100*timeGPU/parentTimeGPU);
+        int percent = static_cast<int>(100 * timeGPU / parentTimeGPU);
         stream << " (" << std::setw(2) << percent << "%)";
     }
     else
@@ -417,26 +416,26 @@ T &ProfilerCUDA::SectionData::logStats(T &stream, const std::string &prefix, con
     stream << " | samples=" << m_statsGPU.getSampleCount() << "\n";
 
     std::string newPrefix = prefix + "-";
-    for(auto &child : m_childSections)
+    for (auto& child : m_childSections)
         child.second->logStats(stream, newPrefix, timeCPU, timeGPU);
 
     return stream;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-void ProfilerCUDA::ThreadData::tic(const std::string &sectionKey, bool isTopLevelSection)
+void ProfilerCUDA::ThreadData::tic(const std::string& sectionKey, bool isTopLevelSection)
 {
-    ProfilerCUDA::SectionData *data;
-    if(isTopLevelSection)
+    ProfilerCUDA::SectionData* data;
+    if (isTopLevelSection)
         data = m_rootSection.getSubsection(sectionKey);
     else
         data = m_activeSections.top().section->getSubsection(sectionKey);
 
-    CudaTimer *timer = getTimer();
-    
+    CudaTimer* timer = getTimer();
+
     auto timeCPU = std::chrono::steady_clock::now();
 
-    m_activeSections.push(ActiveTimingData{data,timeCPU,timer});
+    m_activeSections.push(ActiveTimingData{data, timeCPU, timer});
 
     timer->start();
 }
@@ -460,11 +459,11 @@ void ProfilerCUDA::ThreadData::toc()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-template<typename T>
-T &ProfilerCUDA::ThreadData::logStats(T &stream)
+template <typename T>
+T& ProfilerCUDA::ThreadData::logStats(T& stream)
 {
     stream << "Thread ";
-    if(m_name.empty())
+    if (m_name.empty())
         stream << m_id;
     else
         stream << m_name;
@@ -472,12 +471,12 @@ T &ProfilerCUDA::ThreadData::logStats(T &stream)
 
     if (m_profiler->getShowTotals())
     {
-        for(auto &sections : m_rootSection.getSubsections())
+        for (auto& sections : m_rootSection.getSubsections())
             sections.second->logTotals(stream, "-", 0, 0);
     }
     else
     {
-        for(auto &sections : m_rootSection.getSubsections())
+        for (auto& sections : m_rootSection.getSubsections())
             sections.second->logStats(stream, "-", 0, 0);
     }
 
@@ -485,29 +484,29 @@ T &ProfilerCUDA::ThreadData::logStats(T &stream)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-void ProfilerCUDA::tic(const std::string &sectionKey, bool isTopLevelSection)
+void ProfilerCUDA::tic(const std::string& sectionKey, bool isTopLevelSection)
 {
-    ThreadData *thread = getThreadData();
+    ThreadData* thread = getThreadData();
     thread->tic(sectionKey, isTopLevelSection);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
 void ProfilerCUDA::toc()
 {
-    ThreadData *thread = getThreadData();
+    ThreadData* thread = getThreadData();
     thread->toc();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-template<typename T>
-T &ProfilerCUDA::logStats(T &stream)
+template <typename T>
+T& ProfilerCUDA::logStats(T& stream)
 {
 #ifdef ENABLE_PROFILER
     std::vector<ThreadData*> allData;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        for(auto &thread : m_threads)
+        for (auto& thread : m_threads)
             allData.push_back(thread.second.get());
     }
 
@@ -518,7 +517,7 @@ T &ProfilerCUDA::logStats(T &stream)
     stream << std::fixed << std::setprecision(0);
 
     //stream << "Profiler stats:" << std::endl;
-    for(auto &thread : allData)
+    for (auto& thread : allData)
         thread->logStats(stream);
 
     //Restore flags
@@ -526,7 +525,6 @@ T &ProfilerCUDA::logStats(T &stream)
 #endif
     return stream;
 }
-
 }
 }
 

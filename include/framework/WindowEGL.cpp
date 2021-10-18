@@ -41,7 +41,7 @@
 #include <stdexcept>
 
 // -----------------------------------------------------------------------------
-WindowEGL *WindowEGL::create(int32_t width, int32_t height, bool offscreen,
+WindowEGL* WindowEGL::create(int32_t width, int32_t height, bool offscreen,
                              int32_t samples)
 {
 #if VIBRANTE_V5Q
@@ -52,7 +52,7 @@ WindowEGL *WindowEGL::create(int32_t width, int32_t height, bool offscreen,
 }
 
 // -----------------------------------------------------------------------------
-WindowEGL *WindowEGL::create(int32_t width, int32_t height, bool offscreen)
+WindowEGL* WindowEGL::create(int32_t width, int32_t height, bool offscreen)
 {
     return create(width, height, offscreen, 0);
 }
@@ -69,32 +69,33 @@ WindowEGL::WindowEGL(int32_t width, int32_t height, bool offscreen)
 
     // Load Standard EGL Functions
     eglCreateStreamKHR = (PFNEGLCREATESTREAMKHRPROC)
-                                    eglGetProcAddress("eglCreateStreamKHR");
+        eglGetProcAddress("eglCreateStreamKHR");
     eglDestroyStreamKHR = (PFNEGLDESTROYSTREAMKHRPROC)
-                                    eglGetProcAddress("eglDestroyStreamKHR");
+        eglGetProcAddress("eglDestroyStreamKHR");
     eglCreateStreamProducerSurfaceKHR = (PFNEGLCREATESTREAMPRODUCERSURFACEKHRPROC)
-                                    eglGetProcAddress("eglCreateStreamProducerSurfaceKHR");
+        eglGetProcAddress("eglCreateStreamProducerSurfaceKHR");
 
     // Load EGL Extensions
     eglGetPlatformDisplayEXT = (PFNEGLGETPLATFORMDISPLAYEXTPROC)
-                                    eglGetProcAddress("eglGetPlatformDisplayEXT");
+        eglGetProcAddress("eglGetPlatformDisplayEXT");
     eglCreatePlatformWindowSurfaceEXT = (PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC)
-                                    eglGetProcAddress("eglCreatePlatformWindowSurfaceEXT");
+        eglGetProcAddress("eglCreatePlatformWindowSurfaceEXT");
     eglCreatePlatformPixmapSurfaceEXT = (PFNEGLCREATEPLATFORMPIXMAPSURFACEEXTPROC)
-                                    eglGetProcAddress("eglCreatePlatformPixmapSurfaceEXT");
+        eglGetProcAddress("eglCreatePlatformPixmapSurfaceEXT");
     eglQueryDevicesEXT = (PFNEGLQUERYDEVICESEXTPROC)
-                                    eglGetProcAddress("eglQueryDevicesEXT");
+        eglGetProcAddress("eglQueryDevicesEXT");
     eglQueryDeviceStringEXT = (PFNEGLQUERYDEVICESTRINGEXTPROC)
-                                    eglGetProcAddress("eglQueryDeviceStringEXT");
+        eglGetProcAddress("eglQueryDeviceStringEXT");
 
     if (!eglCreateStreamKHR ||
-            !eglDestroyStreamKHR ||
-            !eglCreateStreamProducerSurfaceKHR ||
-            !eglGetPlatformDisplayEXT ||
-            !eglCreatePlatformWindowSurfaceEXT ||
-            !eglCreatePlatformPixmapSurfaceEXT ||
-            !eglQueryDevicesEXT ||
-            !eglQueryDeviceStringEXT) {
+        !eglDestroyStreamKHR ||
+        !eglCreateStreamProducerSurfaceKHR ||
+        !eglGetPlatformDisplayEXT ||
+        !eglCreatePlatformWindowSurfaceEXT ||
+        !eglCreatePlatformPixmapSurfaceEXT ||
+        !eglQueryDevicesEXT ||
+        !eglQueryDeviceStringEXT)
+    {
 
         throw std::runtime_error("WindowEGL: Cannot load EGL extensions");
     }
@@ -133,7 +134,8 @@ void WindowEGL::resetContext()
             EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_EXT, EGL_NO_RESET_NOTIFICATION_EXT,
             EGL_NONE, EGL_NONE};
         m_context = eglCreateContext(m_display, m_config, EGL_NO_CONTEXT, ctxAttribs);
-        if (m_context == EGL_NO_CONTEXT) {
+        if (m_context == EGL_NO_CONTEXT)
+        {
             std::cout << "WindowEGL: Failed to create EGL context" << std::endl;
             throw std::exception();
         }
@@ -142,7 +144,8 @@ void WindowEGL::resetContext()
     std::cout << "WindowEGL: assign EGL context to current thread" << std::endl;
     {
         EGLBoolean status = eglMakeCurrent(m_display, m_surface, m_surface, m_context);
-        if (status == EGL_FALSE) {
+        if (status == EGL_FALSE)
+        {
             std::cout << "WindowEGL: Could not makeCurrent: "
                       << std::hex << eglGetError() << std::dec << std::endl;
             throw std::exception();
@@ -163,13 +166,15 @@ EGLContext WindowEGL::createSharedContext() const
 
     EGLContext shared = eglCreateContext(m_display, m_config, m_context, ctxAttribs);
 
-    if (shared == EGL_NO_CONTEXT) {
+    if (shared == EGL_NO_CONTEXT)
+    {
         std::cout << "WindowEGL: Failed to create shared EGL context" << eglGetError() << std::endl;
         throw std::exception();
     }
 
     EGLBoolean status = eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, shared);
-    if (status != EGL_TRUE) {
+    if (status != EGL_TRUE)
+    {
         std::cout << "WindowEGL: Failed to make shared EGL context current: " << eglGetError() << std::endl;
         throw std::exception();
     }
@@ -191,6 +196,12 @@ bool WindowEGL::resetCurrent()
 
 // -----------------------------------------------------------------------------
 bool WindowEGL::swapBuffers()
+{
+    return swapBuffersOnly();
+}
+
+// -----------------------------------------------------------------------------
+bool WindowEGL::swapBuffersOnly()
 {
     return eglSwapBuffers(m_display, m_surface) == EGL_TRUE;
 }

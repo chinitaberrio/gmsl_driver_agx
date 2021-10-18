@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_CSD_FRAMEWORKA_S2UQRI_H_
-#define _TAO_IDL_CSD_FRAMEWORKA_S2UQRI_H_
+#ifndef _TAO_IDL_CSD_FRAMEWORKA_FYNPIM_H_
+#define _TAO_IDL_CSD_FRAMEWORKA_FYNPIM_H_
 
 #include /**/ "ace/pre.h"
 

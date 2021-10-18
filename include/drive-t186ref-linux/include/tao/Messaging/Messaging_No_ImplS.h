@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_MESSAGING_NO_IMPLS_7EV2MO_H_
-#define _TAO_IDL_MESSAGING_NO_IMPLS_7EV2MO_H_
+#ifndef _TAO_IDL_MESSAGING_NO_IMPLS_SUZO6X_H_
+#define _TAO_IDL_MESSAGING_NO_IMPLS_SUZO6X_H_
 
 #include /**/ "ace/pre.h"
 

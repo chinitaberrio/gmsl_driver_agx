@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_ANYTYPECODE_POLICYA_9XOKAV_H_
-#define _TAO_IDL_ANYTYPECODE_POLICYA_9XOKAV_H_
+#ifndef _TAO_IDL_ANYTYPECODE_POLICYA_X2OOEH_H_
+#define _TAO_IDL_ANYTYPECODE_POLICYA_X2OOEH_H_
 
 #include /**/ "ace/pre.h"
 

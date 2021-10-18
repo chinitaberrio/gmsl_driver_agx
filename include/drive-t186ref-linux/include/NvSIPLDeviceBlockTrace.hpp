@@ -7,20 +7,26 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
-#ifndef INVSIPLDEVBLKTRACE_H
-#define INVSIPLDEVBLKTRACE_H
+#ifndef NVSIPLDEVBLKTRACE_H
+#define NVSIPLDEVBLKTRACE_H
 
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: DeviceBlock Trace Interface - @ref NvSIPLDevBlk_API </b>
+ * @brief <b> NVIDIA SIPL: DeviceBlock Trace Interface - @ref NvSIPLDevBlkTrace_API </b>
  *
  */
+
+/** @defgroup NvSIPLDevBlkTrace_API NvSIPL Device Block Trace
+ *
+ * @brief Provides interfaces to configure the trace level for SIPL Device Block.
+ *
+ * @ingroup NvSIPL */
 
 namespace nvsipl
 {
 
-/**@ingroup NvSIPLDevBlk_API
+/**@ingroup NvSIPLDevBlkTrace_API
  * @{
  */
 
@@ -29,7 +35,7 @@ namespace nvsipl
  * @brief Describes the interfaces of NvSIPLDeviceBlockTrace.
  *
  * Defines the public interfaces to control the logging/tracing
- * of the @ref NvSIPLDevBlk_API for debug purposes.
+ * of the @ref NvSIPLDevBlkTrace_API for debug purposes.
  */
 class INvSIPLDeviceBlockTrace
 {
@@ -94,4 +100,4 @@ public:
 } // namespace nvsipl
 
 
-#endif // INVSIPLDEVBLKTRACE_H
+#endif // NVSIPLDEVBLKTRACE_H

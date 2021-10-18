@@ -244,7 +244,7 @@ NvMediaVideoSurfaceGetBits(
     uint32_t *dstPitches
 );
 
-/*@} <!-- Ends surface_api -> */
+/**@} <!-- Ends surface_api -> */
 
 /*
  * \defgroup history_nvmedia_video History

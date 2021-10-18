@@ -83,8 +83,7 @@ extern "C" {
 #define NVM_ISP_LTM_AVG_WINDOWS             (8U)
 
 /**
- * \brief Maximum number of windows for local average and clip in a region of
- * interest.
+ * \brief Maximum number of bands for flicker band statistics block.
  */
 #define NVM_ISP_MAX_FB_BANDS                (256U)
 
@@ -113,7 +112,7 @@ typedef struct {
     /**
      * Holds center of the ellipse.
      */
-    NvMediaPoint center;
+    NvMediaPointFloat center;
     /**
      * Holds horizontal axis of the ellipse.
      */
@@ -141,7 +140,7 @@ typedef struct {
      *
      * @li Supported values for X coordinate of the center: [0, input width]
      * @li Supported values for Y coordinate of the center: [0, input height]
-     * @li Supported values for hortizontal axis: [16, 2 x input width]
+     * @li Supported values for horizontal axis: [16, 2 x input width]
      * @li Supported values for vertical axis: [16, 2 x input height]
      * @li Supported values for angle: [0.0, 360.0]
      */
@@ -186,10 +185,14 @@ typedef struct {
      *
      * The coordinates of image top left and bottom right points are (0, 0) and
      * (width, height), respectively.
-     *
-     * The rectangle must be within the input image, and must be a valid
-     * rectangle ((right &gt; left) && (bottom &gt; top)), or must be
+     * A rectangle ((right &gt; left) && (bottom &gt; top)), or must be
      * ((0,0), (0,0)) to disable the rectangular mask.
+     *
+     * The rectangle settings(x0, y0, x1, y1) must follow the constraints listed below:
+     * - (x0 >= 0) and (y0 >= 0)
+     * - x0 and x1 should be even
+     * - (x1 <= image width) and (y1 <= image height)
+     * - rectangle width(x1 - x0) >= 2 and height(y1 - y0) >= 2
      */
     NvMediaRect rectangularMask;
     /**
@@ -205,7 +208,7 @@ typedef struct {
      *
      * @li Supported values for X coordinate of the center: [0, input width]
      * @li Supported values for Y coordinate of the center: [0, input height]
-     * @li Supported values for hortizontal axis: [16, 2 x input width]
+     * @li Supported values for horizontal axis: [16, 2 x input width]
      * @li Supported values for vertical axis: [16, 2 x input height]
      * @li Supported values for angle: [0.0, 360.0]
      */
@@ -301,23 +304,22 @@ typedef struct {
      */
     float_t max[NVM_ISP_MAX_COLOR_COMPONENT];
     /**
-     * Holds a Boolean to enable an indiviual region of interest.
+     * Holds a Boolean to enable an individual region of interest.
      */
     NvMediaBool roiEnable[NVM_ISP_MAX_LAC_ROI];
     /**
      * Holds local average and clip windows for each region of interest.
-     * @li Supported values for width of the window: [2, 256];
-     *  must be an even number
+     * @li Supported values for width of the window: [2, 256] and must be an even number
      * @li Supported values for height of the window: [2, 256]
      * @li Supported values for number of the windows horizontally: [1, 32]
      * @li Supported values for number of the windows vertically: [1, 32]
-     * @li Supported values for horizontal interval between windows:
-     *  \f$[4, 2^{16})\f$; must be an even number
-     * @li Supported values for vertical interval between windows:
-     *  \f$[2, 2^{16})\f$
-     * @li Supported values for X coordinate of start offset:
-     *  \f$[0, 2^{16})\f$; must be an even number
-     * @li Supported values for Y coordinate of start offset: \f$[0, 2^{16})\f$
+     * @li Supported values for horizontal interval between windows: [max(4, window width), image ROI width]
+     *  and must be an even number
+     * @li Supported values for vertical interval between windows: [max(2, window height), image ROI height]
+     * @li Supported values for X coordinate of start offset: [0, image ROI width-3] and must be an even number
+     * @li Supported values for Y coordinate of start offset: [0, image ROI height-3]
+     * @li startOffset.x + horizontalInterval * (numWindowH - 1) + winWidth <= image ROI width
+     * @li startOffset.y + veritcallInterval * (numWindowV - 1) + winHeight <= image ROI height
      */
     NvMediaISPStatisticsWindows windows[NVM_ISP_MAX_LAC_ROI];
     /**
@@ -333,7 +335,7 @@ typedef struct {
      *
      * @li Supported values for X coordinate of the center: [0, input width]
      * @li Supported values for Y coordinate of the center: [0, input height]
-     * @li Supported values for hortizontal axis: [16, 2 x input width]
+     * @li Supported values for horizontal axis: [16, 2 x input width]
      * @li Supported values for vertical axis: [16, 2 x input height]
      * @li Supported values for angle: [0.0, 360.0]
      */
@@ -382,8 +384,10 @@ typedef struct {
      * to 0 or set the rectangle to include the full image with no rectangular
      * mask.
      *
-     * @li Supported values: Rectangle must be within the input image and must
+     * - Supported values: Rectangle must be within the input image and must
      *  be a valid rectangle ((right > left) && (bottom > top)).
+     * - The minimum supported rectangular mask size is 2x2.
+     * - left(x0) and right(x1) coordinates must be even.
      */
     NvMediaRect rectangularMask;
     /**
@@ -399,7 +403,7 @@ typedef struct {
      *
      * @li Supported values for X coordinate of the center: [0, input width]
      * @li Supported values for Y coordinate of the center: [0, input height]
-     * @li Supported values for hortizontal axis: [16, 2 x input width]
+     * @li Supported values for horizontal axis: [16, 2 x input width]
      * @li Supported values for vertical axis: [16, 2 x input height]
      * @li Supported values for angle: [0.0, 360.0]
      */
@@ -418,6 +422,7 @@ typedef struct {
      * Holds the offset of the first band top line.
      * @li Supported values for X coordinate of start offset: [0, input width]
      * @li Supported values for Y coordinate of start offset: [0, input height]
+     * @li The X coordinate of the start offset must be an even number.
      */
     NvMediaPoint startOffset;
     /**
@@ -465,7 +470,7 @@ typedef struct {
      *
      * @li Supported values for X coordinate of the center: [0, input width]
      * @li Supported values for Y coordinate of the center: [0, input height]
-     * @li Supported values for hortizontal axis: [16, 2 x input width]
+     * @li Supported values for horizontal axis: [16, 2 x input width]
      * @li Supported values for vertical axis: [16, 2 x input height]
      * @li Supported values for angle: [0.0, 360.0]
      */
@@ -569,7 +574,7 @@ typedef struct {
      */
     uint32_t highMagInWin;
     /**
-     * Holds accumulatd pixel adjustment for pixels corrected downward within
+     * Holds accumulated pixel adjustment for pixels corrected downward within
      * the window.
      */
     uint32_t lowMagInWin;
@@ -582,11 +587,11 @@ typedef struct {
      */
     uint32_t lowOutWin;
     /**
-     * Holds accumulatd pixel adjustment for pixels corrected upward outside
+     * Holds accumulated pixel adjustment for pixels corrected upward outside
      * the window. */
     uint32_t highMagOutWin;
     /**
-     * Holds accumulatd pixel adjustment for pixels corrected downward outside
+     * Holds accumulated pixel adjustment for pixels corrected downward outside
      * the window.
      */
     uint32_t lowMagOutWin;
@@ -615,7 +620,7 @@ typedef struct {
  * <b> Version 1.0 </b> March 25, 2019
  * - Initial release
  */
-/*@} */
+/** @} */
 
 #ifdef __cplusplus
 };     /* extern "C" */

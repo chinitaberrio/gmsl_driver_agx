@@ -1,7 +1,7 @@
 /*
  * Header file for NvSciBuf APIs
  *
- * Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -29,6 +29,62 @@
 extern "C"
 {
 #endif
+
+/**
+ * @defgroup nvscibuf_blanket_statements NvSciBuf blanket statements.
+ * Generic statements applicable for NvSciBuf interfaces.
+ * @ingroup nvsci_buf
+ * @{
+ */
+
+/**
+ * \page nvscibuf_page_blanket_statements NvSciBuf blanket statements
+ * \section nvscibuf_in_params Input parameters
+ * - NvSciBufModule passed as input parameter to an API is valid input if it is
+ * returned from a successful call to NvSciBufModuleOpen() and has not yet been
+ * deallocated using NvSciBufModuleClose().
+ * - NvSciIpcEndpoint passed as input parameter to an API is valid if it is
+ * obtained from successful call to NvSciIpcOpenEndpoint() and has not yet been
+ * freed using NvSciIpcCloseEndpoint().
+ * - NvSciBufObj is valid if it is obtained from successful call to
+ * NvSciBufObjAlloc() or if it is obtained from successful call to
+ * NvSciBufAttrListReconcileAndObjAlloc() or if it is obtained from
+ * successful call to NvSciBufObjIpcImport() and has not been deallocated
+ * using NvSciBufObjFree().
+ * - Unreconciled NvSciBufAttrList is valid if it is obtained from successful
+ * call to NvSciBufAttrListCreate() or if it is obtained from successful call to
+ * NvSciBufAttrListClone() where input to NvSciBufAttrListClone() is valid
+ * unreconciled NvSciBufAttrList or if it is obtained from successful call to
+ * NvSciBufAttrListIpcImportUnreconciled() and has not been deallocated using
+ * NvSciBufAttrListFree().
+ * - Reconciled NvSciBufAttrList is valid if it is obtained from successful call
+ * to NvSciBufAttrListReconcile() or if it is obtained from successful call to
+ * NvSciBufAttrListClone() where input to NvSciBufAttrListClone() is valid
+ * reconciled NvSciBufAttrList or if it is obtained from successful call to
+ * NvSciBufAttrListIpcImportReconciled() and has not been deallocated using
+ * NvSciBufAttrListFree().
+ *
+ * \section nvscibuf_out_params Output parameters
+ * - In general, output parameters are passed by reference through pointers.
+ * Also, since a null pointer cannot be used to convey an output parameter, API
+ * functions typically return an error code if a null pointer is supplied for a
+ * required output parameter unless otherwise stated explicitly. Output
+ * parameter is valid only if error code returned by an API is
+ * NvSciError_Success unless otherwise stated explicitly.
+ *
+ * \section nvscibuf_concurrency Concurrency
+ * - Every individual function can be called concurrently with itself without
+ * any side-effects unless otherwise stated explicitly in the interface
+ * specifications.
+ * - The conditions for combinations of functions that cannot be called
+ * concurrently or calling them concurrently leads to side effects are
+ * explicitly stated in the interface specifications.
+ */
+
+/**
+ * @}
+ */
+
 /**
  * @defgroup nvsci_buf Buffer Allocation APIs
  *
@@ -45,19 +101,24 @@ extern "C"
  */
 
 /**
- * @brief Enum definitions of NvSciBuf Buffer datatype.
+ * @brief Enum definitions of NvSciBuf datatypes.
+ *
+ * @implements{14911694}
  */
 typedef enum {
-    /*! Reserved for General keys.
-     *! Shouldn't be used as valid value for  NvSciBufGeneralAttrKey_Types. */
-    NvSciBufType_General,
-    NvSciBufType_RawBuffer,
-    NvSciBufType_Image,
-    NvSciBufType_Tensor,
-    NvSciBufType_Array,
-    NvSciBufType_Pyramid,
-    NvSciBufType_MaxValid,
-    NvSciBufType_UpperBound
+    /** Reserved for General keys.
+     * Shouldn't be used as valid value for  NvSciBufGeneralAttrKey_Types.
+     */
+    NvSciBufType_General = 0U,
+    NvSciBufType_RawBuffer = 1U,
+    NvSciBufType_Image = 2U,
+    NvSciBufType_Tensor = 3U,
+#if (NV_IS_SAFETY == 0)
+    NvSciBufType_Array = 4U,
+    NvSciBufType_Pyramid = 5U,
+#endif
+    NvSciBufType_MaxValid = 6U,
+    NvSciBufType_UpperBound = 6U,
 } NvSciBufType;
 
 /**
@@ -71,12 +132,16 @@ typedef enum {
  * @{
  */
 /**
- * @brief API Major version number.
+ * @brief NvSciBuf API Major version number.
+ *
+ * @implements{15393446}
  */
-static const uint32_t NvSciBufMajorVersion = 1U;
+static const uint32_t NvSciBufMajorVersion = 2U;
 
 /**
- * @brief API Minor version number.
+ * @brief NvSciBuf API Minor version number.
+ *
+ * @implements{15393450}
  */
 static const uint32_t NvSciBufMinorVersion = 0U;
 
@@ -92,10 +157,12 @@ static const int NV_SCI_BUF_TENSOR_MAX_DIMS = 8;
  */
 static const int NV_SCI_BUF_IMAGE_MAX_PLANES = 3;
 
+#if (NV_IS_SAFETY == 0)
 /**
  * @brief Maximum number of levels supported by pyramid datatype.
  */
 static const int NV_SCI_BUF_PYRAMID_MAX_LEVELS = 10;
+#endif
 
 /**
  * @brief Indicates the size of export descriptor.
@@ -145,6 +212,8 @@ static const int NV_SCI_BUF_RAW_BUF_ATTR_KEY_START =
 static const int NV_SCI_BUF_IMAGE_ATTR_KEY_START =
            (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) |
            (NvSciBufType_Image << NV_SCI_BUF_ATTRKEY_BIT_COUNT);
+
+#if (NV_IS_SAFETY == 0)
 /**
  * @brief Indicates the start of ImagePyramid Datatype keys.
  */
@@ -158,6 +227,7 @@ static const int NV_SCI_BUF_PYRAMID_ATTR_KEY_START =
 static const int NV_SCI_BUF_ARRAY_ATTR_KEY_START =
            (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) |
            (NvSciBufType_Array << NV_SCI_BUF_ATTRKEY_BIT_COUNT);
+#endif
 
 /**
  * @brief Indicates the start of Tensor Datatype keys.
@@ -169,19 +239,25 @@ static const int NV_SCI_BUF_TENSOR_ATTR_KEY_START =
 #else
 
 /**
- * @brief Maximum number of dimensions supported by tensor datatype.
+ * @brief Maximum number of dimensions supported by NvSciBufType_Tensor.
+ *
+ * @implements{15035145}
  */
 #define NV_SCI_BUF_TENSOR_MAX_DIMS  8u
 
 /**
- * @brief Maximum number of planes supported by image datatype.
+ * @brief Maximum number of planes supported by NvSciBufType_Image.
+ *
+ * @implements{15035115}
  */
 #define NV_SCI_BUF_IMAGE_MAX_PLANES 3u
 
+#if (NV_IS_SAFETY == 0)
 /**
- * @brief Maximum number of levels supported by pyramid datatype.
+ * @brief Maximum number of levels supported by NvSciBufType_Pyramid.
  */
 #define NV_SCI_BUF_PYRAMID_MAX_LEVELS 10u
+#endif
 
 /**
  * @brief Indicates the size of export descriptor.
@@ -189,65 +265,69 @@ static const int NV_SCI_BUF_TENSOR_ATTR_KEY_START =
 #define NVSCIBUF_EXPORT_DESC_SIZE   32u
 
 /**
- * @brief Indicates number of bits used for defining an attribute key.
- * Note: Maximum 16K attribute Keys per datatype.
+ * @brief Global constant to indicate number of bits used for
+ * defining an attribute key. Note: Maximum 16K attribute keys
+ * per NvSciBufType.
  */
 #define NV_SCI_BUF_ATTRKEY_BIT_COUNT  16u
 
 /**
- * @brief Indicates number of bits used for defining datatype of a key.
- * Note: Maximum 1K datatypes.
+ * @brief Global constant to indicate number of bits used for
+ * defining NvSciBufType of an attribute key. Note: Maximum 1K
+ * NvSciBufType(s).
  */
 #define NV_SCI_BUF_DATATYPE_BIT_COUNT  10u
 
 /**
- * @brief Indicates the attribute key is a public key type.
+ * @brief Global constant to indicate the attribute key type is public.
  */
-#define NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC 0
+#define NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC 0u
 
 /**
- * @brief Global constant to specify the start-bit of attribute Keytype.
+ * @brief Global constant to specify the start-bit of attribute key type.
  */
 #define NV_SCI_BUF_KEYTYPE_BIT_START \
         (NV_SCI_BUF_DATATYPE_BIT_COUNT + NV_SCI_BUF_ATTRKEY_BIT_COUNT)
 
 /**
- * @brief Indicates starting value of General attribute keys.
+ * @brief Indicates starting value of NvSciBufAttrKey for NvSciBufType_General.
  */
 #define NV_SCI_BUF_GENERAL_ATTR_KEY_START \
         (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) | \
         (NvSciBufType_General << NV_SCI_BUF_ATTRKEY_BIT_COUNT)
 
 /**
- * @brief Indicates the start of Raw-buffer Datatype keys.
+ * @brief Indicates starting value of NvSciBufAttrKey for NvSciBufType_RawBuffer.
  */
 #define NV_SCI_BUF_RAW_BUF_ATTR_KEY_START \
           (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) | \
           (NvSciBufType_RawBuffer << NV_SCI_BUF_ATTRKEY_BIT_COUNT)
 
 /**
- * @brief Indicates the start of Image Datatype keys.
+ * @brief Indicates the starting value of NvSciBufAttrKey for NvSciBufType_Image.
  */
 #define NV_SCI_BUF_IMAGE_ATTR_KEY_START \
           (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) | \
           (NvSciBufType_Image << NV_SCI_BUF_ATTRKEY_BIT_COUNT)
 
+#if (NV_IS_SAFETY == 0)
 /**
- * @brief Indicates the start of ImagePyramid Datatype keys.
+ * @brief Indicates the starting value of NvSciBufAttrKey for NvSciBufType_Pyramid.
  */
 #define NV_SCI_BUF_PYRAMID_ATTR_KEY_START \
           (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) | \
           (NvSciBufType_Pyramid << NV_SCI_BUF_ATTRKEY_BIT_COUNT)
 
 /**
- * @brief Indicates the start of NvSciBuf Array Datatype keys.
+ * @brief Indicates the starting value of NvSciBufAttrKey for NvSciBufType_Array.
  */
 #define NV_SCI_BUF_ARRAY_ATTR_KEY_START \
           (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) | \
           (NvSciBufType_Array << NV_SCI_BUF_ATTRKEY_BIT_COUNT)
+#endif
 
 /**
- * @brief Macro to specify the start of Tensor Datatype keys.
+ * @brief Indicates the starting value of NvSciBufAttrKey for NvSciBufType_Tensor.
  */
 #define NV_SCI_BUF_TENSOR_ATTR_KEY_START \
           (NV_SCI_BUF_ATTR_KEY_TYPE_PUBLIC << NV_SCI_BUF_KEYTYPE_BIT_START) | \
@@ -266,7 +346,15 @@ static const int NV_SCI_BUF_TENSOR_ATTR_KEY_START =
  */
 
 /**
- * Describes the public attribute keys.
+ * @brief Describes the NvSciBuf public attribute keys holding corresponding
+ * values specifying buffer constraints. Input attribute keys specify desired
+ * buffer constraints and can be set/retrieved from unreconciled
+ * NvSciBufAttrList using NvSciBufAttrListGetAttrs()/NvSciBufAttrListSetAttrs()
+ * respectively. Output attribute keys specify actual buffer constraints
+ * computed by NvSciBuf if reconciliation succeeds. Output attributes can be
+ * retrieved from reconciled NvSciBufAttrList using NvSciBufAttrListGetAttrs().
+ *
+ * @implements{14911697}
  */
 typedef enum {
     /**
@@ -275,32 +363,54 @@ typedef enum {
      */
     NvSciBufAttrKey_LowerBound =         NV_SCI_BUF_GENERAL_ATTR_KEY_START,
 
-    /** Specifies the buffer type that the attribute list is expected to have.
-     * For each type the buffer has, the associated attributes are valid.
+    /** An array of all types that the buffer is expected to have. For each type
+     * the buffer has, the associated attributes are valid. In order to set
+     * @a NvSciBufAttrKeys corresponding to the NvSciBufType, NvSciBufType must
+     * be set first using this key.
+     * NOTE: A single buffer may have multiple types. For example, a buffer may
+     * simultaneously be a NvSciBufType_Image (for integration with NvMedia), a
+     * NvSciBufType_Tensor (for integration with TensorRT or NvMedia), and a
+     * NvSciBufType_RawBuffer (for integration with CUDA kernels that will
+     * directly access it).
      *
-     * Type: Input attribute
+     * During reconciliation, if all the NvSciBufTypes
+     * specified by all the unreconciled NvSciBufAttrLists are same, this
+     * key outputs the specified NvSciBufType. If all NvSciBufTypes are
+     * not same, reconciliation succeeds only if the set of NvSciBufTypes
+     * contains NvSciBufType_Image and NvSciBufType_Tensor only otherwise
+     * reconciliation fails.
      *
-     * Datatype: @ref NvSciBufType
+     * Type: Input/Output attribute
+     *
+     * Datatype: @ref NvSciBufType[]
      */
     NvSciBufGeneralAttrKey_Types,
 
-    /** Specifies if CPU access is required. If this attribute is set to @c true,
-     * then the CPU will be able to obtain a pointer to the buffer
-     * from NvSciBufObjGetCpuPtr().
+    /** Specifies if CPU access is required for the buffer. If this attribute is
+     * set to @c true, then the CPU will be able to obtain a pointer to the
+     * buffer from NvSciBufObjGetConstCpuPtr() if at least read permissions are
+     * granted or from NvSciBufObjGetCpuPtr() if read/write permissions are
+     * granted.
      *
-     * Type: Input attribute
+     * for every peer owning the unreconciled NvSciBufAttrList(s) involved in
+     * reconciliation, if any of the unreconciled NvSciBufAttrList(s) owned by
+     * the peer set the key to true then value of this key is true in the
+     * reconciled NvSciBufAttrList sent to the peer otherwise its false.
+     *
+     * Type: Input/Output attribute
      *
      * Datatype: @c bool
      */
     NvSciBufGeneralAttrKey_NeedCpuAccess,
 
-    /** Specifies which access permissions are required.
-     * If @ref NvSciBufGeneralAttrKey_NeedCpuAccess is @c true, the pointer
-     * returned by NvSciBufObjGetCpuPtr() will provide these
-     * permissions.
-     * Any hardware accelerators that contribute to this attribute list
-     * will be offered at least
-     * these permissions.
+    /** Specifies buffer access permissions.
+     * If reconciliation succeeds, granted buffer permissions are reflected in
+     * NvSciBufGeneralAttrKey_ActualPerm. If
+     * NvSciBufGeneralAttrKey_NeedCpuAccess is true and write permission
+     * are granted, then NvSciBufObjGetCpuPtr() can be used to obtain a
+     * non-const pointer to the buffer.
+     * NOTE: Whether this key is present in reconciled attribute lists is
+     * unspecified, as is its value if it is present.
      *
      * Type: Input attribute
      *
@@ -311,9 +421,9 @@ typedef enum {
     /** Specifies whether to enable/disable CPU caching.
      * If set to @c true:
      *
-     *   The CPU must perform write-back caching of the buffer to the greatest
-     *   extent possible considering all the CPUs that are sharing the buffer.
-     *    Coherency is guaranteed with:
+     * The CPU must perform write-back caching of the buffer to the greatest
+     * extent possible considering all the CPUs that are sharing the buffer.
+     *  Coherency is guaranteed with:
      *         - Other CPU accessors.
      *         - All I/O-Coherent accessors that do not have CPU-invisible
      *           caches.
@@ -321,33 +431,47 @@ typedef enum {
      * If set to @c false:
      *
      * The CPU must not access the caches at all on read or write accesses
-     *  to the buffer from applications.
-     *   Coherency is guaranteed with:
+     * to the buffer from applications.
+     *  Coherency is guaranteed with:
      *         - Other CPU accessors.
      *         - All I/O accessors (whether I/O-coherent or not) that do not
      *              have CPU-invisible caches.
      *
-     * Type: Input attribute
+     * During reconciliation, this key is set to true in reconciled
+     * NvSciBufAttrList if any of the unreconciled NvSciBufattrList owned by any
+     * peer set it to true.
+     *
+     * Type: Input/Output attribute
      *
      * Datatype: @c bool
      */
     NvSciBufGeneralAttrKey_EnableCpuCache,
 
     /** GpuIDs of the GPUs in the system that will access the buffer.
-     *    In a multi GPU System, if multiple GPUs are supposed to access
-     *    the buffer, then provide the GPU IDs of all the GPUs that
-     *    need to access the buffer. The GPU which is not specified in the
-     *    list of GPUIDs may not be able to access the buffer.
+     * In a multi GPU System, if multiple GPUs are supposed to access
+     * the buffer, then provide the GPU IDs of all the GPUs that
+     * need to access the buffer. The GPU which is not specified in the
+     * list of GPUIDs may not be able to access the buffer.
      *
-     * Type: Input attribute
+     * During reconciliation, the value of this key in reconciled
+     * NvSciBufAttrList is equivalent to the aggregate of all the values
+     * specified by all the unreconciled NvSciBufAttrLists involved in
+     * reconciliation.
      *
-     * Datatype: @c uint64_t[]
+     * Type: Input/Output attribute
+     *
+     * Datatype: @ref NvSciRmGpuId[]
      */
     NvSciBufGeneralAttrKey_GpuId,
 
     /** Indicates whether the CPU is required to flush before reads and
-     * after writes. This can be accomplished using NvSciBufObjFlushRange(),
-     * or (if the application prefers) with OS-specific flushing functions.
+     * after writes. This can be accomplished using
+     * NvSciBufObjFlushCpuCacheRange(), or (if the application prefers) with
+     * OS-specific flushing functions. It is set to true in reconciled
+     * NvSciBufAttrList if both NvSciBufGeneralAttrKey_EnableCpuCache and
+     * NvSciBufGeneralAttrKey_NeedCpuAccess are requested by setting them
+     * to true in any of the unreconciled NvSciBufAttrLists from which
+     * reconciled NvSciBufAttrList is obtained.
      *
      * Type: Output attribute
      *
@@ -355,13 +479,17 @@ typedef enum {
      */
     NvSciBufGeneralAttrKey_CpuNeedSwCacheCoherency,
 
-    /** Specifies the access permissions that are provided.
-     *  This key can only be used after reconciliation to find out the
-     *  access permissions provided to the ipcEndpoint which has
-     *  imported this attribute list.
-     * Any hardware accelerators that contribute to this attribute list
-     * will be offered at least
-     * these permissions.
+    /** Specifies the buffer access permissions to the NvSciBufObj.
+     * This key is only valid in reconciled NvSciBufAttrList
+     * and undefined in unreconciled NvSciBufAttrList. If NvSciBufObj is
+     * obtained by calling NvSciBufObjAlloc(),
+     * NvSciBufGeneralAttrKey_ActualPerm is set to NvSciBufAccessPerm_ReadWrite
+     * in the reconciled NvSciBufAttrList corresponding to it since allocated
+     * NvSciBufObj gets read-write permissions by default.
+     *
+     * For any peer importing the NvSciBufObj, this key is set in the reconciled
+     * NvSciBufAttrList to at least the permissions requested by the peer via
+     * NvSciBufGeneralAttrKey_RequiredPerm
      *
      * Type: Output attribute
      *
@@ -369,23 +497,42 @@ typedef enum {
      */
     NvSciBufGeneralAttrKey_ActualPerm,
 
-    /** Specifies the size of the buffer to allocate.
+    /** GPU ID of dGPU from which vidmem allocation should come when multiple
+     * GPUs are sharing buffer. This key should be empty if multiple GPUs
+     * access shared buffer from sysmem.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
+     *
+     * Datatype: NvSciRmGpuId
+     */
+    NvSciBufGeneralAttrKey_VidMem_GpuId,
+
+    /** Specifies the size of the buffer to be allocated for
+     * NvSciBufType_RawBuffer. Input size specified in unreconciled
+     * NvSciBufAttrList should be greater than 0. If reconciliation succeeds,
+     * output size reflected in reconciled NvSciBufAttrList will be equal or
+     * greater than input size.
+     *
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint64_t
      */
     NvSciBufRawBufferAttrKey_Size   =  NV_SCI_BUF_RAW_BUF_ATTR_KEY_START,
 
-    /** Specifies the alignment requirement of raw buffer.
+    /** Specifies the alignment requirement of NvSciBufType_RawBuffer. Input
+     * alignment should be power of 2, output alignment will be power of 2 which
+     * is greater than or equal to input alignment.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint64_t
      */
     NvSciBufRawBufferAttrKey_Align,
 
-    /** Specifies the layout: Block-linear or Pitch-linear.
+    /** Specifies the layout of NvSciBufType_Image: Block-linear or
+     * Pitch-linear. If more than one unreconciled NvSciBufAttrLists specify
+     * this input attribute, reconciliation is successful if all the input
+     * attributes of this type match.
      *
      * Type: Input/Output attribute
      *
@@ -393,47 +540,62 @@ typedef enum {
      */
     NvSciBufImageAttrKey_Layout   =    NV_SCI_BUF_IMAGE_ATTR_KEY_START,
 
-    /** Specifies the top padding for the image.
+    /** Specifies the top padding for the NvSciBufType_Image. If more than one
+     * unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: @c uint64_t
+     * Datatype: @c uint64_t[]
      */
     NvSciBufImageAttrKey_TopPadding,
 
-    /** Specifies the bottom padding for the image.
+    /** Specifies the bottom padding for the NvSciBufType_Image. If more than
+     * one unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: uint64_t
+     * Datatype: uint64_t[]
      */
     NvSciBufImageAttrKey_BottomPadding,
 
-    /** Specifies the left padding for the image.
+    /** Specifies the left padding for the NvSciBufType_Image. If more than one
+     * unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: @c uint64_t
+     * Datatype: @c uint64_t[]
      */
     NvSciBufImageAttrKey_LeftPadding,
 
-    /** Specifies the right padding for the image.
+    /** Specifies the right padding for the NvSciBufType_Image. If more than one
+     * unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: @c uint64_t
+     * Datatype: @c uint64_t[]
      */
     NvSciBufImageAttrKey_RightPadding,
 
-    /** Specifies the VPR flag for the image.
+    /** Specifies the VPR flag for the NvSciBufType_Image. If more than one
+     * unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c bool
      */
     NvSciBufImageAttrKey_VprFlag,
 
-    /** Indicates the size of the image.
+    /** Output size of the NvSciBufType_Image after successful reconciliation.
      *
      * Type: Output attribute
      *
@@ -441,7 +603,8 @@ typedef enum {
      */
     NvSciBufImageAttrKey_Size,
 
-    /** Indicates the alignment for the image.
+    /** Output alignment of the NvSciBufType_Image after successful
+     * reconciliation.
      *
      * Type: Output attribute
      *
@@ -449,7 +612,10 @@ typedef enum {
      */
     NvSciBufImageAttrKey_Alignment,
 
-    /** Specifies the number of image planes.
+    /** Specifies the number of planes for NvSciBufType_Image. If more than one
+     * unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
@@ -457,7 +623,10 @@ typedef enum {
      */
     NvSciBufImageAttrKey_PlaneCount,
 
-    /** Specifies the color format of the image plane.
+    /** Specifies the color format of the NvSciBufType_Image plane. If more than
+     * one unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
@@ -465,7 +634,10 @@ typedef enum {
      */
     NvSciBufImageAttrKey_PlaneColorFormat,
 
-    /** Specifies a set of plane color standards.
+    /** Specifies a set of plane color standards. If more than
+     * one unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
@@ -473,40 +645,51 @@ typedef enum {
      */
     NvSciBufImageAttrKey_PlaneColorStd,
 
-    /** Specifies the image plane base address alignment.
+    /** Specifies the NvSciBufType_Image plane base address alignment. Input
+     * alignment should be power of 2, output alignment will be power of 2
+     * which is greater than or equal to input alignment.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: @c int32_t[]
+     * Datatype: @c uint32_t[]
      */
     NvSciBufImageAttrKey_PlaneBaseAddrAlign,
 
-    /** Specifies the image plane width in pixels.
+    /** Specifies the NvSciBufType_Image plane width in pixels. If more than
+     * one unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: @c int32_t[]
+     * Datatype: @c uint32_t[]
      */
     NvSciBufImageAttrKey_PlaneWidth,
 
-    /** Specifies the image plane height in pixels.
+    /** Specifies the NvSciBufType_Image plane height in pixels. If more than
+     * one unreconciled NvSciBufAttrLists specify this input attribute,
+     * reconciliation is successful if all the input attributes of this
+     * type match.
      *
      * Type: Input/Output attribute
      *
-     * Datatype: @c int32_t[]
+     * Datatype: @c uint32_t[]
      */
     NvSciBufImageAttrKey_PlaneHeight,
 
-    /** Specifies the image scan type: Progressive or Interlaced.
+    /** Specifies the NvSciBufType_Image scan type: Progressive or Interlaced.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes
+     * of this type match.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @ref NvSciBufAttrValImageScanType
      */
     NvSciBufImageAttrKey_PlaneScanType,
     NvSciBufImageAttrKey_ScanType = NvSciBufImageAttrKey_PlaneScanType,
 
-    /** Indicates the image plane in bits per pixel.
+    /** Indicates the NvSciBufType_Image plane in bits per pixel.
      *
      * Type: Output attribute
      *
@@ -514,7 +697,7 @@ typedef enum {
      */
     NvSciBufImageAttrKey_PlaneBitsPerPixel,
 
-    /** Indicates the starting offset of the image plane.
+    /** Indicates the starting offset of the NvSciBufType_Image plane.
      *
      * Type: Output attribute
      *
@@ -522,19 +705,19 @@ typedef enum {
      */
     NvSciBufImageAttrKey_PlaneOffset,
 
-    /** Indicates the color format of the image plane.
+    /** Indicates the data type of the NvSciBufType_Image plane.
      *
      * Type: Output attribute
      *
-     * Datatype: @ref NvSciBufAttrValDataType
+     * Datatype: @ref NvSciBufAttrValDataType[]
      */
     NvSciBufImageAttrKey_PlaneDatatype,
 
-    /** Indicates the channel count in the image plane.
+    /** Indicates the channel count in the NvSciBufType_Image plane.
      *
      * Type: Output attribute
      *
-     * Datatype: @c uint8_t
+     * Datatype: @c uint8_t[]
      */
     NvSciBufImageAttrKey_PlaneChannelCount,
 
@@ -543,64 +726,106 @@ typedef enum {
      *
      * Type: Output attribute
      *
-     * Datatype: @c int64_t[]
+     * Datatype: @c uint64_t[]
      */
     NvSciBufImageAttrKey_PlaneSecondFieldOffset,
 
-    /** Indicates the pitch of the image plane.
+    /** Indicates the pitch of the NvSciBufType_Image plane.
      *
      * Type: Output attribute
      *
-     * Datatype: @c int32_t[]
+     * Datatype: @c uint32_t[]
      */
     NvSciBufImageAttrKey_PlanePitch,
 
-    /** Indicates the aligned height of the image plane.
+    /** Indicates the aligned height of the NvSciBufType_Image plane. The value
+     * is power of 2.
      *
      * Type: Output attribute
      *
-     * Datatype: int32_t[]
+     * Datatype: @c uint32_t[]
      */
     NvSciBufImageAttrKey_PlaneAlignedHeight,
 
-    /** Indicates the aligned size of the image plane.
+    /** Indicates the aligned size of the NvSciBufType_Image plane.
      *
      * Type: Output attribute
      *
-     * Datatype: @c int64_t[]
+     * Datatype: @c uint64_t[]
      */
     NvSciBufImageAttrKey_PlaneAlignedSize,
 
-    /** Specifies the tensor data type.
+    /** Attribute to specify number of NvSciBufType_Image(s) for which buffer
+     * should be allocated. If more than one unreconciled NvSciBufAttrLists
+     * specify this input attribute, reconciliation is successful if all the
+     * input attributes of this type match.NvSciBuf supports allocating buffer
+     * for single image only and thus, this attribute should be set to 1.
+     * A single buffer cannot be allocated for multiple images.
+     * Allocating 'N' buffers corresponding to 'N' images is allowed
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
+     * Datatype: @c uint64_t
+     */
+    NvSciBufImageAttrKey_ImageCount,
+
+    /** Specifies the tensor data type.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
+     *
+     * Type: Input/Output attribute
      *
      * Datatype: @ref NvSciBufAttrValDataType
      */
     NvSciBufTensorAttrKey_DataType  =  NV_SCI_BUF_TENSOR_ATTR_KEY_START,
 
-    /** Specifies the number of tensor dimensions. A maximum of 8 dimensions are allowed.
+    /** Specifies the number of tensor dimensions. A maximum of 8 dimensions are
+     * allowed. If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
+     * If NvSciBufType_Image and NvSciBufType_Tensor NvSciBufTypes are used
+     * in reconciliation, reconciliation succeeds only if this key is set
+     * to 4, since NvSciBuf only supports reconciliation of NvSciBufType_Tensor
+     * of NHWC type with NvSciBufType_Image.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
-     * Datatype: @c int32_t
+     * Datatype: @c uint32_t
      */
     NvSciBufTensorAttrKey_NumDims,
 
     /** Specifies the size of each tensor dimension.
      * This attribute takes size value in terms of an array.
-     * @note Array indices are not tied to the semantics of the dimension.
-     * NvSciBuf is not affected by the dimension order.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match. Number of elements in value array of this attribute
+     * should not be less than value specified by NvSciBufTensorAttrKey_NumDims
+     * attribute.
+     * @note Array indices are not tied to the semantics of the
+     * dimension if NvSciBufType_Tensor is the only NvSciBufType involved
+     * in reconciliation. If NvSciBufType_Tensor and NvSciBufType_Image
+     * are involved in reconciliation, NvSciBuf only supports
+     * reconciliation of NvSciBufType_Image with NHWC NvSciBufType_Tensor
+     * where N=1 and thus reconciliation succeeds only if value of
+     * dimension 0 is 1 and it matches with value of
+     * NvSciBufImageAttrKey_ImageCount, value of dimension 1 matches with value
+     * of NvSciBufImageAttrKey_PlaneHeight, value of dimension 2 matches with
+     * value of NvSciBufImageAttrKey_PlaneWidth and dimension 3 specifies
+     * channel count for NvSciBufAttrValColorFmt specified in
+     * NvSciBufTensorAttrKey_PixelFormat key
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint64_t[]
      */
     NvSciBufTensorAttrKey_SizePerDim,
 
     /** Specifies the alignment constraints per tensor dimension.
+     * Number of elements in value array of this attribute should not be less
+     * than value specified by NvSciBufTensorAttrKey_NumDims attribute. Value of
+     * every element in the value array should be power of two.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint32_t[]
      */
@@ -617,32 +842,72 @@ typedef enum {
      */
     NvSciBufTensorAttrKey_StridesPerDim,
 
-    /** Specifies the data type of a buffer array.
+    /** Attribute providing pixel format of the tensor. This key needs to be
+     * set only if NvSciBufType_Image and NvSciBufType_Tensor are involved in
+     * reconciliation. Reconciliation succeeds only if value of this key matches
+     * with value of NvSciBufImageAttrKey_PlaneColorFormat.
+     * Image/Tensor reconciliation only supports NvSciColor_A8B8G8R8 and
+     * NvSciColor_Float_A16B16G16R16 color formats as of now.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
+     * Datattype: @ref NvSciBufAttrValColorFmt
+     */
+    NvSciBufTensorAttrKey_PixelFormat,
+
+    /** Attribute providing base address alignment requirements for tensor.
+     * Input value provided for this attribute must be power of two. Output
+     * value of this attribute is always power of two.
+     *
+     * Type: Input/Output attribute
+     * Datatype: @c uint64_t
+     */
+    NvSciBufTensorAttrKey_BaseAddrAlign,
+
+    /** Size of buffer allocated for 'N' tensors.
+     *
+     * Type: Output attribute
+     *
+     * Datatype: @c uint64_t
+     */
+    NvSciBufTensorAttrKey_Size,
+
+#if (NV_IS_SAFETY == 0)
+    /** Specifies the data type of a NvSciBufType_Array.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
+     *
+     * Type: Input/Output attribute
      *
      * Datatype: @ref NvSciBufAttrValDataType
      */
     NvSciBufArrayAttrKey_DataType   =  NV_SCI_BUF_ARRAY_ATTR_KEY_START,
 
-    /** Specifies the stride of each element in the buffer array.
-     * Stride must be less than the size of the array data type.
+    /** Specifies the stride of each element in the NvSciBufType_Array.
+     * Stride must be greater than or equal to size of datatype specified by
+     * NvSciBufArrayAttrKey_DataType.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint64_t
      */
     NvSciBufArrayAttrKey_Stride,
 
-    /** Specifies the buffer array capacity.
+    /** Specifies the NvSciBufType_Array capacity.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint64_t
      */
     NvSciBufArrayAttrKey_Capacity,
 
-    /** Indicates the total size of a buffer array.
+    /** Indicates the total size of a NvSciBufType_Array.
      *
      * Type: Output attribute
      *
@@ -650,7 +915,7 @@ typedef enum {
      */
     NvSciBufArrayAttrKey_Size,
 
-    /** Indicates the base alignment of a buffer array.
+    /** Indicates the base alignment of a NvSciBufType_Array.
      *
      * Type: Output attribute
      *
@@ -659,8 +924,11 @@ typedef enum {
     NvSciBufArrayAttrKey_Alignment,
 
     /** Specifies the number of levels of images in a pyramid.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c uint32_t
      */
@@ -668,8 +936,11 @@ typedef enum {
 
     /** Specifies the scaling factor by which each successive image in a
      * pyramid must be scaled. Value must be 0 < @em scale <= 1.
+     * If more than one unreconciled NvSciBufAttrLists specify this input
+     * attribute, reconciliation is successful if all the input attributes of
+     * this type match.
      *
-     * Type: Input attribute
+     * Type: Input/Output attribute
      *
      * Datatype: @c float
      */
@@ -693,12 +964,20 @@ typedef enum {
      */
     NvSciBufPyramidAttrKey_LevelSize,
 
+    /** Alignment attribute of pyramid
+     *
+     * Type: Output attribute
+     * Datatype: uint64_t
+     */
+    NvSciBufPyramidAttrKey_Alignment,
+#endif
+
     /** Specifies the maximum number of NvSciBuf attribute keys.
      * The total space for keys is 32K.
      *
      * Datatype: None
      */
-    NvSciBufAttrKey_UpperBound,
+    NvSciBufAttrKey_UpperBound = 0x3ffffffU,
 
 } NvSciBufAttrKey;
 
@@ -712,16 +991,25 @@ typedef enum {
  */
 
 /**
- * @brief Defines access permissions for NvSciBuf.
+ * @brief Defines buffer access permissions for NvSciBufObj.
+ *
+ * @implements{14911700}
  */
 typedef enum {
-    NvSciBufAccessPerm_Readonly,
-    NvSciBufAccessPerm_ReadWrite,
+    NvSciBufAccessPerm_Readonly = 1,
+    NvSciBufAccessPerm_ReadWrite = 3,
+    /*! Usage of Auto permissions is restricted only for export,
+     *! import APIs and shouldn't be used to set value for
+     *! NvSciBufGeneralAttrKey_RequiredPerm Attribute
+     */
+    NvSciBufAccessPerm_Auto,
     NvSciBufAccessPerm_Invalid,
 } NvSciBufAttrValAccessPerm;
 
 /**
- * @brief Defines the image layout type for NvSciBuf.
+ * @brief Defines the image layout type for NvSciBufType_Image.
+ *
+ * @implements{14911703}
  */
 typedef enum {
     NvSciBufImage_BlockLinearType,
@@ -729,7 +1017,9 @@ typedef enum {
 } NvSciBufAttrValImageLayoutType;
 
 /**
- * @brief Defines the image scan type for NvSciBuf.
+ * @brief Defines the image scan type for NvSciBufType_Image.
+ *
+ * @implements{14911706}
  */
 typedef enum {
     NvSciBufScan_ProgressiveType,
@@ -737,7 +1027,9 @@ typedef enum {
 } NvSciBufAttrValImageScanType;
 
 /**
- * @brief Defines the image color formats for NvSciBuf.
+ * @brief Defines the image color formats for NvSciBufType_Image.
+ *
+ * @implements{14911709}
  */
 typedef enum {
     NvSciColor_LowerBound,
@@ -752,6 +1044,14 @@ typedef enum {
     NvSciColor_Bayer16GBRG,
     NvSciColor_Bayer16GRBG,
     NvSciColor_Bayer16RGGB,
+    NvSciColor_Bayer16RCCB,
+    NvSciColor_Bayer16BCCR,
+    NvSciColor_Bayer16CRBC,
+    NvSciColor_Bayer16CBRC,
+    NvSciColor_Bayer16RCCC,
+    NvSciColor_Bayer16CCCR,
+    NvSciColor_Bayer16CRCC,
+    NvSciColor_Bayer16CCRC,
     NvSciColor_X2Bayer14GBRG,
     NvSciColor_X4Bayer12GBRG,
     NvSciColor_X6Bayer10GBRG,
@@ -767,6 +1067,14 @@ typedef enum {
     NvSciColor_X2Bayer14CCCC,
     NvSciColor_X4Bayer12CCCC,
     NvSciColor_X6Bayer10CCCC,
+    NvSciColor_X4Bayer12RCCB,
+    NvSciColor_X4Bayer12BCCR,
+    NvSciColor_X4Bayer12CRBC,
+    NvSciColor_X4Bayer12CBRC,
+    NvSciColor_X4Bayer12RCCC,
+    NvSciColor_X4Bayer12CCCR,
+    NvSciColor_X4Bayer12CRCC,
+    NvSciColor_X4Bayer12CCRC,
     NvSciColor_Signed_X2Bayer14CCCC,
     NvSciColor_Signed_X4Bayer12CCCC,
     NvSciColor_Signed_X6Bayer10CCCC,
@@ -776,11 +1084,27 @@ typedef enum {
     NvSciColor_FloatISP_Bayer16BGGR,
     NvSciColor_FloatISP_Bayer16GRBG,
     NvSciColor_FloatISP_Bayer16GBRG,
+    NvSciColor_FloatISP_Bayer16RCCB,
+    NvSciColor_FloatISP_Bayer16BCCR,
+    NvSciColor_FloatISP_Bayer16CRBC,
+    NvSciColor_FloatISP_Bayer16CBRC,
+    NvSciColor_FloatISP_Bayer16RCCC,
+    NvSciColor_FloatISP_Bayer16CCCR,
+    NvSciColor_FloatISP_Bayer16CRCC,
+    NvSciColor_FloatISP_Bayer16CCRC,
     NvSciColor_X12Bayer20CCCC,
     NvSciColor_X12Bayer20BGGR,
     NvSciColor_X12Bayer20RGGB,
     NvSciColor_X12Bayer20GRBG,
     NvSciColor_X12Bayer20GBRG,
+    NvSciColor_X12Bayer20RCCB,
+    NvSciColor_X12Bayer20BCCR,
+    NvSciColor_X12Bayer20CRBC,
+    NvSciColor_X12Bayer20CBRC,
+    NvSciColor_X12Bayer20RCCC,
+    NvSciColor_X12Bayer20CCCR,
+    NvSciColor_X12Bayer20CRCC,
+    NvSciColor_X12Bayer20CCRC,
     NvSciColor_Signed_X12Bayer20CCCC,
     NvSciColor_Signed_X12Bayer20GBRG,
 
@@ -833,12 +1157,14 @@ typedef enum {
     NvSciColor_Float_A16B16G16R16,
     NvSciColor_A32,
     NvSciColor_Signed_A32,
-
+    NvSciColor_Float_A16,
     NvSciColor_UpperBound
 } NvSciBufAttrValColorFmt;
 
 /**
- * @brief Defines the image color standard for NvSciBuf.
+ * @brief Defines the image color standard for NvSciBufType_Image.
+ *
+ * @implements{14911712}
  */
 typedef enum {
     NvSciColorStd_SRGB,
@@ -857,6 +1183,8 @@ typedef enum {
 
 /**
  * @brief Defines various numeric datatypes for NvSciBuf.
+ *
+ * @implements{14911721}
  */
 typedef enum {
     NvSciDataType_Int4,
@@ -874,6 +1202,17 @@ typedef enum {
     NvSciDataType_UpperBound
 } NvSciBufAttrValDataType;
 
+/**
+ * @brief Defines GPU ID structure. This structure is used to
+ * set the value for NvSciBufGeneralAttrKey_GpuId attribute.
+ *
+ * @implements{14911730}
+ */
+typedef struct {
+    /** GPU ID. This member is initialized by the successful
+     * call to cuDeviceGetUuid() for CUDA usecases */
+    uint8_t bytes[16];
+} NvSciRmGpuId;
 
 /**
  * @}
@@ -886,10 +1225,11 @@ typedef enum {
  */
 
 /**
- * @brief Holds a pointer to NvSciBufModuleRec.
+ * @brief top-level container for the following set of
+ *        resources: NvSciBufAttrLists, buffers, and NvSciBufObjs.
  * Any @ref NvSciBufAttrList created or imported using a particular @ref NvSciBufModule
- * is bound to that module instance, along with any @ref NvSciBufObj objects created or
- * imported using those @ref NvSciSyncAttrList objects.
+ * is bound to it, along with any @ref NvSciBufObj created or
+ * imported using those NvSciBufAttrList(s).
  *
  * @note For any NvSciBuf API call that has more than one input of type
  * NvSciBufModule, NvSciBufAttrList, and/or NvSciBufObj, all such inputs
@@ -898,39 +1238,66 @@ typedef enum {
 typedef struct NvSciBufModuleRec* NvSciBufModule;
 
 /**
- * @brief Defines a key/value pair of attribute to be set.
+ * @brief This structure defines a key/value pair used to get or set
+ * the NvSciBufAttrKey(s) and their corresponding values from or to
+ * NvSciBufAttrList.
  *
- * @note An array of key/value pairs need to be set
- * in order to allocate a buffer.
+ * @note An array of this structure need to be set in order to
+ * allocate a buffer.
+ *
+ * @implements{14911727}
  */
 typedef struct {
+     /** NvSciBufAttrKey for which value needs to be set/retrieved. This member
+      * is initialized to any one of the NvSciBufAttrKey other than
+      * NvSciBufAttrKey_LowerBound and NvSciBufAttrKey_UpperBound */
       NvSciBufAttrKey key;
+
+      /** Memory which contains the value corresponding to the key */
       const void* value;
+
+      /** Length of the value in bytes */
       size_t len;
 } NvSciBufAttrKeyValuePair;
 
 /**
- * @brief Holds a pointer to NvSciBufObjRefRec.
+ * A memory object is a container holding the reconciled NvSciBufAttrList
+ * defining constraints of the buffer, the handle of the allocated buffer
+ * enforcing the buffer access permissions represented by
+ * NvSciBufGeneralAttrKey_ActualPerm key in reconciled NvSciBufAttrList
+ * and the buffer properties.
+ */
+
+/**
+ * @brief A reference to a particular Memory object.
  *
  * @note Every @ref NvSciBufObj that has been created but not freed
- * holds a reference to the @ref NvSciBufModule, preventing the module
+ * holds a reference to the @ref NvSciBufModule, preventing it
  * from being de-initialized.
  */
 typedef struct NvSciBufObjRefRec* NvSciBufObj;
 
+
 /**
- * @brief Holds a pointer to NvSciBufAttrListRec.
+ * @brief A container constituting an attribute list which contains
+ * - set of NvSciBufAttrKey attributes defining buffer constraints
+ * - slotcount defining number of slots in an attribute list
+ * - flag specifying if attribute list is reconciled or unreconciled
  *
  * @note Every @ref NvSciBufAttrList that has been created but not freed
- * holds a reference to the @ref NvSciBufModule, preventing the module
+ * holds a reference to the @ref NvSciBufModule, preventing it
  * from being de-initialized.
  */
 typedef struct NvSciBufAttrListRec* NvSciBufAttrList;
 
 /**
- * @brief Defines the export data (blob) for @ref NvSciBufObj.
+ * @brief Defines the exported form of NvSciBufObj intended to be
+ * shared across an NvSciIpc channel.
+ *
+ * @implements{15120654}
  */
 typedef struct {
+      /** Exported data (blob) for NvSciBufObj */
       uint64_t data[NVSCIBUF_EXPORT_DESC_SIZE];
 } __attribute__((packed)) NvSciBufObjIpcExportDescriptor;
 
@@ -945,107 +1312,168 @@ typedef struct {
  */
 
 /**
- * @brief Creates an attribute list holding the attributes
- * of the NvSciBufObj to be allocated.
+ * @brief Creates a new, single slot, unreconciled NvSciBufAttrList associated
+ * with the input NvSciBufModule with empty NvSciBufAttrKeys.
  *
- * @param[in] module NvSciBufModule to associate with the newly created NvSciBufAttrList.
- * @param[out] newAttrList A pointer to the NvSciBufAttrList object that this function creates.
+ * @param[in] module NvSciBufModule to associate with the newly
+ * created NvSciBufAttrList.
+ * @param[out] newAttrList The new NvSciBufAttrList.
  *
  * @return ::NvSciError, the completion status of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if @a newAttrList is NULL.
- * - ::NvSciError_InsufficientMemory if insufficient system memory to create
- *   a list.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a module is NULL
+ *      - @a newAttrList is NULL
+ * - ::NvSciError_InsufficientMemory if insufficient system memory to
+ *   create a NvSciBufAttrList.
+ * - panics if @a module is invalid.
  */
-NvSciError NvSciBufAttrListCreate(NvSciBufModule module,
+NvSciError NvSciBufAttrListCreate(
+    NvSciBufModule module,
     NvSciBufAttrList* newAttrList);
 
 /**
- * @brief Frees the memory of an attribute list.
+ * @brief Frees the NvSciBufAttrList and removes its association with the
+ * NvSciBufModule with which it was created.
  *
- * @param[in] attrList Attribute list to be freed.
+ * @note Every owner of the NvSciBufAttrList shall call NvSciBufAttrListFree()
+ * only after all the functions invoked by the owner with NvSciBufAttrList as
+ * an input are completed.
+ *
+ * @param[in] attrList The NvSciBufAttrList to be freed.
  *
  * @return void
+ * - panics if NvSciBufAttrList is invalid.
  */
-void NvSciBufAttrListFree(NvSciBufAttrList attrList);
+void NvSciBufAttrListFree(
+    NvSciBufAttrList attrList);
 
 /**
- * @brief Sets the attribute values in the attribute list.
- * Reads values only during the call, saving copies.
+ * @brief Sets the values for NvSciBufAttrKey(s) in the NvSciBufAttrList.
+ * It only reads values from NvSciBufAttrKeyValuePair array and
+ * saves copies during this call.
  *
- * @param[in] attrList Unreconciled attribute list where the function
- * will set the attribute key and value.
- * @param[in] pairArray Array of attribute key/value pair structures.
+ * @note All combinations of NvSciBufAttrListSetAttrs(),
+ * NvSciBufAttrListGetAttrs(), NvSciBufAttrListAppendUnreconciled()
+ * and NvSciBufAttrListReconcile() can be called concurrently,
+ * however, function completion order is not guaranteed by NvSciBuf
+ * and thus outcome of calling these functions concurrently is
+ * undefined.
+ *
+ * @param[in] attrList Unreconciled NvSciBufAttrList.
+ * @param[in] pairArray Array of NvSciBufAttrKeyValuePair structures.
+ * Valid value: pairArray is valid input if it is not NULL and
+ * key member of every NvSciBufAttrKeyValuePair in the array is an input or
+ * input/output attribute and it is > NvSciBufAttrKey_LowerBound and <
+ * NvSciBufAttrKey_UpperBound and value member of every NvSciBufAttrKeyValuePair
+ * in the array is not NULL.
  * @param[in] pairCount Number of elements/entries in @a pairArray.
+ * Valid value: pairCount is valid input if it is non-zero.
  *
  * @return ::NvSciError, the completion status of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if @a attrList is NULL, or @a attrList is a reconciled
- *   and/or imported attribute list.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a attrList is NULL
+ *      - @a attrList is reconciled or if any of the NvSciBufAttrKey(s)
+ *        specified in NvSciBufAttrKeyValuePair array is output only
+ *      - @a pairArray is NULL
+ *      - @a pairCount is 0
+ * - ::NvSciError_BadParameter if NvSciBufAttrKey specified in @ pairArray
+ *   is < NvSciBufAttrKey_LowerBound OR > NvSciBufAttrKey_UpperBound
+ * - panics if @a attrList is not valid
  */
-NvSciError NvSciBufAttrListSetAttrs(NvSciBufAttrList attrList,
-                NvSciBufAttrKeyValuePair* pairArray, size_t pairCount);
+NvSciError NvSciBufAttrListSetAttrs(
+    NvSciBufAttrList attrList,
+    NvSciBufAttrKeyValuePair* pairArray,
+    size_t pairCount);
 
 /**
- * @brief Returns the slot count per key in an attribute list.
+ * @brief Returns the slot count per NvSciBufAttrKey in a NvSciBufAttrList.
  *
- * @param[in] attrList Attribute list to retrieve the slot count from.
+ * @param[in] attrList The NvSciBufAttrList to retrieve the slot count from.
  *
  * @return size_t
- * - Number of slots in the attribute list
- * - 0 if attrList is invalid
+ * - Number of slots in the NvSciBufAttrList
+ * - panics if @a attrList is invalid
  */
-size_t NvSciBufAttrListGetSlotCount(NvSciBufAttrList attrList);
+size_t NvSciBufAttrListGetSlotCount(
+    NvSciBufAttrList attrList);
 
 /**
- * @brief Returns an array of attribute key/value pairs for a given set of keys.
- *
- * This function accepts a set of keys passed in the @ref NvSciBufAttrKeyValuePair
+ * @brief Returns an array of NvSciBufAttrKeyValuePair for a given set of NvSciBufAttrKey(s).
+ * This function accepts a set of NvSciBufAttrKey(s) passed in the @ref NvSciBufAttrKeyValuePair
  * structure. The return values, stored back into @ref NvSciBufAttrKeyValuePair, consist of
- * @c const @c void* pointers to the attribute
- * values from the @ref NvSciBufAttrList.
+ * @c const @c void* pointers to the attribute values from the @ref NvSciBufAttrList.
  * The application must not write to this data.
  *
- * @param[in] attrList Attribute list to fetch the attribute key/value pairs from.
- * @param[in,out] pairArray Array of key/value pair structures.
+ * @param[in] attrList NvSciBufAttrList to fetch the NvSciBufAttrKeyValuePair(s) from.
+ * @param[in,out] pairArray Array of NvSciBufAttrKeyValuePair.
+ * Valid value: pairArray is valid input if it is not NULL and key member
+ * of every NvSciBufAttrKeyValuePair in the array > NvSciBufAttrKey_LowerBound
+ * and < NvSciBufAttrKey_UpperBound.
  * @param[in] pairCount Number of elements/entries in @a pairArray.
+ * Valid value: pairCount is valid input if it is non-zero.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL, or
- * if @a attrList is an imported unreconciled attribute list.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a attrList is NULL
+ *      - @a pairArray is NULL
+ *      - @a pairCount is 0
+ *      - @a attrList is reconciled and any of the NvSciBufAttrKey(s) specified
+ *        in NvSciBufAttrKeyValuePair is input only
+ *      - @a attrList is unreconciled and any of the NvSciBufAttrKey(s)
+ *        specified in NvSciBufAttrKeyValuePair is output only
+ * - ::NvSciError_BadParameter if NvSciBufAttrKey specified in @ pairArray
+ *   is < NvSciBufAttrKey_LowerBound OR > NvSciBufAttrKey_UpperBound
+ * - panics if @a attrList is invalid
  */
-NvSciError NvSciBufAttrListGetAttrs(NvSciBufAttrList attrList,
-                NvSciBufAttrKeyValuePair* pairArray, size_t pairCount);
+NvSciError NvSciBufAttrListGetAttrs(
+    NvSciBufAttrList attrList,
+    NvSciBufAttrKeyValuePair* pairArray,
+    size_t pairCount);
 
 /**
- * @brief Returns an array of attribute key/value pairs from a multi-slot unreconciled
- * attribute list at the given slot index.
+ * @brief Returns an array of NvSciBufAttrKeyValuePair(s) from a multi-slot unreconciled
+ * NvSciBufAttrList at the given slot index. The return values, stored in @ref
+ * NvSciBufAttrKeyValuePair, consist of @c const @c void* pointers to the attribute values
+ * from the NvSciBufAttrList. The application must not write to this data.
  *
- * @note When exporting an array containing multiple unreconciled attribute
- * lists, the importing endpoint still imports just one unreconciled attribute
- * list. This unreconciled attribute list is referred to as a multi-slot
- * attribute list. It logically represents an array of attribute lists, where
+ * @note When exporting an array containing multiple unreconciled NvSciBufAttrList(s),
+ * the importing endpoint still imports just one unreconciled NvSciBufAttrList.
+ * This unreconciled NvSciBufAttrList is referred to as a multi-slot
+ * NvSciBufAttrList. It logically represents an array of NvSciBufAttrList(s), where
  * each key has an array of values, one per slot.
  *
- * The return values, stored in @ref NvSciBufAttrKeyValuePair, consist of
- * @c const @c void* pointers to the attribute
- * values from the NvSciBufAttrList.
- * The application must not write to this data.
- *
- * @param[in] attrList Attribute list to fetch the attribute key/value pairs from.
- * @param[in] slotIndex Index in the attribute list.
- * @param[in,out] pairArray Array of key/value pair structures. Holds the keys passed
- * into the function and returns an array of NvSciBufAttrKeyValuePair structures.
+ * @param[in] attrList NvSciBufAttrList to fetch the NvSciBufAttrKeyValuePair(s) from.
+ * @param[in] slotIndex Index in the NvSciBufAttrList.
+ * Valid value: 0 to slot count of NvSciBufAttrList - 1.
+ * @param[in,out] pairArray Array of NvSciBufAttrKeyValuePair. Holds the NvSciBufAttrKey(s)
+ * passed into the function and returns an array of NvSciBufAttrKeyValuePair structures.
+ * Valid value: pairArray is valid input if it is not NULL and key member
+ * of every NvSciBufAttrKeyValuePair in the array > NvSciBufAttrKey_LowerBound
+ * and < NvSciBufAttrKey_UpperBound.
  * @param[in] pairCount Number of elements/entries in pairArray.
+ * Valid value: pairCount is valid input if it is non-zero.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a attrList is NULL
+ *      - @a pairArray is NULL
+ *      - @a pairCount is 0
+ *      - @a slotIndex >= slot count of NvSciBufAttrList
+ * - NvSciError_BadParameter if NvSciBufAttrKey specified in @ pairArray is <
+ *   NvSciBufAttrKey_LowerBound OR > NvSciBufAttrKey_UpperBound.
+ * - panics if @a attrList is invalid
  */
-NvSciError NvSciBufAttrListSlotGetAttrs(NvSciBufAttrList attrList,
-    size_t slotIndex, NvSciBufAttrKeyValuePair* pairArray, size_t pairCount);
+NvSciError NvSciBufAttrListSlotGetAttrs(
+    NvSciBufAttrList attrList,
+    size_t slotIndex,
+    NvSciBufAttrKeyValuePair* pairArray,
+    size_t pairCount);
 
+#if (NV_IS_SAFETY == 0)
 /**
  * @brief Allocates a buffer and then dumps the contents of the specified
  * attribute list into the buffer.
@@ -1058,74 +1486,127 @@ NvSciError NvSciBufAttrListSlotGetAttrs(NvSciBufAttrList attrList,
  * - ::NvSciError_Success if successful.
  * - ::NvSciError_BadParameter if @a attrList is invalid.
  */
-NvSciError NvSciBufAttrListDebugDump(NvSciBufAttrList attrList, void** buf,
+NvSciError NvSciBufAttrListDebugDump(
+    NvSciBufAttrList attrList,
+    void** buf,
     size_t* len);
+#endif
 
 /**
- * @brief Reconciles the given unreconciled attribute list(s) into a new
- * reconciled attribute list.
- * On success, this API call allocates memory for the reconciled attribute list
- * which has to be freed by the caller using NvSciBufAttrListFree().
- * On reconciliation failure, this API call allocates memory for the conflicting
- * attribute list which has to be freed by the caller using
- * NvSciBufAttrListFree().
+ * @brief Reconciles the given unreconciled NvSciBufAttrList(s) into a new
+ * reconciled NvSciBufAttrList.
+ * On success, this API call returns reconciled NvSciBufAttrList, which has to
+ * be freed by the caller using NvSciBufAttrListFree().
  *
- * @param[in] inputArray Array containing unreconciled attribute list(s) to be
- * reconciled.
- * @param[in] inputCount The number of unreconciled attributes lists in
- * @a inputArray.
- *
- * @param[out] newReconciledAttrList Reconciled attribute list. This field
- * is populated only if the reconciliation succeeded.
- * @param[out] newConflictList Unreconciled attribute list consisting of the
+ * @param[in] inputArray Array containing unreconciled NvSciBufAttrList(s) to be
+ *            reconciled. @a inputArray is valid if it is non-NULL.
+ * @param[in] inputCount The number of unreconciled NvSciBufAttrList(s) in
+ *            @a inputArray. This value must be non-zero. For a single
+ *            NvSciBufAttrList, the count must be set 1.
+ * @param[out] newReconciledAttrList Reconciled NvSciBufAttrList. This field
+ *             is populated only if the reconciliation succeeded.
+ */
+#if (NV_IS_SAFETY == 0)
+/**
+ * @param[out] newConflictList Unreconciled NvSciBufAttrList consisting of the
  * key/value pairs which caused the reconciliation failure. This field is
  * populated only if the reconciliation failed.
+ */
+#else
+/**
+ * @param[out] newConflictList unused.
+ */
+#endif
+/**
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
- * - ::NvSciError_InsufficientMemory if not enough system memory.
- * - ::NvSciError_ReconciliationFailed if reconciliation failed.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a inputArray[] is NULL
+ *      - @a inputCount is 0
+ *      - @a newReconciledAttrList is NULL
+ *      - any of the NvSciBufAttrList in @a inputArray is reconciled.
+ *      - not all the NvSciBufAttrLists in @a inputArray are bound to the
+ *        same NvSciBufModule.
  */
-NvSciError NvSciBufAttrListReconcile(NvSciBufAttrList inputArray[],
-    size_t inputCount, NvSciBufAttrList* newReconciledAttrList,
+#if (NV_IS_SAFETY == 0)
+/**      - @a newConflictList is NULL
+ */
+#endif
+/**
+ * - ::NvSciError_InsufficientMemory if not enough system memory.
+ * - ::NvSciError_InvalidState if any of the following occur:
+ *      - a new NvSciBufAttrList cannot be associated with the NvSciBufModule
+ *        associated with the NvSciBufAttrList(s) in the given @a inputArray to
+ *        create a new reconciled NvSciBufAttrList
+ *      - NvSciBufType of NvSciBufAttrList is invalid.
+ * - ::NvSciError_Overflow if internal integer overflow is detected.
+ * - ::NvSciError_ReconciliationFailed if reconciliation failed.
+ * - ::NvSciError_ResourceError if system lacks resource other than memory.
+ * - Panic if:
+ *      - @a unreconciled NvSciBufAttrList(s) in inputArray is not valid.
+ */
+NvSciError NvSciBufAttrListReconcile(
+    const NvSciBufAttrList inputArray[],
+    size_t inputCount,
+    NvSciBufAttrList* newReconciledAttrList,
     NvSciBufAttrList* newConflictList);
 
 /**
- * @brief Clones an unreconciled/reconciled attribute list. The resulting
- * attribute list contains all the values of the original attribute
- * list. If the list is an unreconciled attribute list, then modification
- * will be allowed using setAttrList APIs.
+ * @brief Clones an unreconciled/reconciled NvSciBufAttrList. The resulting
+ * NvSciBufAttrList contains all the values of the input NvSciBufAttrList.
+ * If the input NvSciBufAttrList is an unreconciled NvSciBufAttrList, then
+ * modification to the output NvSciBufAttrList will be allowed using
+ * NvSciBufAttrListSetAttrs().
  *
- * @param[in] origAttrList Attribute list to be cloned.
+ * @param[in] origAttrList NvSciBufAttrList to be cloned.
  *
- * @param[out] newAttrList A pointer to the newly cloned attribute list.
+ * @param[out] newAttrList The new NvSciBufAttrList.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL.
- * - ::NvSciError_InsufficientMemory if there is insufficient system memory.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a origAttrList is NULL
+ *      - @a newAttrList is NULL
+ * - ::NvSciError_InsufficientMemory if there is insufficient system memory
+ *   to create a new NvSciBufAttrList.
+ * - ::NvSciError_InvalidState if a new NvSciBufAttrList cannot be associated
+ *   with the NvSciBufModule of @a origAttrList to create the new
+ *   NvSciBufAttrList.
+ * - ::NvSciError_ResourceError if system lacks resource other than memory.
+ * - panics if @a origAttrList is invalid
  */
-NvSciError NvSciBufAttrListClone(NvSciBufAttrList origAttrList,
+NvSciError NvSciBufAttrListClone(
+    NvSciBufAttrList origAttrList,
     NvSciBufAttrList* newAttrList);
 
 /**
- * @brief Append multiple unreconciled attribute lists together, forming a
- *  single new unreconciled attribute list with a slot count equal to the
- *  sum of all the slot counts in the input list.
+ * @brief Appends multiple unreconciled NvSciBufAttrList(s) together, forming a
+ *  single new unreconciled NvSciBufAttrList with a slot count equal to the
+ *  sum of all the slot counts of NvSciBufAttrList(s) in the input array.
  *
  * @param[in] inputUnreconciledAttrListArray[] Array containing the
- *  unreconciled attribute lists to be appended together.
- * @param[in] inputUnreconciledAttrListCount Number of unreconciled attribute
- *  lists to append.
+ *  unreconciled NvSciBufAttrList(s) to be appended together.
+ *  Valid value: Array of valid NvSciBufAttrList(s) where the array
+ *  size is at least 1.
+ * @param[in] inputUnreconciledAttrListCount Number of unreconciled
+ * NvSciBufAttrList(s) in @a inputUnreconciledAttrListArray.
+ * Valid value: inputUnreconciledAttrListCount is valid input if it
+ * is non-zero.
  *
- * @param[out] newUnreconciledAttrList Appended attribute list created out of
- *  the input unreconciled attribute lists.
+ * @param[out] newUnreconciledAttrList Appended NvSciBufAttrList.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a inputUnreconciledAttrListArray is NULL
+ *      - @a inputUnreconciledAttrListCount is 0
+ *      - @a newUnreconciledAttrList is NULL
+ *      - any of the NvSciBufAttrList(s) in @a inputUnreconciledAttrListArray
+ *        is reconciled
  * - ::NvSciError_InsufficientMemory if memory allocation failed.
+ * - panics if @a any NvSciBufAttrList in the @a
+ *   inputUnreconciledAttrListArray is invalid
  */
 NvSciError NvSciBufAttrListAppendUnreconciled(
     const NvSciBufAttrList inputUnreconciledAttrListArray[],
@@ -1133,42 +1614,63 @@ NvSciError NvSciBufAttrListAppendUnreconciled(
     NvSciBufAttrList* newUnreconciledAttrList);
 
 /**
- * @brief Checks if an attribute list is reconciled.
+ * @brief Checks if the NvSciBufAttrList is reconciled.
  *
- * @param[in] attrList Attribute list to check.
+ * @param[in] attrList NvSciBufAttrList to check.
+ * @param[out] isReconciled boolean value indicating whether the
+ * @a attrList is reconciled or not.
  *
- * @param[out] isReconciled A pointer to a boolean to store whether the
- * @a attrlist is reconciled or not.
- *
- * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL.
- */
-NvSciError NvSciBufAttrListIsReconciled(NvSciBufAttrList attrList,
-    bool* isReconciled);
-
-/**
- * @brief Validates a reconciled attribute list against a set of
- *        unreconciled attribute lists.
- *
- * @param[in] reconciledAttrList Reconciled attribute list to be validated.
- * @param[in] unreconciledAttrListArray Set of unreconciled lists that need
- *  to be used for validation.
- * @param[in] unreconciledAttrListCount Number of unreconciled attribute lists.
- * @param[out] isReconcileListValid Flag indicating if the reconciled list
- *  satisfies the parameters of set of unreconciled lists.
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
  * - ::NvSciError_BadParameter if any of the following occurs:
- *         - reconciledAttrList is NULL or
- *         - unreconciledAttrListArray[ ] is NULL or
- *         - unreconciledAttrListCount is zero or
- *         - isReconcileListValid is NULL
+ *      - @a attrList is NULL
+ *      - @a isReconciled is NULL
+ * - panics if @a attrList is invalid
+ */
+NvSciError NvSciBufAttrListIsReconciled(
+    NvSciBufAttrList attrList,
+    bool* isReconciled);
+
+/**
+ * @brief Validates a reconciled NvSciBufAttrList against a set of
+ *        unreconciled NvSciBufAttrList(s).
+ *
+ * @param[in] reconciledAttrList Reconciled NvSciBufAttrList list to be
+ *            validated. @a unreconciledAttrListArray is valid if it is
+ *            non-NULL.
+ * @param[in] unreconciledAttrListArray Set of unreconciled NvSciBufAttrList(s)
+ *            that need to be used for validation.
+ * @param[in] unreconciledAttrListCount Number of unreconciled
+ *            NvSciBufAttrList(s). This value must be non-zero.
+ *            For a single NvSciBufAttrList, the count must be set to 1.
+ * @param[out] isReconcileListValid Flag indicating if the reconciled
+ *             NvSciBufAttrList satisfies the constraints of set of
+ *             unreconciled NvSciBufAttrList(s).
+ * @return ::NvSciError, the completion code of the operation:
+ * - ::NvSciError_Success if successful.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *         - @a reconciledAttrList is NULL or
+ *         - @a unreconciledAttrListArray[] is NULL or
+ *         - @a unreconciledAttrListCount is zero or
+ *         - @a isReconcileListValid is NULL
+ *         - any of the NvSciBufAttrList in @a unreconciledAttrListArray is
+ *           reconciled.
+ *         - not all the NvSciBufAttrLists in @a unreconciledAttrListArray are
+ *           bound to the same NvSciBufModule.
+ * - ::NvSciError_ReconciliationFailed if validation of reconciled
+ *   NvSciBufAttrList failed against input unreconciled NvSciBufAttrList(s).
+ * - ::NvSciError_InsufficientMemory if internal memory allocation failed.
+ * - ::NvSciError_Overflow if internal integer overflow occurs.
+ * - Panics if:
+ *         - @a unreconciled NvSciBufAttrList(s) in unreconciledAttrListArray
+ *           is invalid.
+ *         - @a reconciledAttrList is not valid.
  */
 NvSciError NvSciBufAttrListValidateReconciled(
     NvSciBufAttrList reconciledAttrList,
     const NvSciBufAttrList unreconciledAttrListArray[],
-    size_t unreconciledAttrListCount, bool* isReconcileListValid);
+    size_t unreconciledAttrListCount,
+    bool* isReconcileListValid);
 
 /**
  * @}
@@ -1181,132 +1683,298 @@ NvSciError NvSciBufAttrListValidateReconciled(
  */
 
 /**
- * @brief Clones a NvSciBuf object.
+ * @brief Creates a new NvSciBufObj holding reference to the same
+ * Memory object to which input NvSciBufObj holds the reference.
  *
- * @param[in] bufObj The NvSciBuf object to clone.
+ * @note The new NvSciBufObj created with NvSciBufObjDup() has same
+ * NvSciBufAttrValAccessPerm as the input NvSciBufObj.
  *
- * @param[out] dupObj A clone of the NvSciBuf object passed into the function.
+ * @param[in] bufObj NvSciBufObj from which new NvSciBufObj needs
+ * to be created.
+ * @param[out] dupObj The new NvSciBufObj.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL
+ *      - @a dupObj is NULL
+ * - ::NvSciError_InsufficientMemory if memory allocation is failed.
+ * - ::NvSciError_InvalidState if the total number of NvSciBufObjs referencing
+ *   the memory object is INT32_MAX and the caller tries to take one more
+ *   reference using this API.
+ * - ::NvSciError_ResourceError if system lacks resource other than memory
+ * - Panics if @a bufObj is invalid.
  */
-NvSciError NvSciBufObjDup(NvSciBufObj bufObj, NvSciBufObj* dupObj);
+NvSciError NvSciBufObjDup(
+    NvSciBufObj bufObj,
+    NvSciBufObj* dupObj);
 
 /**
- * @brief Reconcile the input unreconciled attribute list(s) into a new
- * reconciled attribute list and allocate NvSciBuf object that meets all the
- * constraints in the new reconciled attribute list.
+ * @brief Reconciles the input unreconciled NvSciBufAttrList(s) into a new
+ * reconciled NvSciBufAttrList and allocates NvSciBufObj that meets all the
+ * constraints in the reconciled NvSciBufAttrList.
  *
- * @param[in] attrListArray Array containing unreconciled attribute list(s) to
- * reconcile.
- * @param[in] attrListCount The number of unreconciled attribute list(s) in
- * @c inputArray.
+ * @note This interface just combines NvSciBufAttrListReconcile() and
+ * NvSciBufObjAlloc() interfaces together.
  *
- * @param[out] bufObj Newly created NvSciBufObj.
- * @param[out] newConflictList Unreconciled attribute list consisting of the
+ * @param[in] attrListArray Array containing unreconciled NvSciBufAttrList(s) to
+ * reconcile. Valid value: Array of valid unreconciled NvSciBufAttrList(s) where
+ * array size is at least 1.
+ * @param[in] attrListCount The number of unreconciled NvSciBufAttrList(s) in
+ * @c attrListArray. Valid value: 1 to SIZE_MAX.
+ *
+ * @param[out] bufObj The new NvSciBufObj.
+ */
+#if (NV_IS_SAFETY == 0)
+/**
+ * @param[out] newConflictList Unreconciled NvSciBufAttrList consisting of the
  * key/value pairs which caused the reconciliation failure. This field is
  * populated only if the reconciliation failed.
- *
+ */
+#else
+/**
+ * @param[out] newConflictList unused.
+ */
+#endif
+/**
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a attrListCount is 0
+ *      - @a attrListArray is NULL
+ *      - @a bufObj is NULL
+ *      - any of the NvSciBufAttrList in @a attrListArray is reconciled.
+ *      - not all the NvSciBufAttrLists in @a attrListArray are bound to
+ *        the same NvSciBufModule.
+ */
+#if (NV_IS_SAFETY == 0)
+/**
+ *      - @a newConflictList is NULL
+ */
+#endif
+/**
  * - ::NvSciError_InsufficientMemory if memory allocation failed.
+ * - ::NvSciError_InvalidState if a new NvSciBufAttrList cannot be associated
+ *   with the NvSciBufModule associated with the NvSciBufAttrList(s) in the
+ *   given @a attrListArray to create the new NvSciBufAttrList.
  * - ::NvSciError_ReconciliationFailed if reconciliation failed.
+ * - ::NvSciError_ResourceError if any of the following occurs:
+ *      - NVIDIA driver stack failed while assigning new permission to the buffer handle
+ *      - system lacks resource other than memory
+ * - Panics if any of the unreconciled NvSciBufAttrLists is invalid.
  */
 NvSciError NvSciBufAttrListReconcileAndObjAlloc(
-    NvSciBufAttrList attrListArray[], size_t attrListCount,
-    NvSciBufObj* bufObj, NvSciBufAttrList* newConflictList);
+    const NvSciBufAttrList attrListArray[],
+    size_t attrListCount,
+    NvSciBufObj* bufObj,
+    NvSciBufAttrList* newConflictList);
 
 /**
- * @brief Destroys the NvSciBuf object, which frees any memory allocated for it.
+ * @brief Removes reference to the Memory object by destroying the NvSciBufObj.
  *
- * \param[in] bufObj The NvSciBuf object to deallocate.
+ * @note Every owner of the NvSciBufObj shall call NvSciBufObjFree()
+ * only after all the functions invoked by the owner with NvSciBufObj
+ * as an input are completed.
+ *
+ * \param[in] bufObj The NvSciBufObj to deallocate.
  *
  * @return void
+ * - Panics if @a bufObj is invalid.
  */
-void NvSciBufObjFree(NvSciBufObj bufObj);
+void NvSciBufObjFree(
+    NvSciBufObj bufObj);
 
 /**
- * @brief Retrieves the attribute list from an NvSciBuf object. This
- * validated attribute list was used to allocate the object.
+ * @brief Retrieves the reconciled NvSciBufAttrList whose attributes define
+ * the constraints of the allocated buffer from the NvSciBufObj.
  *
- * Note: The retrieved attribute list from an NvSciBuf object is read-only,
+ * @note The retrieved NvSciBufAttrList from an NvSciBufObj is read-only,
  * and the attribute values in the list cannot be modified using
- * set attribute APIs. In
- * addition, the retrieved attribute list must not be freed with
- * NvSciBufAttrListFree.
+ * set attribute APIs. In addition, the retrieved NvSciBufAttrList must
+ * not be freed with NvSciBufAttrListFree.
  *
- * @param[in] bufObj The NvSciBuf object to retrieve the attribute list from.
- *
- * @param[out] bufAttrList A pointer to the retrieved attribute list.
+ * @param[in] bufObj The NvSciBufObj to retrieve the NvSciBufAttrList from.
+ * @param[out] bufAttrList The retrieved reconciled NvSciBufAttrList.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL.
+ *      - @a bufAttrList is NULL.
+ * - Panics if @a bufObj is invalid.
  */
-NvSciError NvSciBufObjGetAttrList(NvSciBufObj bufObj,
+NvSciError NvSciBufObjGetAttrList(
+    NvSciBufObj bufObj,
     NvSciBufAttrList* bufAttrList);
 
 /**
- * @brief Gets the CPU virtual address (VA) of the NvSciBufObj.
+ * @brief Gets the CPU virtual address (VA) of the read/write buffer
+ * referenced by the NvSciBufObj.
  *
- * @param[in] bufObj The buffer object to get the address of.
+ * @note This interface can be called successfully only if NvSciBufObj
+ * was obtained from successful call to NvSciBufObjAlloc() or
+ * NvSciBufObj was obtained from successful call to NvSciBufObjIpcImport()/
+ * NvSciBufIpcImportAttrListAndObj() where NvSciBufAccessPerm_ReadWrite
+ * permissions are granted to the imported NvSciBufObj (The permissions
+ * of the NvSciBufObj are indicated by NvSciBufGeneralAttrKey_ActualPerm
+ * key in the reconciled NvSciBufAttrList associated with it) and CPU
+ * access is requested by setting NvSciBufGeneralAttrKey_NeedCpuAccess
+ * to true.
  *
- * @param[out] ptr A pointer to the CPU mapping of the NvSciBufObj.
+ * @param[in] bufObj The NvSciBufObj.
  *
- * @return ::NvSciError, the completion code of this operation:
- * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if @a bufObj is invalid.
- */
-NvSciError NvSciBufObjGetCpuPtr(NvSciBufObj bufObj,  void**  ptr);
-
-/**
- * @brief Gets the CPU virtual address (VA) of the NvSciBufObj. The returned value
- * cannot be modified.
- *
- * @param[in] bufObj The buffer object to get the address of.
- *
- * @param[out] ptr A @c const pointer to the CPU mapping of the NvSciBufObj.
+ * @param[out] ptr The CPU virtual address (VA).
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if @a bufObj is invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL.
+ *      - @a ptr is NULL.
+ * - ::NvSciError_BadParameter NvSciBufObj either did not request
+ *   for CPU access by setting NvSciBufGeneralAttrKey_NeedCpuAccess
+ *   to true OR does not have NvSciBufAccessPerm_ReadWrite to the
+ *   buffer.
+ * - Panics if @a bufObj is invalid.
  */
-NvSciError NvSciBufObjGetConstCpuPtr(NvSciBufObj bufObj,  const void**  ptr);
+NvSciError NvSciBufObjGetCpuPtr(
+    NvSciBufObj bufObj,
+    void**  ptr);
 
 /**
- * @brief Flushes the given @c len bytes at starting offset @c offset
- * in NvSciBufObj from all CPU-managed caches.
+ * @brief Gets the CPU virtual address (VA) of the read-only buffer
+ * referenced by the NvSciBufObj.
  *
- * @param[in] bufObj NvSciBuf object to flush the memory of.
- * @param[in] offset The starting offset in memory of the NvSciBuf object.
+ * @note This interface can be called successfully only if NvSciBufObj
+ * was obtained from successful call to NvSciBufObjAlloc() or
+ * NvSciBufObj was obtained from successful call to NvSciBufObjIpcImport()/
+ * NvSciBufIpcImportAttrListAndObj() where at least NvSciBufAccessPerm_Readonly
+ * permissions are granted to the imported NvSciBufObj (The permissions of the
+ * NvSciBufObj are indicated by NvSciBufGeneralAttrKey_ActualPerm key in the
+ * reconciled NvSciBufAttrList associated with it) and CPU access is
+ * requested by setting NvSciBufGeneralAttrKey_NeedCpuAccess to true.
+ *
+ * @param[in] bufObj The NvSciBufObj.
+ *
+ * @param[out] ptr the CPU virtual address (VA).
+ *
+ * @return ::NvSciError, the completion code of this operation:
+ * - ::NvSciError_Success if successful.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL.
+ *      - @a ptr is NULL.
+ * - ::NvSciError_BadParameter NvSciBufObj either did not request
+ *   for CPU access by setting NvSciBufGeneralAttrKey_NeedCpuAccess
+ *   to true OR does not have at least NvSciBufAccessPerm_ReadOnly
+ *   permissions to the buffer.
+ * - Panics if @a bufObj is invalid.
+ */
+NvSciError NvSciBufObjGetConstCpuPtr(
+    NvSciBufObj bufObj,
+    const void**  ptr);
+
+/**
+ * @brief Flushes the given @c len bytes at starting @c offset in the
+ * buffer referenced by the NvSciBufObj. Flushing is done only when
+ * NvSciBufGeneralAttrKey_CpuNeedSwCacheCoherency key is set in
+ * reconciled NvSciBufAttrList to true.
+ *
+ * @param[in] bufObj The NvSciBufObj.
+ * @param[in] offset The starting offset in memory of the NvSciBufObj.
+ * Valid value: 0 to buffer size - 1.
  * @param[in] len The length (in bytes) to flush.
+ * Valid value: 1 to buffer size - offset.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if @a bufObj is invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL
+ *      - @a len is zero
+ *      - @a offset + @a len > buffer size.
+ * - ::NvSciError_NotPermitted if buffer referenced by @a bufObj is
+ *   not mapped to CPU.
+ * - ::NvSciError_NotSupported if NvSciBufAllocIfaceType associated with the
+ *   NvSciBufObj is not supported.
+ * - ::NvSciError_Overflow if @a offset + @a len exceeds UINT64_MAX
+ * - ::NvSciError_ResourceError if NVIDIA driver stack could not flush the
+ *   CPU cache range.
+ * - Panics if @a bufObj is invalid.
  */
-NvSciError NvSciBufObjFlushCpuCacheRange(NvSciBufObj bufObj,
-    uint64_t offset, uint64_t len);
+NvSciError NvSciBufObjFlushCpuCacheRange(
+    NvSciBufObj bufObj,
+    uint64_t offset,
+    uint64_t len);
 
 /**
- * @brief Allocates an NvSciBuf object that meets all the constraints in the
- * specified reconciled attribute list.
+ * @brief Allocates a buffer that satisfies all the constraints defined by
+ * the attributes of the specified reconciled NvSciBufAttrList, and outputs
+ * a new NvSciBufObj referencing the Memory object containing the allocated
+ * buffer properties.
  *
- * @param[in] reconciledAttrList The reconciled attribute list generated through
- * NvSciBufAttrListReconcile().
+ * @param[in] reconciledAttrList The reconciled NvSciBufAttrList.
  *
- * @param[out] bufObj Identifier representing NvSciBuf object.
+ * @param[out] bufObj The new NvSciBufObj.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if reconciledList is NULL or reconciledList is not a
- *   reconciled attribute list or bufObj is NULL.
- * - ::NvSciError_InsufficientMemory if is insufficient memory to complete the operation.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a reconciledList is NULL
+ *      - @a reconciledList is not a reconciled NvSciBufAttrList
+ *      - @a bufObj is NULL
+ * - ::NvSciError_InsufficientMemory if there is insufficient memory
+ *   to complete the operation.
+ * - ::NvSciError_InvalidState if a new NvSciBufObj cannot be associated
+ *   with the NvSciBufModule with which @a reconciledAttrList is associated to
+ *   create the new NvSciBufObj.
+ * - ::NvSciError_ResourceError if any of the following occurs:
+ *      - NVIDIA driver stack failed during buffer allocation
+ *      - system lacks resource other than memory
+ * - Panics if @a reconciledAttrList is invalid.
  */
-NvSciError NvSciBufObjAlloc(NvSciBufAttrList reconciledAttrList,
+NvSciError NvSciBufObjAlloc(
+    NvSciBufAttrList reconciledAttrList,
     NvSciBufObj* bufObj);
+
+/**
+ * @brief Creates a new memory object containing a buffer handle representing
+ * new NvSciBufAttrValAccessPerm to the same buffer for which buffer handle
+ * is contained in the input memory object referenced by input NvSciBufObj and
+ * creates a new NvSciBufObj referencing it provided NvSciBufAttrValAccessPerm
+ * are less than permissions represented by buffer handle in the memory object
+ * referenced by input NvSciBufObj. This interface has same effect as calling
+ * NvSciBufObjDup() if NvSciBufAttrValAccessPerm are same as permissions
+ * represented by buffer handle in the memory object referenced by input
+ * NvSciBufObj.
+ *
+ * @param[in] bufObj NvSciBufObj.
+ * @param[in] reducedPerm Reduced access permissions that need to be imposed on
+ * the new NvSciBufObj (see @ref NvSciBufAttrValAccessPerm).
+ * Valid value: NvSciBufAttrValAccessPerm enum value >=
+ * NvSciBufAccessPerm_Readonly and <= NvSciBufAttrValAccessPerm represented by
+ * NvSciBufGeneralAttrKey_ActualPerm key in reconciled NvSciBufAttrList
+ * associated with the input NvSciBufObj.
+ * \param[out] newBufObj The new NvSciBufObj with new permissions.
+ *
+ * @return ::NvSciError, the completion code of this operation:
+ * - ::NvSciError_Success if successful.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL
+ *      - @a newBufObj is NULL
+ *      - @a reducedPerm is greater than the permissions specified in the value
+ *        of the NvSciBufGeneralAttrKey_ActualPerm key
+ * - ::NvSciError_InsufficientMemory if memory allocation failed.
+ * - ::NvSciError_InvalidState if the total number of NvSciBufObjs referencing
+ *   the memory object is INT32_MAX and the caller tries to take one more
+ *   reference using this API.
+ * - ::NvSciError_ResourceError if any of the following occurs:
+ *      - NVIDIA driver stack failed while assigning new permission to the buffer handle
+ *      - system lacks resource other than memory
+ * - Panics of @a bufObj is invalid.
+ */
+NvSciError NvSciBufObjDupWithReducePerm(
+    NvSciBufObj bufObj,
+    NvSciBufAttrValAccessPerm reducedPerm,
+    NvSciBufObj* newBufObj);
+
 /**
  * @}
  */
@@ -1320,247 +1988,366 @@ NvSciError NvSciBufObjAlloc(NvSciBufAttrList reconciledAttrList,
 
 
 /**
- * @brief Exports an NvSciBuf attribute list and object into an
- * NvSciIpc-transferable object binary descriptor. The blob can be
- * transferred to the other processes to create a matching NvSciBuf object.
+ * @brief Exports NvSciBufAttrList and NvSciBufObj into an
+ * NvSciIpc-transferable object export descriptor. The blob can be
+ * transferred to the other processes to create a matching NvSciBufObj.
  *
- * @param[in] bufObj NvSciBuf Object to export.
+ * @param[in] bufObj NvSciBufObj to export.
  * @param[in] permissions Flag indicating the expected access permission
- (see @ref NvSciBufAttrValAccessPerm).
+ *            (see @ref NvSciBufAttrValAccessPerm). The valid data range is
+ *            from NvSciBufAccessPerm_Readonly upto NvSciBufAcessPerm_Auto.
  * @param[in] ipcEndpoint NvSciIpcEndpoint to identify the peer process.
  * \param[out] attrListAndObjDesc NvSciBuf allocates and fills in the
- * exported form of NvSciBufObj and its corresponding attribute list
- * to be shared across an NvSciIpc channel.
- * \param[out] attrListAndObjDescSize Size of the exported blob.
-  *
- * @return ::NvSciError, the completion code of this operation:
- * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
- */
-NvSciError NvSciBufIpcExportAttrListAndObj(NvSciBufObj bufObj,
-    NvSciBufAttrValAccessPerm permissions, NvSciIpcEndpoint ipcEndpoint,
-    void** attrListAndObjDesc, size_t* attrListAndObjDescSize);
-
-/**
- * @brief This API is invoked by importing process after it receives the
- * binary blob sent by the other process who has created the binary descriptor.
- * Importing process will create its own NvSciBuf object and return as output.
- *
- * @param[in] module Instance of the @ref NvSciBufModule to be used for importing
- * NvSciBuf Object.
- * @param[in] ipcEndpoint NvSciIpcEndpoint to identify the peer process.
- * @param[in] attrListAndObjDesc The exported form of attribute list and NvSciBufObj.
- * @param[in] attrListAndObjDescSize Size of the imported blob.
- * @param[in] attrList[] Receiver side array of attribute lists against which
- * the imported attrList has to be validated.
- * @param[in] count Number of NvSciBufAttrList objects in the array.
- * @param[in] minPermissions Minimum permissions of the buffer that the process
- * is expecting to import the buffer (see @ref NvSciBufAttrValAccessPerm).
- * @param[in] timeoutUs Maximum delay (in microseconds) before an NvSciBuf object
- * times out.
- * \param[out] bufObj NvSciBuf Object duplicated and exported during the importing process.
- * It contains the attribute list to be shared across an NvSciIpc channel.
+ *             exportable form of NvSciBufObj and its corresponding
+ *             NvSciBufAttrList to be shared across an NvSciIpc channel.
  * \param[out] attrListAndObjDescSize Size of the exported blob.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
- */
-NvSciError NvSciBufIpcImportAttrListAndObj(NvSciBufModule module,
-    NvSciIpcEndpoint ipcEndpoint, const void* attrListAndObjDesc,
-    size_t attrListAndObjDescSize, const NvSciBufAttrList attrList[],
-    size_t count, NvSciBufAttrValAccessPerm minPermissions,
-    int64_t timeoutUs, NvSciBufObj* bufObj);
-
-/**
- * @brief Frees the descriptor used for exporting/importing both
- * attrlist and NvSciBuf Object together.
- *
- * @param[in] attrListAndObjDescBuf Descriptor to be freed.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a attrListAndObjDesc is NULL
+ *      - @a attrListAndObjDescSize is NULL
+ *      - @a bufObj is NULL
+ *      - @a ipcEndpoint is invalid
+ * - ::NvSciError_InsufficientMemory if memory allocation failed
+ * - ::NvSciError_InvalidOperation if reconciled NvSciBufAttrList of @a bufObj
+ *   has greater permissions for the @a ipcEndpoint peer than the
+ *   @a permissions
+ * - Panic if @a bufObj is invalid
  *
  */
-void NvSciiBufAttrListAndObjFreeDesc(void* attrListAndObjDescBuf);
+NvSciError NvSciBufIpcExportAttrListAndObj(
+    NvSciBufObj bufObj,
+    NvSciBufAttrValAccessPerm permissions,
+    NvSciIpcEndpoint ipcEndpoint,
+    void** attrListAndObjDesc,
+    size_t* attrListAndObjDescSize);
 
 /**
- * @brief Exports a NvSciBuf object into an NvSciIpc-transferable object binary
+ * @brief This API is invoked by the importing process after it receives the
+ * object export descriptor sent by the other process who has created
  * descriptor.
- * Descriptor can be transferred to other end of IPC where matching NvSciBuf
- * object can be created from the descriptor.
+ * The importing process will create its own NvSciBufObj and return as
+ * output.
  *
- * @param[in] bufObj NvSciBuf object to export.
- * @param[in] accPerm Flag indicating the expected access permission
- (see @ref NvSciBufAttrValAccessPerm).
- * @param[in] ipcEndPoint Handle to IPC endpoint.
- * \param[out] exportData NvSciBuf populates the return value with exported
- * form of NvSciBufObj shared across an NvSciIpc channel.
+ * @param[in] module NvSciBufModule to be used for importing NvSciBufObj.
+ * @param[in] ipcEndpoint NvSciIpcEndpoint to identify the peer process.
+ * @param[in] attrListAndObjDesc The exported form of NvSciBufAttrList and
+ *            NvSciBufObj. The valid value must be non NULL.
+ * @param[in] attrListAndObjDescSize Size of the imported blob. This value must
+ *            be non-zero.
+ * @param[in] attrList[] Receiver side array of NvSciBufAttrList(s) against
+ *            which the imported NvSciBufAttrList has to be validated. NULL is
+ *            valid value here if the validation of the received
+ *            NvSciBufAttrList needs to be skipped.
+ * @param[in] count Number of NvSciBufAttrList objects in the array. This value
+ *            must be non-zero.
+ * @param[in] minPermissions Minimum permissions of the buffer that the process
+ *            is expecting to import the buffer (see @ref
+ *            NvSciBufAttrValAccessPerm). The valid data range is from
+ *            NvSciBufAccessPerm_Readonly to less than
+ *            NvSciBufAccessPerm_Invalid and should be less than
+ *            NvSciBufAttrValAccessPerm, with which it was exported.
+ * @param[in] timeoutUs Maximum delay (in microseconds) before an NvSciBuf
+ *            object times out. The value of the variable is ignored currently.
+ * \param[out] bufObj NvSciBuf Object duplicated and exported during the
+ *             importing process. This object is associated with the reconciled
+ *             NvSciBufAttrList imported from the attrListAndObjDesc.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
- * - ::NvSciError_InsufficientMemory if memory allocation failed.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a module is NULL
+ *      - @a ipcEndpoint is invalid
+ *      - @a attrListAndObjDesc is NULL or invalid
+ *      - @a attrListAndObjDescSize is 0
+ *      - @a count is 0
+ *      - @a bufObj is NULL
+ * - ::NvSciError_AccessDenied if @a minPermissions are greater than permissions
+ *     with which object was exported
+ * - ::NvSciError_AttrListValidationFailed if input unreconciled attribute
+ *     lists' contraints are not satisfied by attributes associated with
+ *     imported NvSciBuf object
+ * - ::NvSciError_InsufficientMemory if memory allocation failed
+ * - Panic if:
+ *    - @a any of the unreconciled attribute lists are not valid
+ *    - @a module is invalid
+ *
  */
-NvSciError NvSciBufObjIpcExport(NvSciBufObj bufObj,
-    NvSciBufAttrValAccessPerm accPerm, NvSciIpcEndpoint ipcEndPoint,
+NvSciError NvSciBufIpcImportAttrListAndObj(
+    NvSciBufModule module,
+    NvSciIpcEndpoint ipcEndpoint,
+    const void* attrListAndObjDesc,
+    size_t attrListAndObjDescSize,
+    const NvSciBufAttrList attrList[],
+    size_t count,
+    NvSciBufAttrValAccessPerm minPermissions,
+    int64_t timeoutUs,
+    NvSciBufObj* bufObj);
+
+/**
+ * @brief Frees the descriptor used for exporting both NvSciBufAttrList and
+ * NvSciBufObj together.
+ *
+ * @param[in] attrListAndObjDescBuf Descriptor to be freed. The valid value is
+ *            the one returned by successful call to
+ *            NvSciBufIpcAttrlistAndObjExport.
+ *
+ * @return void
+ *
+ */
+void NvSciBufAttrListAndObjFreeDesc(
+    void* attrListAndObjDescBuf);
+
+/**
+ * @brief Exports the NvSciBufObj into an NvSciIpc-transferable object
+ * export descriptor.
+ * Descriptor can be transferred to other end of IPC where matching
+ * NvSciBufObj can be created from the descriptor.
+ *
+ * @param[in] bufObj NvSciBufObj to export.
+ * @param[in] accPerm Flag indicating the expected access permission
+ *            (see @ref NvSciBufAttrValAccessPerm). The valid data range is
+ *            from NvSciBufAccessPerm_Readonly to less than
+ *            NvSciBufAccessPerm_Invalid.
+ * @param[in] ipcEndpoint NvSciIpcEndpoint.
+ * \param[out] exportData NvSciBuf populates the return value with exportable
+ *             form of NvSciBufObj shared across an NvSciIpc channel.
+ *
+ * @return ::NvSciError, the completion code of this operation:
+ * - ::NvSciError_Success if successful.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a bufObj is NULL
+ *      - @a accPerm is invalid
+ *      - @a ipcEndpoint is invalid
+ *      - @a exportData is NULL
+ * - ::NvSciError_InsufficientMemory if memory allocation failed.
+ * - ::NvSciError_InvalidOperation if reconciled NvSciBufAttrList of @a bufObj
+ *   has greater permissions for the @a ipcEndpoint peer than the
+ *   @a permissions
+ * - Panic if @a bufObj is invalid
+ *
+ */
+NvSciError NvSciBufObjIpcExport(
+    NvSciBufObj bufObj,
+    NvSciBufAttrValAccessPerm accPerm,
+    NvSciIpcEndpoint ipcEndpoint,
     NvSciBufObjIpcExportDescriptor* exportData);
 
 /**
- * @brief Creates a NvSciBuf object based on supplied binary descriptor and
- * returns the NvSciBuf object.
+ * @brief Creates the NvSciBufObj based on supplied object export descriptor
+ * and returns the NvSciBufObj.
  *
- * @param[in] ipcEndPoint Identifier of type NvSciIpcEndpoint.
- * @param[in] desc A pointer to an NvSciBufObjIpcExportedDescriptor, an exported
- form of NvSciBufObj received via the NvIpc channel.
- * @param[in] reconciledAttrList Reconciled attribute list returned by
- * NvSciBufAttrListImport().
+ * @param[in] ipcEndpoint NvSciIpcEndpoint.
+ * @param[in] desc A pointer to an NvSciBufObjIpcExportDescriptor. The valid
+ *            value is non-NULL that points to descriptor received on NvSciIpc
+ *            channel.
+ * @param[in] reconciledAttrList Reconciled NvSciBufAttrList returned by
+ *            NvSciBufAttrListImport().
  * @param[in] minPermissions Flag indicating the expected access permission.
- * @param[in] timeoutUs Import timeout in micro seconds, -1 for infinite
- *            wait.
+ *            The valid data range is from NvSciBufAccessPerm_Readonly to less than
+ *            NvSciBufAccessPerm_Invalid.
+ * @param[in] timeoutUs Maximum delay (in microseconds) before an NvSciBuf
+ *            object times out. The value of the variable is ignored currently.
  * @param[out] bufObj Imported NvSciBufObj created from the descriptor.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a ipcEndpoint is invalid
+ *      - @a desc is NULL or invalid
+ *      - @a reconciledAttrList is NULL
+ *      - @a bufObj is NULL
  * - ::NvSciError_InsufficientMemory if there is insufficient system memory.
- * - ::NvSciError_AttrListValidationFailed if @c reconciledAttrList constraints
-     are not met by attributes of the imported NvSciBuf object.
- * - ::NvSciError_InvalidOperation if the importing process does not have permission
-to initiate the action to import the buffer.
- * - ::NvSciError_Timeout if the import action did not complete in time.
+ * - ::NvSciError_AccessDenied if minPermissions are greater than permissions
+ *     with which object was exported
+ * - Panic if @a reconciledAttrList is invalid
  */
-NvSciError NvSciBufObjIpcImport(NvSciIpcEndpoint ipcEndPoint,
+NvSciError NvSciBufObjIpcImport(
+    NvSciIpcEndpoint ipcEndpoint,
     const NvSciBufObjIpcExportDescriptor* desc,
     NvSciBufAttrList reconciledAttrList,
-    NvSciBufAttrValAccessPerm minPermissions, int64_t timeoutUs,
+    NvSciBufAttrValAccessPerm minPermissions,
+    int64_t timeoutUs,
     NvSciBufObj* bufObj);
 
 /**
- * @brief Transforms the input attribute list(s) to an exported
- * attribute list descriptor that can be transported by the application to any
- * remote process as serialized set of bytes over an IPC/IVC/nvIPC channel.
+ * @brief Transforms the input unreconciled NvSciBufAttrList(s) to an exportable
+ * unreconciled NvSciBufAttrList descriptor that can be transported by the
+ * application to any remote process as a serialized set of bytes over an
+ * NvSciIpc channel.
  *
- * @param[in] unreconciledAttrListArray[] Array of unreconciled attribute lists.
- * @param[in] unreconciledAttrListCount Number of unreconciled attribute lists in
- * unreconciledAttrListArray[].
- * @param[in] ipcEndpoint The NvSciIpc endpoint through which the caller may
- * send the exported attribute list descriptor provided by this function.
- * @param[out] descBuf Address at which the pointer to exported attribute list
- * descriptor is to be stored.
- * @param[out] descLen Address at which the size of the exported attribute list
- * descriptor is to be stored.
+ * @param[in] unreconciledAttrListArray The unreconciled NvSciBufAttrList(s) to
+ *            be exported. The valid value is non NULL.
+ * @param[in] unreconciledAttrListCount Number of unreconciled
+ *            NvSciBufAttrList(s) in @a unreconciledAttrListArray. This value
+ *            must be non-zero. For a single list, the count must be set 1.
+ * @param[in] ipcEndpoint The NvSciIpcEndpoint.
+ * @param[out] descBuf A pointer to the new unreconciled NvSciBufAttrList
+ *             descriptor, which the caller can deallocate later using
+ *             NvSciBufAttrListFreeDesc().
+ * @param[out] descLen The size of the new unreconciled NvSciBufAttrList
+ *             descriptor.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a unreconciledAttrListArray is NULL
+ *      - @a unreconciledAttrListCount is 0
+ *      - @a ipcEndpoint is invalid
+ *      - @a descBuf is NULL
+ *      - @a descLen is NULL
  * - ::NvSciError_InsufficientMemory if memory allocation failed.
- * - ::NvSciError_InvalidOperation if the import process does not
-have permission to initiate the action to import the buffer.
+ * - Panic if @a any of the NvSciBufAttrList(s) in @a unreconciledAttrListArray
+ *   is invalid.
+ *
  */
 NvSciError NvSciBufAttrListIpcExportUnreconciled(
-    NvSciBufAttrList unreconciledAttrListArray[],
-    size_t unreconciledAttrListCount, NvSciIpcEndpoint ipcEndpoint,
-    void** descBuf, size_t* descLen);
+    const NvSciBufAttrList unreconciledAttrListArray[],
+    size_t unreconciledAttrListCount,
+    NvSciIpcEndpoint ipcEndpoint,
+    void** descBuf,
+    size_t* descLen);
 
 /**
- * @brief Transforms the input attribute list(s) to an exported
- * attribute list descriptor that can be transported by the application to any
- * remote process as serialized set of bytes over an IPC/IVC/nvIPC channel.
+ * @brief Transforms the reconciled NvSciBufAttrList to an exportable reconciled
+ * NvSciBufAttrList descriptor that can be transported by the application to any
+ * remote process as a serialized set of bytes over an NvSciIpc channel.
  *
- * @param[in] reconciledAttrList Reconciled attribute list.
- * @param[in] ipcEndpoint The NvSciIpc endpoint through which the caller may
- * send the exported attribute list descriptor provided by this function.
- * @param[out] descBuf Address at which pointer to exported attribute list
- * descriptor is to be stored.
- * @param[out] descLen Address at which the size of the exported attribute list
- * descriptor is to be stored.
+ * @param[in] reconciledAttrList The reconciled NvSciBufAttrList to be exported.
+ * @param[in] ipcEndpoint NvSciIpcEndpoint.
+ * @param[out] descBuf A pointer to the new reconciled NvSciBufAttrList
+ *             descriptor, which the caller can deallocate later using
+ *             NvSciBufAttrListFreeDesc().
+ * @param[out] descLen The size of the new reconciled NvSciBufAttrList
+ *             descriptor.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a reconciledAttrList is NULL
+ *      - @a ipcEndpoint is invalid
+ *      - @a descBuf is NULL
+ *      - @a descLen is NULL
  * - ::NvSciError_InsufficientMemory if memory allocation failed.
- * - ::NvSciError_InvalidOperation if the import process does not
-have permission to initiate the action to import the buffer.
+ * - Panic if @a reconciledAttrList is invalid.
+ *
  */
 NvSciError NvSciBufAttrListIpcExportReconciled(
-    NvSciBufAttrList reconciledAttrList, NvSciIpcEndpoint ipcEndpoint,
-    void** descBuf, size_t* descLen);
+    NvSciBufAttrList reconciledAttrList,
+    NvSciIpcEndpoint ipcEndpoint,
+    void** descBuf,
+    size_t* descLen);
 
 /**
- * @brief Retrieves the attribute list from the attribute
- * descriptor received over IPC channel. When importing a reconciled attribute
- * list, it will also validate the attribute list to be imported against the
- * provided input unreconciled attribute lists. (This is required while
- * importing a reconciled attribute list to cause NvSciBuf to validate the
- * reconciled attributes against the input attributes so that the process
- * can be sure that a buffer consistent with the imported reconciled list
- * will satisfy the input constraints.)
+ * @brief Translates an exported unreconciled NvSciBufAttrList descriptor
+ * (potentially received from any process) into an unreconciled NvSciBufAttrList.
  *
- * @param[in] module The NvSciBuf module instance with which to associate the
- * imported NvSciBufAttrList.
- * @param[in] ipcEndpoint The NvSciIpc endpoint through which the caller may
- * send the exported attribute list descriptor provided by this function.
- * @param[in] descBuf Address at which pointer to imported attribute list
- * descriptor is to be stored.
- * @param[in] descLen The size of the imported attribute list descriptor.
- * @param[out] importedUnreconciledAttrList The imported unreconciled attribute
- * list.
+ * @param[in] module NvScibufModule with which to associate the
+ *            imported NvSciBufAttrList.
+ * @param[in] ipcEndpoint NvSciIpcEndpoint.
+ * @param[in] descBuf The unreconciled NvSciBufAttrList descriptor to be
+ *            translated into an unreconciled NvSciBufAttrList.  The valid value
+ *            is non-NULL that points to descriptor received on NvSciIpc
+ *            channel.
+ * @param[in] descLen The size of the unreconciled NvSciBufAttrList descriptor.
+ *            This value must be non-zero.
+ * @param[out] importedUnreconciledAttrList The imported unreconciled
+ *             NvSciBufAttrList.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument are NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a module is NULL
+ *      - @a ipcEndpoint is invalid
+ *      - @a descBuf is NULL or invalid
+ *      - @a descLen is 0
+ *      - @a importedUnreconciledAttrList is NULL
  * - ::NvSciError_InsufficientMemory if sufficient system memory.
- * - ::NvSciError_InvalidOperation if the import process does not
-have permission to initiate the action to import the buffer.
+ * - Panic if @a module is invalid
+ *
  */
-NvSciError NvSciBufAttrListIpcImportUnreconciled(NvSciBufModule module,
-    NvSciIpcEndpoint ipcEndpoint, const void* descBuf, size_t descLen,
+NvSciError NvSciBufAttrListIpcImportUnreconciled(
+    NvSciBufModule module,
+    NvSciIpcEndpoint ipcEndpoint,
+    const void* descBuf,
+    size_t descLen,
     NvSciBufAttrList* importedUnreconciledAttrList);
 
 /**
- * @brief Retrieves the attribute list from the attribute
- * descriptor received over IPC channel. When importing a reconciled attribute
- * list, it will also validate the attribute list to be imported against the
- * provided input unreconciled attribute lists. (This is required while
- * importing a reconciled attribute list to cause NvSciBuf to validate the
- * reconciled attributes against the input attributes so that the process
- * can be sure that a buffer consistent with the imported reconciled list
- * will satisfy the input constraints.)
+ * @brief Translates an exported reconciled NvSciBufAttrList descriptor
+ * (potentially received from any process) into a reconciled NvSciBufAttrList.
  *
- * @param[in] module The NvSciBuf module instance with which to associate the
- * imported NvSciBufAttrList.
- * @param[in] ipcEndpoint The NvSciIpc endpoint through which the caller may
- * send the exported attribute list descriptor provided by this function.
- * @param[in] descBuf Address at which pointer to imported attribute list
- * descriptor is to be stored.
- * @param[in] descLen The size of the imported attribute list descriptor.
- * @param[in] inputUnreconciledAttrListArray Array of unreconciled list against
- * imported reconciled list will be verified.
- * @param[in] inputUnreconciledAttrListCount Number of unreconciled attribute list
- * in unreconciledAttrListArray[].
- * @param[out] importedReconciledAttrList The imported reconciled attribute
- * list.
+ * It also validates that the reconciled NvSciBufAttrList to be imported will
+ * be a reconciled NvSciBufAttrList that is consistent with the constraints in
+ * an array of input unreconciled NvSciBufAttrList(s). This is recommended
+ * while importing what is expected to be a reconciled NvSciBufAttrList to
+ * cause NvSciBuf to validate the reconciled NvSciBufAttrList against the input
+ * un-reconciled NvSciBufAttrList(s), so that the importing process can be sure
+ * that an NvSciBufObj will satisfy the input constraints.
+ *
+ * @param[in] module NvScibufModule with which to associate the
+ *            imported NvSciBufAttrList.
+ * @param[in] ipcEndpoint NvSciIpcEndpoint.
+ * @param[in] descBuf The reconciled NvSciBufAttrList descriptor to be
+ *            translated into a reconciled NvSciBufAttrList.  The valid value is
+ *            non-NULL that points to descriptor received on NvSciIpc channel.
+ * @param[in] descLen The size of the reconciled NvSciBufAttrList descriptor.
+ *            This value must be non-zero.
+ * @param[in] inputUnreconciledAttrListArray The array of unreconciled
+ *            NvSciBufAttrList against which the new reconciled
+ *            NvSciBufAttrList is to be validated. NULL pointer is acceptable
+ *            as a parameter if the validation needs to be skipped.
+ * @param[in] inputUnreconciledAttrListCount The number of unreconciled
+ *            NvSciBufAttrList(s) in @a inputUnreconciledAttrListArray. If
+ *            @a inputUnreconciledAttrListCount is non-zero, then this operation
+ *            will fail with an error unless all the constraints of all the
+ *            unreconciled NvSciBufAttrList(s) in inputUnreconciledAttrListArray
+ *            are met by the imported reconciled NvSciBufAttrList.
+ * @param[out] importedReconciledAttrList Imported reconciled NvSciBufAttrList.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_BadParameter if any argument is NULL or invalid.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a module is NULL
+ *      - @a ipcEndpoint is invalid
+ *      - @a descBuf is NULL or invalid
+ *      - @a descLen is 0
+ *      - @a importedReconciledAttrList is NULL
  * - ::NvSciError_InsufficientMemory if memory allocation failed.
  * - ::NvSciError_InvalidOperation if the import process does not
-have permission to initiate the action to import the buffer.
+ *     have permission to initiate the action to import the reconciled attribute
+ *     list.
+ * - ::NvSciError_AttrListValidationFailed if input unreconciled attribute
+ *     lists' contraints are not satisfied by attributes associated with
+ *     imported importedReconciledAttrList.
+ * - Panic if:
+ *      - @a any of the NvSciBufAttrList in
+ *        inputUnreconciledAttrListArray is invalid
+ *      - @a module is invalid
+ *
  */
-NvSciError NvSciBufAttrListIpcImportReconciled(NvSciBufModule module,
-    NvSciIpcEndpoint ipcEndpoint, const void* descBuf, size_t descLen,
-    NvSciBufAttrList inputUnreconciledAttrListArray[],
+NvSciError NvSciBufAttrListIpcImportReconciled(
+    NvSciBufModule module,
+    NvSciIpcEndpoint ipcEndpoint,
+    const void* descBuf,
+    size_t descLen,
+    const NvSciBufAttrList inputUnreconciledAttrListArray[],
     size_t inputUnreconciledAttrListCount,
     NvSciBufAttrList* importedReconciledAttrList);
 
 
 /**
- * @brief Frees the NvSciBuf exported attribute list descriptor.
+ * @brief Frees the NvSciBuf exported NvSciBufAttrList descriptor.
  *
- * @param[in] descBuf Attribute list descriptor to be freed.
+ * @param[in] descBuf NvSciBufAttrList descriptor to be freed.  The valid value
+ * is non-NULL.
  *
  * @return void
+ *
  */
-void NvSciBufAttrListFreeDesc(void* descBuf);
+void NvSciBufAttrListFreeDesc(
+    void* descBuf);
 
 /**
  * @}
@@ -1573,33 +2360,63 @@ void NvSciBufAttrListFreeDesc(void* descBuf);
  */
 
 /**
- * @brief Initializes an instance of the NvSciBuf module within the
- * calling process and provides an NvSciBufModule representing the instance.
+ * @brief Initializes and returns a new NvSciBufModule with no
+ * NvSciBufAttrLists, buffers, or NvSciBufObjs bound to it.
  * @note A process may call this function multiple times.
- * Each successful invocation will yield a new NvSciBuf module instance.
+ * Each successful invocation will yield a new NvSciBufModule.
  *
- * @param[in] newModule The new NvSciBuf module instance.
+ * @param[out] newModule The new NvSciBufModule.
  *
  * @return ::NvSciError, the completion code of this operation:
  * - ::NvSciError_Success if successful.
- * - ::NvSciError_ResourceError if system drivers not available.
+ * - ::NvSciError_BadParameter if @a newModule is NULL.
+ * - ::NvSciError_InsufficientMemory if memory is not available.
+ * - ::NvSciError_ResourceError if any of the following occurs:
+ *      - NVIDIA driver stack failed
+ *      - system lacks resource other than memory
  */
-NvSciError NvSciBufModuleOpen(NvSciBufModule* newModule);
+NvSciError NvSciBufModuleOpen(
+    NvSciBufModule* newModule);
 
 /**
- * @brief Releases an instance of the NvSciBuf module obtained through
- * an earlier call to NvSciBufModuleOpen(). Once an NvSciBufModule is closed
- * and all NvSciBufAttrLists and NvSciBufObjs bound to that module instance
- * are freed, the NvSciBuf module instance will be de-initialized in
+ * @brief Releases the NvSciBufModule obtained through
+ * an earlier call to NvSciBufModuleOpen(). Once the NvSciBufModule is closed
+ * and all NvSciBufAttrLists and NvSciBufObjs bound to it
+ * are freed, the NvSciBufModule will be de-initialized in
  * the calling process.
  *
- * @param[in] module The NvSciBufModule instance to close.
- * The calling process must not pass this module to another
- * NvSciBuf API call.
+ * @param[in] module The NvSciBufModule to close.
  *
  * @return void
+ * - Panic if @a module is invalid
  */
-void NvSciBufModuleClose(NvSciBufModule module);
+void NvSciBufModuleClose(
+    NvSciBufModule module);
+
+/**
+ * \brief Checks if loaded NvSciBuf library version is compatible with
+ * NvSciBuf library version with which elements dependent on NvSciBuf
+ * were built.
+ *
+ * This function checks loaded NvSciBuf library version with input NvSciBuf
+ * library version as well as versions of libraries that NvSciBuf depends on
+ * and sets the output variable to true if all libraries are compatible, else
+ * sets output to false.
+ *
+ * \param[in] majorVer build major version.
+ * \param[in] minorVer build minor version.
+ * \param[out] isCompatible boolean value stating if loaded NvSciBuf library is
+ * compatible or not.
+ * \return ::NvSciError, the completion code of the operation:
+ * - ::NvSciError_Success if successful.
+ * - ::NvSciError_BadParameter if any of the following occurs:
+ *      - @a isCompatible is NULL or
+ *      - failed to check dependent library versions.
+ */
+NvSciError NvSciBufCheckVersionCompatibility(
+    uint32_t majorVer,
+    uint32_t minorVer,
+    bool* isCompatible);
 
 /**
  * @}

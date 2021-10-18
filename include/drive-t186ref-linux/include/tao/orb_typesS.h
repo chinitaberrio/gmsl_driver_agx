@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_ORB_TYPESS_HS9ZIB_H_
-#define _TAO_IDL_ORB_TYPESS_HS9ZIB_H_
+#ifndef _TAO_IDL_ORB_TYPESS_JOK5XZ_H_
+#define _TAO_IDL_ORB_TYPESS_JOK5XZ_H_
 
 #include /**/ "ace/pre.h"
 

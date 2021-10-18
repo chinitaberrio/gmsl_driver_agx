@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2017 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2017-2019 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -35,31 +35,32 @@
 #endif
 
 // -----------------------------------------------------------------------------
-WindowBase *WindowBase::create(const char *title, int windowWidth,
-        int windowHeight, bool offscreen, int samples, bool initInvisible)
+WindowBase* WindowBase::create(const char* title, int windowWidth,
+                               int windowHeight, bool offscreen, int samples, bool initInvisible, bool fullScreen)
 {
 #ifdef DW_USE_EGL
     if (offscreen)
         return WindowEGL::create(windowWidth,
-                windowHeight, offscreen, samples);
+                                 windowHeight, offscreen, samples);
 #endif
 
 #ifdef VIBRANTE_V5Q
     (void)title;
     (void)samples;
     (void)initInvisible;
+    (void)fullScreen;
 
     return WindowEGL::create(windowWidth,
-            windowHeight, offscreen, samples);
+                             windowHeight, offscreen, samples);
 #else
     return new WindowGLFW(title, windowWidth,
-            windowHeight, offscreen, samples, initInvisible);
+                          windowHeight, offscreen, samples, initInvisible, fullScreen);
 #endif
 }
 
 // -----------------------------------------------------------------------------
-WindowBase *WindowBase::create(int windowWidth, int windowHeight,
-        bool offscreen, int samples)
+WindowBase* WindowBase::create(int windowWidth, int windowHeight,
+                               bool offscreen, int samples)
 {
     return create("DriveWorks", windowWidth, windowHeight, offscreen, samples);
 }

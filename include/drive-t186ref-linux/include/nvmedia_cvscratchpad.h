@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -35,9 +35,9 @@ extern "C" {
  */
 
 /** \brief Major version number */
-#define NVMEDIA_CVSCRATCHPAD_VERSION_MAJOR 1
+#define NVMEDIA_CVSCRATCHPAD_VERSION_MAJOR (1u)
 /** \brief Minor version number */
-#define NVMEDIA_CVSCRATCHPAD_VERSION_MINOR 0
+#define NVMEDIA_CVSCRATCHPAD_VERSION_MINOR (1u)
 
 /** \brief Specifies the type of memory that is allocated
 */
@@ -119,12 +119,26 @@ NvMediaCVScratchpadDestroy(
  */
 NvMediaStatus
 NvMediaCVScratchpadGetProperties(
-    NvMediaCVScratchpad *handle,
+    const NvMediaCVScratchpad *handle,
     uint32_t *size,
     NvMediaCVScratchMemoryAllocationType *memoryType
 );
 
 /** @} */
+
+/*
+ * \defgroup history_nvmedia_cvscratchpad History
+ * Provides change history for the NvMedia CVScratchpad API.
+ *
+ * \section history_nvmedia_cvscratchpad Version History
+ *
+ * <b> Version 1.0 </b> August 3, 2018
+ * - Initial release
+ *
+ * <b> Version 1.1 </b> March 11, 2020
+ * - Fix Minor Misra Violations
+ *
+ **/
 
 #ifdef __cplusplus
 };     /* extern "C" */

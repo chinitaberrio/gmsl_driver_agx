@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2017 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2019 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -31,13 +31,13 @@
 #ifndef COMMON_SCREENSHOT_HPP_
 #define COMMON_SCREENSHOT_HPP_
 
-
 // Common
 #include <framework/Checks.hpp>
+
 // Driveworks
-#include <dw/image/Image.h>
-#include <dw/image/ImageStreamer.h>
-#include <dw/image/FrameCapture.h>
+#include <dw/sensors/Sensors.h>
+#include <dwvisualization/interop/ImageStreamer.h>
+#include <dwvisualization/image/FrameCapture.h>
 
 #include <string>
 #include <lodepng.h>
@@ -49,13 +49,13 @@ namespace common
 
 class ScreenshotHelper
 {
-  public:
+public:
     ScreenshotHelper(dwContextHandle_t ctx, dwSALHandle_t sal, uint32_t width, uint32_t height, std::string path);
     virtual ~ScreenshotHelper();
 
     // Set a flag to take a screenshot when processScreenshotTrig is called.
     // Useful for calling screenshot from different thread
-    void triggerScreenshot();
+    void triggerScreenshot(const std::string filename = "");
 
     // If the flag is set, take a screenshot. This allows the screenshot to be called from a different thread.
     void processScreenshotTrig();
@@ -63,22 +63,24 @@ class ScreenshotHelper
     // Take a screenshot. This must be called from a thread with access to GL context.
     void takeScreenshot();
 
-private :
+private:
     dwImageStreamerHandle_t m_streamer;
     dwFrameCaptureHandle_t m_frameCapture;
 
     dwImageHandle_t m_imageGL;
 
-    uint32_t m_screenshotCount;
+    uint32_t m_screenshotCount{0};
 
     dwRect m_roi;
 
     std::string m_pathName;
 
+    std::string m_filename;
+
     // internal flag to trigger a screenshot. Used by triggerScreenshot and processScreenshotTrig.
     bool m_screenshotTrigger;
 };
-}
-}
+} // namespace common
+} // namespace dw_samples
 
 #endif

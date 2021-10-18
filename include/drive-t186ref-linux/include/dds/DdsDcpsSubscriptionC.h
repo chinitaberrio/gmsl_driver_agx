@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_IDL_DDSDCPSSUBSCRIPTIONC_OLC95E_H_
-#define _TAO_IDL_DDSDCPSSUBSCRIPTIONC_OLC95E_H_
+#ifndef _TAO_IDL_DDSDCPSSUBSCRIPTIONC_VKAZGB_H_
+#define _TAO_IDL_DDSDCPSSUBSCRIPTIONC_VKAZGB_H_
 
 #include /**/ "ace/pre.h"
 

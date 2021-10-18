@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_ANYTYPECODE_CONV_FRAMEA_OIRAC3_H_
-#define _TAO_IDL_ANYTYPECODE_CONV_FRAMEA_OIRAC3_H_
+#ifndef _TAO_IDL_ANYTYPECODE_CONV_FRAMEA_5SOBNC_H_
+#define _TAO_IDL_ANYTYPECODE_CONV_FRAMEA_5SOBNC_H_
 
 #include /**/ "ace/pre.h"
 

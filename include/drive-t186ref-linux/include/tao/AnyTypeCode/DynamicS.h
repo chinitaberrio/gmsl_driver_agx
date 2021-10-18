@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_DYNAMICS_EHBETY_H_
-#define _TAO_IDL_DYNAMICS_EHBETY_H_
+#ifndef _TAO_IDL_DYNAMICS_KKAMUS_H_
+#define _TAO_IDL_DYNAMICS_KKAMUS_H_
 
 #include /**/ "ace/pre.h"
 

@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2014-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -32,16 +32,24 @@
 #define SAMPLES_COMMON_WINDOW_HPP_
 
 #include <dw/core/EGL.h>
-#include <dw/gl/GL.h>
+#include <dwvisualization/gl/GL.h>
 
 #ifndef DW_USE_EGL
 #include <GLFW/glfw3.h>
 #endif
 
+// Status and None defines from EGL cause conflicts
+#ifdef Status
+#undef Status
+#endif
+
+#ifdef None
+#undef None
+#endif
+
 class WindowBase
 {
-  public:
-
+public:
     typedef void (*KeyDownCallback)(int key, int scancode, int mods);
     typedef void (*KeyUpCallback)(int key, int scancode, int mods);
     typedef void (*KeyRepeatCallback)(int key, int scancode, int mods);
@@ -54,11 +62,11 @@ class WindowBase
     typedef void (*ResizeWindowCallback)(int width, int height);
 
     // Factory
-    static WindowBase *create(const char *title, int windowWidth,
-            int windowHeight, bool offscreen, int samples = 0,
-            bool initInvisible = false);
-    static WindowBase *create(int windowWidth, int windowHeight,
-            bool offscreen, int samples = 0);
+    static WindowBase* create(const char* title, int windowWidth,
+                              int windowHeight, bool offscreen, int samples = 0,
+                              bool initInvisible = false, bool fullScreen = false);
+    static WindowBase* create(int windowWidth, int windowHeight,
+                              bool offscreen, int samples = 0);
 
     // create an X11 window
     //   width: width of window
@@ -84,8 +92,11 @@ class WindowBase
     {
     }
 
-    // swap back and front buffers
+    // poll events and swap back and front buffers
     virtual bool swapBuffers() = 0;
+
+    // swap back and front buffers ONLY, does not poll events
+    virtual bool swapBuffersOnly() = 0;
 
     // release EGL context
     virtual bool releaseContext() = 0;
@@ -93,7 +104,7 @@ class WindowBase
     // reset EGL context
     virtual void resetContext() = 0;
 
-    // create shared window context for the calling thread
+// create shared window context for the calling thread
 #ifdef DW_USE_EGL
     virtual EGLContext createSharedContext() const = 0;
 #else
@@ -110,10 +121,20 @@ class WindowBase
     virtual bool shouldClose() { return false; }
 
     // Set the window size
-    virtual bool setWindowSize(int w, int h) { (void)w; (void)h; return false; }
+    virtual bool setWindowSize(int w, int h)
+    {
+        (void)w;
+        (void)h;
+        return false;
+    }
 
     // Get the current desktop resolution
-    virtual bool getDesktopResolution(int& w, int& h) { w = 1280; h=800; return false; }
+    virtual bool getDesktopResolution(int& w, int& h)
+    {
+        w = 1280;
+        h = 800;
+        return false;
+    }
 
     // Set windowed mode window to full screen
     virtual bool setFullScreen() { return false; }
@@ -121,10 +142,19 @@ class WindowBase
     // indicate that the window is offscreen, hence no rendering needed
     virtual bool isOffscreen() const { return false; }
 
+    // indicate if EGL is enabled
+    virtual bool isEGLEnabled() const { return false; }
+
     // Set window position to center of screen
     virtual bool setWindowPosCentered() { return false; }
 
-    virtual bool setWindowVisibility(bool visible) { (void)visible; return false; }
+    virtual bool setWindowVisibility(bool visible)
+    {
+        (void)visible;
+        return false;
+    }
+
+    virtual bool setWindowTitle(const char*) { return false; }
 
     // get EGL display
     virtual EGLDisplay getEGLDisplay(void) = 0;
@@ -183,7 +213,7 @@ class WindowBase
         m_resizeWindowCallback = callback;
     }
 
-  protected:
+protected:
     int m_width;
     int m_height;
 

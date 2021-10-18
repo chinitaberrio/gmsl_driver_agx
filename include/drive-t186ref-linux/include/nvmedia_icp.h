@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2014-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "nvmedia_core.h"
 #include "nvmedia_surface.h"
@@ -41,13 +41,13 @@ extern "C" {
 /** \brief Major version number. */
 #define NVMEDIA_ICP_VERSION_MAJOR   4
 /** \brief Minor version number. */
-#define NVMEDIA_ICP_VERSION_MINOR   16
+#define NVMEDIA_ICP_VERSION_MINOR   22
 
 /**
  * \hideinitializer
  * \brief  Defines an infinite timeout for NvMediaICPGetImageGroup().
  */
-#define NVMEDIA_IMAGE_CAPTURE_TIMEOUT_INFINITE  (0xFFFFFFFFu)
+#define NVMEDIA_IMAGE_CAPTURE_TIMEOUT_INFINITE  0xFFFFFFFFu
 
 /** Defines the maximum number of virtual groups. */
 #define NVMEDIA_ICP_MAX_VIRTUAL_GROUPS     4u
@@ -88,6 +88,39 @@ extern "C" {
  */
 #define NVMEDIA_MAX_ICP_FRAME_BUFFERS   32u
 
+/** Defines the minimum supported image width. */
+#define NVMEDIA_ICP_MIN_IMAGE_WIDTH       640u
+
+/** Defines the maximum supported image width. */
+#define NVMEDIA_ICP_MAX_IMAGE_WIDTH       3848u
+
+/** Defines the minimum supported image height. */
+#define NVMEDIA_ICP_MIN_IMAGE_HEIGHT      480u
+
+/** Defines the maximum supported image height. */
+#define NVMEDIA_ICP_MAX_IMAGE_HEIGHT      2168u
+
+/** Defines the minimum supported frame rate. */
+#define NVMEDIA_ICP_MIN_FRAME_RATE        10U
+
+/** Defines the maximum supported frame rate. */
+#define NVMEDIA_ICP_MAX_FRAME_RATE        60U
+
+#if (NV_IS_SAFETY == 1)
+/** Defines the maximum number of embedded lines supported. */
+#define NVMEDIA_ICP_MAX_EMBEDDED_LINES    28u
+
+/** Defines the supported value of pixelFrequency */
+#define NVMEDIA_ICP_PIXEL_FREQUENCY        0U
+
+/** Defines the supported value of thsSettle */
+#define NVMEDIA_ICP_THS_SETTLE_TIME        0U
+#else
+/** Defines the maximum number of embedded lines supported. */
+#define NVMEDIA_ICP_MAX_EMBEDDED_LINES    256u
+
+#endif /* NV_IS_SAFETY */
+
 /**
  * \brief Specifies the image capture interface type for the CSI interface.
  */
@@ -126,9 +159,10 @@ typedef enum {
     NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_YUV422,
     /*! Specifies YUV 4:2:2 10 bits. */
     NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_YUV422_10,
-    /*! Specifies YUV 4:4:4. */
+    /*! Specifies YUV 4:4:4.
+     * This input format is not supported */
     NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_YUV444,
-    /*! Specifies RGBA. */
+    /*! Specifies RGB. */
     NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_RGB888,
     /*! Specifies RAW 6. */
     NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_RAW6,
@@ -178,7 +212,7 @@ typedef enum {
     NVMEDIA_BITS_PER_PIXEL_14,
     /*! Specifies 16 bits per pixel. */
     NVMEDIA_BITS_PER_PIXEL_16,
-    /*! Specifies 20 bits per pixel. */
+    /*! Specifies 20 bits per pixel. This value is not supported */
     NVMEDIA_BITS_PER_PIXEL_20
 } NvMediaBitsPerPixel;
 
@@ -188,18 +222,30 @@ typedef enum {
 typedef struct {
     /*! Holds capture input format type. */
     NvMediaICPInputFormatType inputFormatType;
-    /*! Holds number of bits per pixel. Used when the bits per pixel doesn't
-     match the input format type. */
+    /*! Holds number of bits per pixel for NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_USER_DEFINED_x
+     input format types.*/
     NvMediaBitsPerPixel bitsPerPixel;
 } NvMediaICPInputFormat;
 
+#if (NV_IS_SAFETY == 1)
 /**
- * \brief  Specifies the CSI phy mode.
+ * \brief Specifies the CSI mipi data rate.
  */
 typedef enum {
-    /* Specifies that CSI is in DPHY mode. */
+    NVMEDIA_ICP_CSI_MIPISPEED_297000 = 297000,
+    NVMEDIA_ICP_CSI_MIPISPEED_633000 = 633000,
+    NVMEDIA_ICP_CSI_MIPISPEED_800000 = 800000,
+    NVMEDIA_ICP_CSI_MIPISPEED_1700000 = 1700000
+} NvMediaICPCsiMipiSpeed;
+#endif /* NV_IS_SAFETY */
+
+/**
+ * \brief Specifies the CSI phy mode.
+ */
+typedef enum {
+    /*! Specifies that CSI is in DPHY mode. */
     NVMEDIA_ICP_CSI_DPHY_MODE = 0,
-    /* Specifies that CSI is in CPHY mode. */
+    /*! Specifies that CSI is in CPHY mode. */
     NVMEDIA_ICP_CSI_CPHY_MODE
 } NvMediaICPCsiPhyMode;
 
@@ -207,29 +253,40 @@ typedef enum {
  * Holds image capture settings for the CSI format.
  */
 typedef struct {
-    /*! Holds the interface type. */
+    /*! Holds the interface type.
+     *  This parameter will be ignored.
+     *  Please set interfaceType in \ref NvMediaICPSettingsEx */
     NvMediaICPInterfaceType interfaceType;
     /*! Holds the input format. */
     NvMediaICPInputFormat inputFormat;
     /*! Holds the capture surface type */
     NvMediaSurfaceType surfaceType;
-    /*! Holds the capture width. */
+    /*! Holds the capture width in pixels. */
     uint16_t width;
-    /*! Holds the capture height. */
+    /*! Holds the capture height in pixels. */
     uint16_t height;
-    /*! Holds the horizontal start position. */
+    /*! Holds the horizontal start position.
+     *  This feature is not supported, this parameter will be ignored. */
     uint16_t startX;
-    /*! Holds the vertical start position. */
+    /*! Holds the vertical start position.
+     *  This feature is not supported, this parameter will be ignored. */
     uint16_t startY;
     /*! Holds the embedded data lines. */
     uint16_t embeddedDataLines;
-    /*! Holds the number of CSI interface lanes active. */
+    /*! Holds the number of CSI interface lanes active.
+     *  This parameter will be ignored.
+     *  Please set interfaceLanes in \ref NvMediaICPSettingsEx */
     uint32_t interfaceLanes;
-    /*! Holds the pixel clock frequency. This parameter is required.
+    /*! Holds the pixel clock frequency. If pixelFrequency is lower then
+     *  mipiSpeed, \ref mipiSpeed is required instead of \ref pixelFrequency.
      *  It can be calculated from the expression `HTS * VTS * framerate`,
      *  with `framerate` in Hertz. */
     uint32_t pixelFrequency;
-    /*! Holds the mipi speed in kilohertz. */
+    /*! For DPHY mode, holds the mipi data rate in kbps.
+     *  For CPHY mode, holds the mipi data rate in ksps.
+     *  This is used to program CSI WDT(watch dog timer) for a long packet(a line),
+     *  it helps to detect incomplete line packet early as much as a line cycle.
+     *  if it is zero, CSI WDT won't be enabled */
     uint32_t mipiSpeed;
     /*! Holds the MIPI THS-SETTLE time. The meaning of the value is
      SOC-specific. */
@@ -239,18 +296,14 @@ typedef struct {
     NvMediaBool embeddedDataType;
     /*! Holds a Boolean; indicates whether TPG is enabled. */
     uint8_t tpgEnable;
-    /*! Holds the CSI phy mode. */
+    /*! Holds the CSI phy mode.
+     *  This parameter will be ignored.
+     *  Please use phyMode in \ref NvMediaICPSettingsEx */
     NvMediaICPCsiPhyMode phyMode;
     /*! Holds the capture frame rate in frames per second. If the actual
      frame rate is slower than this value, a frame completion timeout error
      occurs. Set the frame rate to zero to disable the frameout timer. */
     uint32_t frameRate;
-    /*! Holds the CSI error mask type. Each error bit is set to 1
-     to mask the corresponding error. */
-    uint32_t csiErrorMask;
-    /*! Holds the CSI error interrupt type. Each error bit is set to 1
-     to indicate that the corresponding error type is uncorrectable. */
-    uint32_t csiErrorType;
 } NvMediaICPSettings;
 
 /**
@@ -269,7 +322,10 @@ typedef struct {
             uint16_t virtualChannelIndex;
             /* Holds the image capture settings for CSI format. */
             NvMediaICPSettings icpSettings;
-            /* Holds the clipping rectangle. */
+            /**
+             * Holds the clipping rectangle.
+             * This feature is not supported, this parameter will be ignored.
+             */
             NvMediaRect clipRect;
             /**
              * Holds a flag for disabling PFSD (Permanent Fault Software
@@ -290,90 +346,6 @@ typedef struct {
 } NvMediaICPSettingsEx;
 
 /**
- * \brief Defines error status codes that specify the meanings of the "masked"
- *  bits in \ref NvMediaICPSettings::csiErrorMask, and the "non-correctable"
- *  bits in \ref NvMediaICPSettings::csiErrorType.
- */
-typedef enum {
-    /* Specifies an LP sequence error detected on clock lane[A/B]. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DPHY_CLK_LANE_CTRL_ERR = (1 << 0),
-    /* Specifies a one-bit error detected on the lane[A/B]0 sync word. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_SOT_SB_ERR0 = (1 << 1),
-    /* Specifies a more than one-bit error detected on the lane[A/B]0 sync
-     word. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_SOT_MB_ERR0 = (1 << 2),
-    /* Specifies an LP sequence error detected on lane [A/B]0. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_CTRL_ERR0 = (1 << 3),
-    /* Specifies a lane [A/B]0 FIFO overflow. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_RXFIFO_FULL_ERR0 = (1 << 4),
-    /* Specifies a one-bit error detected on the lane[A/B]1 sync word. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_SOT_SB_ERR1 = (1 << 5),
-    /* Specifies a more than one-bit error detected on the lane[A/B]1 sync
-     word. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_SOT_MB_ERR1 = (1 << 6),
-    /* Specifies an LP sequence error detected on lane [A/B]1. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_CTRL_ERR1 = (1 << 7),
-    /* Specifies a Lane [A/B]1 FIFO overflow. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_RXFIFO_FULL_ERR1 = (1 << 8),
-    /* Specifies a DPHY de-skew calibration not complete when sweeping the
-     trimmer of data lane [A/B]0. Happens when the calibration sequence length
-     is not long enough. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DPHY_DESKEW_CALIB_ERR_LANE0 = (1 << 9),
-    /* Specifies a DPHY de-skew calibration not complete when sweeping the
-     trimmer of data lane [A/B]1. Happens when the calibration sequence length
-     is not long enough. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DPHY_DESKEW_CALIB_ERR_LANE1 = (1 << 10),
-    /* Specifies a DPHY de-skew calibration not complete when sweeping the
-     trimmer of clock lane [A/B]. Happens when the calibration sequence length
-     is not long enough. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DPHY_DESKEW_CALIB_ERR_CTRL = (1 << 11),
-    /* Specifies that an error is detected in the PHY partition [A/B]: some
-     lanes detected a sync word while other lanes did not. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DPHY_LANE_ALIGN_ERR = (1 << 12),
-    /* Specifies that an error is detected in the escape mode sync of lane
-     [A/B]0. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_ESC_MODE_SYNC_ERR0 = (1 << 13),
-    /* Specifies that an error is detected in the escape mode sync of lane
-     [A/B]0. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_ESC_MODE_SYNC_ERR1 = (1 << 14),
-    /* Specifies that an error is detected in the 2 LSBs of the lane [A/B]0
-     sync word. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_SOT_2LSB_ERR0 = (1 << 15),
-    /* Specifies that an error is detected in the 2 LSBs of the lane [A/B]1
-     sync word. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_DATA_LANE_SOT_2LSB_ERR1 = (1 << 16),
-    /* For DPHY mode, CSI packet header uses ECC check. If multi-bit errors
-     are detected in the packet header the error bits are not able to correct
-     them, the packet is not able to do the unpack, the packet is dropped, and
-     this error status is set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_NOVC_PH_ECC_MULTI_BIT_ERR = (1 << 17),
-    /* Specifies that for CPHY mode, the CSI packet has two packet headers,
-     each with CRC check. If both packet headers fail the CRC check, the packet
-     cannot be unpacked and is dropped, and this error status is set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_NOVC_PH_BOTH_CRC_ERR = (1 << 18),
-    /* Specifies that there is a watchdog timer inside NVCSI to detect packets
-     that are incomplete after a sufficient amount of time. If the timer
-     expires, this error status is set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_VC_PPFSM_TIMEOUT = (1 << 19),
-    /* Specifies that for DPHY mode, the CSI packet header includes an ECC
-     check. If a one-bit error in the packet header is detected the error is
-     corrected, the packet can still be unpacked, and this error status is
-     set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_VC_PH_ECC_SINGLE_BIT_ERR = (1 << 20),
-    /* Specifies that the CSI packet include a payload CRC check. If the CRC
-     check fails, this error status is set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_VC_PD_CRC_ERR = (1 << 21),
-    /* Specifies that the CSI packet header includes the length of the packet.
-     If the packet is shorter than the expected length, this error status is
-     set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_VC_PD_WC_SHORT_ERR = (1 << 22),
-    /* Specifies that for CPHY mode, the CSI packet has two packet headers,
-     each with CRC check. If one packet header passes CRC check and the other
-     fails, the packet can still be unpacked and this error status is set. */
-    NVMEDIA_ICP_CSI_ERROR_TYPE_VC_PH_SINGLE_CRC_ERR = (1 << 23),
-} NvMediaICPCSIErrorType;
-
-/**
  * \brief Holds an image capture object per virtual group.
  */
 typedef struct NvMediaICP NvMediaICP;
@@ -382,12 +354,13 @@ typedef struct NvMediaICP NvMediaICP;
  * \brief Holds an image capture object created by NvMediaICPCreateEx().
  */
 typedef struct {
-    /* Holds the number of virtual groups used. */
+    /*! Holds the number of virtual groups used. */
     uint16_t numVirtualGroups;
+    /*! Holds an array of \ref NvMediaICP structs, one for each virtual group. */
     struct {
-        /* Holds the virtual group index. */
+        /*! Holds the virtual group index. */
         uint16_t virtualGroupId;
-        /* Holds a pointer to the image capture object. */
+        /*! Holds a pointer to the image capture object. */
         NvMediaICP *hIcp;
     } icp[NVMEDIA_ICP_MAX_VIRTUAL_GROUPS];
 } NvMediaICPEx;
@@ -399,7 +372,7 @@ typedef struct {
  * following table, @a Module, @a Type, and @a Code represent macro parameters.
  * For example:
  * @code
- *     %NVMEDIA_ICP_ERROR(CSI, FS_FAULT, 6, "A frame start occurred before previous frame end")
+ *     NVMEDIA_ICP_ERROR(CSI, FS_FAULT, 6, "A frame start occurred before previous frame end")
  * @endcode
  * <br>
  *
@@ -413,7 +386,7 @@ typedef struct {
  * | CSI    | FE_FORCED_FAULT     |     9 | `NVMEDIA_ICP_CSI_ERROR_FE_FORCED_FAULT`    | Frame end was injected by the CSI hardware. |
  * | CSI    | PXL_ENABLE_FAULT    |    10 | `NVMEDIA_ICP_CSI_ERROR_PXL_ENABLE_FAULT`   | Illegal pixel encoding detected. |
  * | CSI    | PP_FSM_TIMEOUT      |    20 | `NVMEDIA_ICP_CSI_ERROR_PP_FSM_TIMEOUT`     | Pixel Parser FSM timeout. |
- * | CSI    | PP_ECC_DPHY         |    21 | `NVMEDIA_ICP_CSI_ERROR_PP_ECC_DPHY`        | Single bit error correction code in DPHY packet header. |
+ * | CSI    | PH_ECC_DPHY         |    21 | `NVMEDIA_ICP_CSI_ERROR_PH_ECC_DPHY`        | Single bit error correction code in DPHY packet header. |
  * | CSI    | PAYLOAD_CRC         |    22 | `NVMEDIA_ICP_CSI_ERROR_PAYLOAD_CRC`        | Packet payload CRC check failure. |
  * | CSI    | LINE_SHORT          |    23 | `NVMEDIA_ICP_CSI_ERROR_LINE_SHORT`         | Packet payload is less than word count in packet header. |
  * | CSI    | PH_CRC_CPHY         |    24 | `NVMEDIA_ICP_CSI_ERROR_PH_CRC_CPHY`        | One of the CPHY packet headers contained a CRC error. |
@@ -469,8 +442,7 @@ typedef enum {
     NVMEDIA_ICP_ERROR_STATUS_CSI_INPUTSTREAM,
     NVMEDIA_ICP_ERROR_STATUS_PIXEL_FAULT,
     NVMEDIA_ICP_ERROR_STATUS_FRAME_FAULT,
-    NVMEDIA_ICP_ERROR_STATUS_MEMORYWRITE,
-    NVMEDIA_ICP_ERROR_STATUS_FATAL
+    NVMEDIA_ICP_ERROR_STATUS_MEMORYWRITE
 } NvMediaICPErrorStatus;
 
 typedef enum {
@@ -491,7 +463,9 @@ typedef enum {
 typedef enum {
     /* CSI Stream Errors */
     NVMEDIA_ICP_ERROR(CSI, SPURIOUS_DATA,         0,  "FIFO data was found in the gap between frame start and frame end")
-    /* FIFO_OVERFLOW & FIFO_LOF Events are NOT Recoverable, application is expected to stop the capture on these errors */
+    /**
+     * FIFO_OVERFLOW & FIFO_LOF Events will trigger capture engine to stop the capture channel,
+     * the client has to call NvMediaICPDestoryEx, when those errors are reported */
     NVMEDIA_ICP_ERROR(CSI, FIFO_OVERFLOW,         1,  "An overflow occurred in a stream FIFO")
     NVMEDIA_ICP_ERROR(CSI, FIFO_LOF,              2,  "A loss of frame overflow occurred")
     NVMEDIA_ICP_ERROR(CSI, FIFO_BADPKT,           3,  "An unknown packet type has been received on a stream")
@@ -541,36 +515,38 @@ typedef enum {
  *  NvMediaICPGetErrorInfo().
  */
 typedef struct {
-    /* Holds the CSI stream index. */
+    /*! Holds the CSI stream index. */
     uint32_t csiStreamId;
-    /* Holds the CSI frame index generated by CSI Tx. */
+    /*! Holds the CSI frame index generated by CSI Tx. */
     uint32_t csiFrameId;
-    /* Holds the virtual channel index. */
+    /*! Holds the virtual channel index. */
     uint32_t virtualChannelId;
-    /* Holds the error status from capture HW engine. */
+    /*! Holds the error status from capture HW engine. */
     NvMediaICPErrorStatus errorStatus;
-    /* Holds a detailed error code corresponding to \ref NvMediaICPErrorStatus,
+    /*! Holds a detailed error code corresponding to \ref NvMediaICPErrorStatus,
      above. */
     uint32_t errorData;
-    /* Holds notified errors. Notified errors are applicable only when the
-     @c errorStatus member is @c NVMEDIA_ICP_ERROR_STATUS_NONE. The array holds
-     all notified errors to ICP that occurred between the current successful
+    /*! Holds notified errors.
+     The array holds all notified errors to ICP that occurred between the current
      frame and the previously captured frame. @c notifiedErrors must be parsed
      for each \ref NvMediaICPErrorStatus, and may contain one or more types of
      errors per @c NvMediaICPErrorStatus. */
-    uint32_t notifiedErrors[NVMEDIA_ICP_ERROR_STATUS_FATAL];
+    uint32_t notifiedErrors[NVMEDIA_ICP_ERROR_STATUS_MEMORYWRITE + 1u];
 } NvMediaICPErrorInfo;
 
 /**
- * \brief Checks version compatibility for the NvMedia ICP library.
+ * \brief Gets the version of the NvMedia ICP library.
  *
- * \param[in] version A pointer to a version information structure that
- *  describes ICP versions compatible with the client.
- * \retval  NVMEDIA_STATUS_OK indicates that the ICP library is compatible
- *  with the client.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a version is invalid.
- * \retval  NVMEDIA_STATUS_INCOMPATIBLE_VERSION indicates that the ICP library
- *  is not compatible with the client.
+ * The client should compare the version of the NvMedia ICP library with
+ * \ref NVMEDIA_ICP_VERSION_MAJOR and \ref NVMEDIA_ICP_VERSION_MINOR to
+ * ensure compatibility.
+ *
+ * \param[out] version A pointer to a version information structure that
+ *             the function will write the library version to.
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates that the library version has been
+ *        successfully written to @a version.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @a version was NULL.
  */
 NvMediaStatus
 NvMediaICPGetVersion(
@@ -581,19 +557,6 @@ NvMediaICPGetVersion(
  * \brief Creates an image capture object used to capture various formats
  *        of input into an \ref NvMediaImage.
  *
- * The supported surfaces
- * must be obtained by NvMediaSurfaceFormatGetType() with:
- * - \ref NVM_SURF_FMT_SET_ATTR_RAW(attr, RGGB/BGGR/GRBG/GBRG, INT,
- *      8/10/12/16/20, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_RAW(attr, RCCB/BCCR/CRBC/CBRC, INT, 12, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_RAW(attr, RCCC/CCCR/CRCC/CCRC, INT, 12, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, YUV, 422, SEMI_PLANAR, UINT,
- *      8, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, YUYV, 422, PACKED, UINT, 8, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, YVYU, 422, PACKED, UINT, 8, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, VYUY, 422, PACKED, UINT, 8, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_YUV(attr, UYVY, 422, PACKED, UINT, 8, PL)
- * - \ref NVM_SURF_FMT_SET_ATTR_RGBA(attr, RGBA, UINT, 8, PL)
  * \param[in] settings A pointer to the settings for the capture.
  * \return  The new image capture's handle if successful, or NULL otherwise.
  */
@@ -611,137 +574,110 @@ NvMediaICPDestroyEx(
     NvMediaICPEx *icpEx
 );
 
-
 /**
- * \brief Maps a frame to the capture engine.
+ * \brief Maps an image group to the capture engine.
  * \param[in] icp       A pointer to the image capture object to be used.
  * \param[in] imageGrp  A pointer to the NvMedia image group to be mapped to
  *                       the capture engine.
- * \return  A status code; \ref NVMEDIA_STATUS_OK if the operation was
- *  successful, or \ref NVMEDIA_STATUS_ERROR otherwise.
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates the operation was successful.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL or pointing to
+ *   non-icp object, @a imageGrp was NULL or @a imageGrp contained an incorrect number of
+ *   virtual channels or @a imageGrp is currently registered.
+ * - \ref NVMEDIA_STATUS_ERROR if any other error occurred.
  */
 NvMediaStatus
 NvMediaICPRegisterImageGroup(
-    NvMediaICP   *icp,
-    NvMediaImageGroup *imageGrp
+    const NvMediaICP            *icp,
+    const NvMediaImageGroup     *imageGrp
 );
-
 
 /**
  * \brief  Adds an image group to the image capture pool. The pool size is
  *  determined by \ref NVMEDIA_MAX_ICP_FRAME_BUFFERS.
+ *
+ * This function will do the following for each image in the image group:
+ * 1. Block until all \ref NvSciSyncFence prefences for the image's virtual channel have posted.
+ * 2. Submit the image to the capture engine.
+ * 3. Remove all prefences for the image's virtual channel.
+ *
  * \param[in] icp       The image capture object to be used.
  * \param[in] imageGrp  The NvMedia image group to be added to the pool.
  * \param[in] millisecondTimeout
  *    A timeout in milliseconds. Represents time elapsed from the VI hardware
  *    start of processing the capture request to the time when a frame start
  *    occurs. It helps catch frame errors early, before the capture completion
- *    timeout.
+ *    timeout. If this value is 0, timeout is infinite.
  *    \n\n
  *    Take care when programming the frame start timeout for the first frame,
  *    for which the time required to set up the sensor to start streaming must
  *    be included.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_TIMED_OUT indicates that the operation timed out.
- * \retval  NVMEDIA_STATUS_ERROR indicates any other error.
+ *    The @a imageGrp might still be used by the capture engine even if NVMEDIA_STATUS_OK is not
+ *    returned. In this case, @a imageGrp must not be destroyed till \ref NvMediaICPDestroyEx
+ *    is called.
+ *
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * - \ref NVMEDIA_STATUS_TIMED_OUT indicates that the operation timed out.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @ icp was NULL or pointing to non-icp object,
+ *   @a imageGrp was NULL, or @a imageGrp contained an incorrect number of virtual channels.
+ * - \ref NVMEDIA_STATUS_NOT_INITIALIZED indicates that @a imageGrp was not previously registered.
+ * - \ref NVMEDIA_STATUS_NOT_SUPPORTED indicates that the requested operation was not supported.
+ * - \ref NVMEDIA_STATUS_INSUFFICIENT_BUFFERING indicates that the image capture pool is full.
+ * - \ref NVMEDIA_STATUS_ERROR indicates any other error.
  */
 NvMediaStatus
 NvMediaICPFeedImageGroup(
-    NvMediaICP   *icp,
-    NvMediaImageGroup *imageGrp,
-    unsigned int millisecondTimeout
+    const NvMediaICP     *icp,
+    NvMediaImageGroup    *imageGrp,
+    uint32_t             millisecondTimeout
 );
-
-/**
- * \brief Stops the hardware engine from capturing the image.
- *
- * To restart image capture:
- * 1. Call NvMediaICPReleaseFrame().
- * 2. Call NvMediaICPResume().
- *
- * \param[in] icp A pointer to the image capture object to be used.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp is NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that the image capture pool is not
- *  empty yet.
- */
-NvMediaStatus
-NvMediaICPStop(
-    NvMediaICP *icp
-);
-
-/**
- * \brief Resumes a stopped image capture operation.
- *
- * \param[in] icp  A pointer to the image capture object to be used.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that the capture engine was not
- *  stopped.
- */
-NvMediaStatus
-NvMediaICPResume(
-    NvMediaICP *icp);
 
 /**
  * \brief Gets a captured image group with frame status.
  *
- * This function blocks until a frame is available, or until a timeout occurs.
+ * This function blocks until an image group is available, or until a timeout occurs.
  *
  * \param[in] icp A pointer to the image capture object to be used.
  * \param[in] millisecondTimeout Timeout in milliseconds. To block
  * without a timeout, specify \ref NVMEDIA_IMAGE_CAPTURE_TIMEOUT_INFINITE.
  * \param[in,out] imageGrp An indirect pointer to the NvMedia image group
  *                          that is ready for use.
- * \retval  NVMEDIA_STATUS_OK indicates that the image is valid.
- * \retval  NVMEDIA_STATUS_NONE_PENDING indicates that @a image is NULL, there
- *  is no fed frame, or the internal pool is empty.
- * \retval  NVMEDIA_STATUS_TIMED_OUT indicates that @a image is NULL because the
- * frame is not ready for use.
- * \retval  NVMEDIA_STATUS_ERROR indicates that @a image is NULL because the
- *  hardware engine has stopped trying to capture images.
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates that @a imageGrp was valid.
+ * - \ref NVMEDIA_STATUS_NONE_PENDING indicates that the internal pool was empty.
+ * - \ref NVMEDIA_STATUS_TIMED_OUT indicates that @a imageGrp was NULL because the
+ *   frame was not ready for use.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @ icp was NULL or pointing to non-icp object,
+ *   @a imageGrp was NULL, or @a imageGrp contained an incorrect number of virtual channels.
+ * - \ref NVMEDIA_STATUS_NOT_SUPPORTED indicates that the requested operation was not supported.
+ * - \ref NVMEDIA_STATUS_PFSD_ERROR indicates that the Permanent Fault Software Diagnostic (PFSD)
+ *        pattern on the image was not correct.
+ * - \ref NVMEDIA_STATUS_ERROR indicates that @a imageGrp was not valid because the
+ *   capture engine has reported an error.
  */
 NvMediaStatus
 NvMediaICPGetImageGroup(
-    NvMediaICP *icp,
-    uint32_t millisecondTimeout,
-    NvMediaImageGroup **imageGrp
+    const NvMediaICP    *icp,
+    uint32_t            millisecondTimeout,
+    NvMediaImageGroup   **imageGrp
 );
 
 /**
- * \brief Unmaps a frame from the capture engine.
+ * \brief Unmaps an image group from the capture engine.
  * \param[in] icp A pointer to the image capture object to be used.
  * \param[in] imageGrp A pointer to the NvMedia image group to be unmapped.
- * \return A status code; \ref NVMEDIA_STATUS_OK if the operation was
- *  successful, or \ref NVMEDIA_STATUS_ERROR otherwise.
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates the operation was successful.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @ icp was NULL or pointing to non-icp object,
+ *   @a imageGrp was NULL or contained an incorrect number of virtual channels or @a imageGrp is
+ *   currently not registered.
+ * - \ref NVMEDIA_STATUS_ERROR if any other error occurred.
  */
 NvMediaStatus
 NvMediaICPUnregisterImageGroup(
-    NvMediaICP   *icp,
-    NvMediaImageGroup *imageGrp
-);
-
-/**
- * \brief Gets an image group from the internal pool that the client
- * previously supplied with NvMediaICPFeedImageGroup().
- *
- * After the hardware engine abandons a capture, call this function
- * repeatedly until it returns \ref NVMEDIA_STATUS_ERROR.
- *
- * \param[in] icp           A pointer to the image capture object to be used.
- * \param[in,out] imageGrp  The image group that was fed from user but hardware
- *                           gives up to capture.
- * \retval  NVMEDIA_STATUS_OK indicates that the function has returned the
- *  image group that the user fed.
- * \retval  NVMEDIA_STATUS_ERROR indicates that an error occurred while
- *  returning the image group.
- * \retval  NVMEDIA_STATUS_NONE_PENDING indicates that there is nothing
- *  to return.
- */
-NvMediaStatus
-NvMediaICPReleaseImageGroup(
-    NvMediaICP *icp,
-    NvMediaImageGroup **imageGrp
+    const NvMediaICP          *icp,
+    const NvMediaImageGroup   *imageGrp
 );
 
 /**
@@ -751,38 +687,61 @@ NvMediaICPReleaseImageGroup(
  * frame ID, and error status.
  * You can use this information to determine a suitable response to
  * a CSI capture error.
+ * This function should be called after NvMediaICPGetFrameEx() to catch all
+ * error notifications.
  *
  * \param[in]  icp          A pointer to the image capture object to be used.
  * \param[out] icpErrorInfo A pointer to the structure where information is
  *                           to be put.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp or
- *  @a icpErrorInfo was NULL, and thus no error information is returned.
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icpErrorInfo was NULL or @ icp was NULL or
+ *   pointing to non-icp object
+ * - \ref NVMEDIA_STATUS_NOT_SUPPORTED indicates that the requested operation was not
+ *   supported.
+ * - \ref NVMEDIA_STATUS_ERROR indicates that the error information could not be retrieved.
+ *   @a icpErrorInfo was NULL, and thus no error information was returned.
  */
 NvMediaStatus
 NvMediaICPGetErrorInfo(
-    NvMediaICP *icp,
-    NvMediaICPErrorInfo *icpErrorInfo
+    const NvMediaICP        *icp,
+    NvMediaICPErrorInfo     *icpErrorInfo
 );
 
+#if (NV_IS_SAFETY == 0)
 /**
- * \brief Waits for next SoF (Start of Frame).
+ * \brief Gets an image group from the internal pool that the client
+ * previously supplied with NvMediaICPFeedImageGroup(). [deprecated]
  *
- * The function blocks until it receives the next SoF event.
+ * @note This function is deprecated. Please refer to the NvMedia Porting Guide on how to use
+ * NvMediaICPGetImageGroup() to achieve release functionality.
+ * If this function is called when there is only one image group in the internal pool,
+ * then it will remove the image group from the pool, stop the capture channel, and
+ * return \ref NVMEDIA_STATUS_NONE_PENDING.
  *
- * \deprecated  Use NvMediaICPGetSOFNvSciSyncFence instead.
- * \param[in] icp  A pointer to the image capture object to be used.
- * \retval  NVMEDIA_STATUS_OK indicates that a SoF has been received.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL.
- * \retval  NVMEDIA_STATUS_NONE_PENDING indicates that there was no fed frame,
- *  and so the internal capture pool was empty.
- * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred while
- *  the function was waiting for SoF.
+ * When the client needs to stop the capture channel, call this function
+ * repeatedly until it returns \ref NVMEDIA_STATUS_NONE_PENDING
+ *
+ * \param[in] icp           A pointer to the image capture object to be used.
+ * \param[in,out] imageGrp  The image group that was fed from user but hardware
+ *                           gives up to capture.
+ * \return \ref NvMediaStatus The completion status of the operation. Possible values are:
+ * - \ref NVMEDIA_STATUS_OK indicates that the function has returned the
+ *   image group that the user fed.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER indicates that @a icp was NULL.
+ * - \ref NVMEDIA_STATUS_NOT_SUPPORTED indicates that the requested operation was not
+ *   supported.
+  * - \ref NVMEDIA_STATUS_ERROR indicates that an error occurred while
+ *   returning the image group.
+ * - \ref NVMEDIA_STATUS_NONE_PENDING indicates that there was nothing
+ *   to return.
  */
 NvMediaStatus
-NvMediaICPWaitForSoF(
-    NvMediaICP *icp
-)NVM_DEPRECATED_MSG("Use NvMediaICPGetSOFNvSciSyncFence");
+NvMediaICPReleaseImageGroup(
+    const NvMediaICP    *icp,
+    NvMediaImageGroup   **imageGrp
+)NVM_DEPRECATED_MSG("Use NvMediaICPGetImageGroup");;
+#endif /* NV_IS_SAFETY */
 
 /*
  * \defgroup history_nvmedia_icp History
@@ -886,13 +845,45 @@ NvMediaICPWaitForSoF(
  * <b> Version 4.15 </b> April 4, 2019
  * Add \ref NvMediaBitsPerPixel, NVMEDIA_MAX_ICP_FRAME_BUFFERS
  *
- * <b> version 4.16 </b> April 10, 2019
+ * <b> Version 4.16 </b> April 10, 2019
  * Added deprecated warning message for \ref NvMediaICPWaitForSoF.
+ *
+ * <b> Version 4.17 </b> May 22, 2019
+ * Remove deprecated NvMediaICPWaitForSoF
+ *
+ * <b> Version 4.18 </b> July 12, 2019
+ * removed NvMediaICPCSIErrorType Enum
+ * removed csiErrorMask, csiErrorType from \ref NvMediaICPSettings
+ * removed NVMEDIA_ICP_ERROR_STATUS_FATAL from \ref NvMediaICPErrorStatus
+ *
+ * <b> Version 4.19 </b> July 18, 2019
+ * Remove NvMediaICPStop and NvMediaICPResume
+ *
+ * <b> Version 4.20 </b> October 21, 2019
+ * Added the const keyword to appropriate pointer parameters for the following:
+ * - \ref NvMediaICPRegisterImageGroup
+ * - \ref NvMediaICPFeedImageGroup
+ * - \ref NvMediaICPGetImageGroup
+ * - \ref NvMediaICPUnregisterImageGroup
+ * - \ref NvMediaICPReleaseImageGroup
+ * - \ref NvMediaICPGetErrorInfo
+ * Added comments for the following values of \ref NvMediaStatus:
+ * - \ref NVMEDIA_STATUS_NOT_SUPPORTED
+ * - \ref NVMEDIA_STATUS_NOT_INITIALIZED
+ *
+ * <b> Version 4.21 </b> November 20, 2019
+ * NvMediaICPReleaseImageGroup() is removed from safety build and deprecated in non-safety build.
+ * Use NvMediaICPGetImageGroup() instead
+ *
+ * <b> Version 4.22 </b> January 22, 2020
+ * Add NVMEDIA_ICP_MIN_FRAME_RATE and NVMEDIA_ICP_MAX_FRAME_RATE in safety build.
+ * Remove the return value NVMEDIA_STATUS_NOT_INITIALIZED for some functions
+ *
  */
 /** @} */
 
 #ifdef __cplusplus
 };     /* extern "C" */
-#endif
+#endif /* __cplusplus */
 
-#endif /* _NVMEDIA_ICP_H */
+#endif /* NVMEDIA_ICP_H */

@@ -257,6 +257,9 @@ NvGlDemoSetButtonCB(NvGlDemoButtonCB cb);
 void
 NvGlDemoCheckEvents(void);
 
+void
+NvGlDemoWaitEvents(void);
+
 #ifdef NVGLDEMO_HAS_DEVICE
 void
 NvGlDemoSetDisplayAlpha(float alpha);
@@ -295,6 +298,9 @@ typedef struct {
     int useProgramBin;                      // Program binary enable option
     int displayNumber;                      // Display output number
     int eglQnxScreenTest;                   // To enable the eglQnxScreenTest
+    int enablePostSubBuffer;                // Set before initializing to enable
+    int enableMutableRenderBuffer;          // Set before initializing to enable
+    int fullScreen;                         // To start the demo in fullscreen mode
     int nFifo;                              // FIFO mode for eglstreams. 0 -> mailbox
     int latency;                            // Egl Stream Consumer latency
     int timeout;                            // Egl Stream Consumer acquire timeout
@@ -311,6 +317,7 @@ typedef struct {
     float inactivityTime;                   // Interval for inactivity testing
     int isSmart;                            // can detect termination of cross-partition stream
     int isDrmNvdcPermissive;                // Set drm-nvdc permissive
+    int isProtected;                        // Set protected content
 } NvGlDemoOptions;
 
 // Values for displayBlend option

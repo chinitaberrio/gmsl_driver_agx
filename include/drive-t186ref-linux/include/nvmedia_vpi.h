@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, NVIDIA CORPORATION. All rights reserved. All
+ * Copyright (c) 2017-2020, NVIDIA CORPORATION. All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -13,8 +13,8 @@
  * @b Description: This file contains the NvMedia VPI API.
  */
 
-#ifndef _NvMediaVPI_H
-#define _NvMediaVPI_H
+#ifndef NVMEDIA_VPI_H
+#define NVMEDIA_VPI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,7 @@ extern "C" {
 #include "nvmedia_surface.h"
 
 /**
- * \defgroup NvMediaVPI Vision Programming Interface
+ * \defgroup nvmedia_vpi_top Vision Programming Interface
  *
  * The NvMedia Vision Programming Interface (VPI) API contains NvMedia functions
  * for accessing the Computer Vision (CV) hardware accelerated algorithms.
@@ -37,42 +37,35 @@ extern "C" {
  * @{
  */
 
+/**
+ * \defgroup nvmedia_vpi_api NvMedia VPI
+ *
+ * APIs for accessing Computer Vision (CV) hardware-accelerated algorithms.
+ *
+ * @{
+ */
 /** \brief Major version number. */
-#define NVMEDIA_VPI_VERSION_MAJOR   2
+#define NVMEDIA_VPI_VERSION_MAJOR   (3u)
 /** \brief Minor version number. */
-#define NVMEDIA_VPI_VERSION_MINOR   6
+#define NVMEDIA_VPI_VERSION_MINOR   (3u)
 
 /** \brief Maximum number of tasks that can be queued. Used by
     NvMediaVPICreate(). */
-#define NVMEDIA_VPI_MAX_QUEUED_TASKS 64
+#define NVMEDIA_VPI_MAX_QUEUED_TASKS (64u)
 
 /**
  * \brief Holds an opaque object representing NvMediaVPI.
  */
 typedef struct NvMediaVPI NvMediaVPI;
 
-/** \brief Defines the different types of VPI-specific arrays.
- */
-typedef enum {
-    /*! Keypoint type. */
-    NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT = 0,
-    /*! Bounding Box with Transform type. */
-    NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM = 1,
-    /*! Transform type. */
-    NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM = 2,
-    /*! Number of types. */
-        /* If more types are needed, add above this and update this. */
-    NVMEDIA_VPI_ARRAY_NUM_TYPES = 3,
-} NvMediaVPIArrayType;
-
 /**
  * \brief  Holds 2D floating point definition.
  */
 typedef struct {
     /*! x co-ordinate. */
-    float x;
+    float_t x;
     /*! y co-ordinate. */
-    float y;
+    float_t y;
 } NvMediaVPIPoint2Df;
 
 /**
@@ -93,13 +86,13 @@ typedef struct {
  */
 typedef struct {
     /*! x coordinate. */
-    float x;
+    float_t x;
     /*! y coordinate. */
-    float y;
+    float_t y;
     /*! width of bounding box. */
-    float width;
+    float_t width;
     /*! height of bounding box. */
-    float height;
+    float_t height;
     /*! 1 indicates tracking is invalid, 0 indicates valid. */
     uint8_t trackingStatus;
     /*! 1 indicatestemplate needs updating, 0 indicates template is valid. */
@@ -114,7 +107,7 @@ typedef struct {
  * \brief  3x3 transform matrix.
  */
 typedef struct {
-    float mat3[3][3];
+    float_t mat3[3][3];
 } NvMediaVPI2DTransform;
 
 /**
@@ -122,11 +115,11 @@ typedef struct {
  */
 typedef struct {
     /*! Scale. */
-    float deltaScale;
+    float_t deltaScale;
     /*! Need description. */
-    float deltaX;
+    float_t deltaX;
     /*! Need description. */
-    float deltaY;
+    float_t deltaY;
 } NvMediaVPITranslationWithScale;
 
 /**
@@ -136,9 +129,9 @@ typedef struct {
     /*! Transform array. */
     NvMediaVPI2DTransform transform;
     /*! width of bounding box. */
-    float width;
+    float_t width;
     /*! height of bounding box. */
-    float height;
+    float_t height;
     /*! 1 indicates tracking is invalid, 0 indicates valid. */
     uint8_t trackingStatus;
     /*! 1 indicates template needs updating, 0 indicates template is valid. */
@@ -170,7 +163,7 @@ NvMediaVPIGetNumEngines(
  * \return  Status indicator.
  * Possible values are:
  * - \ref NVMEDIA_STATUS_OK if the operation was successful.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer wass invalid.
+ * - \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer was invalid.
  */
 NvMediaStatus
 NvMediaVPIGetVersion(
@@ -179,7 +172,7 @@ NvMediaVPIGetVersion(
 
 /**
  * \brief Creates an NvMediaVPI object.
- * \param[in] Id    Engine ID. Must be less than the value returned by
+ * \param[in] vpiId    Engine ID. Must be less than the value returned by
  *                  NvMediaVPIGetNumEngines().
  * \param[in] maxQueuedTasks
  *                  Number of simultaneous tasks that can be submitted to an
@@ -190,7 +183,7 @@ NvMediaVPIGetVersion(
  */
 NvMediaVPI *
 NvMediaVPICreate(
-    const uint32_t Id,
+    const uint32_t vpiId,
     const uint32_t maxQueuedTasks
 );
 
@@ -236,8 +229,8 @@ NvMediaVPIFlush(
  */
 NvMediaStatus
 NvMediaVPIImageRegister(
-    NvMediaVPI *vpi,
-    NvMediaImage *image
+    const NvMediaVPI *vpi,
+    const NvMediaImage *image
 );
 
 /**
@@ -253,8 +246,8 @@ NvMediaVPIImageRegister(
  */
 NvMediaStatus
 NvMediaVPIImageUnregister(
-    NvMediaVPI *vpi,
-    NvMediaImage *image
+    const NvMediaVPI *vpi,
+    const NvMediaImage *image
 );
 
 /**
@@ -270,7 +263,7 @@ NvMediaVPIImageUnregister(
  */
 NvMediaStatus
 NvMediaVPIArrayRegister(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     NvMediaArray *array
 );
 
@@ -287,7 +280,7 @@ NvMediaVPIArrayRegister(
  */
 NvMediaStatus
 NvMediaVPIArrayUnregister(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     NvMediaArray *array
 );
 
@@ -305,8 +298,8 @@ NvMediaVPIArrayUnregister(
  */
 NvMediaStatus
 NvMediaVPIScratchpadRegister(
-    NvMediaVPI *vpi,
-    NvMediaCVScratchpad *scratchpad
+    const NvMediaVPI *vpi,
+    const NvMediaCVScratchpad *scratchpad
 );
 
 /**
@@ -323,27 +316,8 @@ NvMediaVPIScratchpadRegister(
  */
 NvMediaStatus
 NvMediaVPIScratchpadUnregister(
-    NvMediaVPI *vpi,
-    NvMediaCVScratchpad *scratchpad
-);
-
-/**
- * \brief  Creates an \ref NvMediaArray for a VPI-specific element type.
- * \param[in] device        Handle to the NvMedia device obtained by calling
- *                          NvMediaDeviceCreate().
- * \param[in] type          Type of array to be created.
- * \param[in] numElements   Number of elements in the array.
- * \param[in] attrs         A pointer to an array of allocation attributes.
- * \param[in] numAttrs      Number of allocation elelments in @a attrs.
- * \return  Handle to the array, or NULL if unsuccessful.
- */
-NvMediaArray *
-NvMediaVPIArrayCreate(
-    NvMediaDevice *device,
-    NvMediaVPIArrayType type,
-    uint32_t numElements,
-    const NvMediaArrayAllocAttr *attrs,
-    uint32_t numAttrs
+    const NvMediaVPI *vpi,
+    const NvMediaCVScratchpad *scratchpad
 );
 
 /**
@@ -359,8 +333,8 @@ NvMediaVPIArrayCreate(
  */
 NvMediaStatus
 NvMediaVPIPyramidRegister(
-    NvMediaVPI *vpi,
-    NvMediaImagePyramid *pyramid
+    const NvMediaVPI *vpi,
+    const NvMediaImagePyramid *pyramid
 );
 
 /**
@@ -376,8 +350,8 @@ NvMediaVPIPyramidRegister(
  */
 NvMediaStatus
 NvMediaVPIPyramidUnregister(
-    NvMediaVPI *vpi,
-    NvMediaImagePyramid *pyramid
+    const NvMediaVPI *vpi,
+    const NvMediaImagePyramid *pyramid
 );
 
 /**
@@ -401,54 +375,6 @@ typedef enum {
 } NvMediaVPIOFSTOutputType;
 
 /**
- * \brief  Creates \ref NvMediaVPIProcessStereoDescriptor.
- *
- * \param[in]  vpi          A pointer to the \ref NvMediaVPI object returned by
- *                          NvMediaVPICreate().
- * \param[in]  width        Width of the input images.
- * \param[in]  height       Height of the input images.
- * \param[in]  outputType   \ref NvMediaVPIOFSTOutputType for type of output.
- * \return  A pointer to the \ref NvMediaVPIProcessStereoDescriptor.
- */
-NvMediaVPIProcessStereoDescriptor *
-NvMediaVPICreateProcessStereoPairDescriptor(
-    NvMediaVPI *vpi,
-    const uint32_t width,
-    const uint32_t height,
-    const NvMediaVPIOFSTOutputType outputType
-);
-
-/**
- * \brief  Queues an operation to process a stereo image pair.
- * \note \ref NvMediaVPIFlush() must be called to actually flush the queue
- *  to the engine.
- *
- * \param[in]     vpi           A pointer to the \ref NvMediaVPI returned by
- *                              NvMediaVPICreate().
- * \param[in,out] descriptor    Pointer returned by
- *                              NvMediaVPICreateProcessStereoPairDescriptor().
- * \param[in]     left          A pointer to the left \ref NvMediaImage image.
- * \param[in]     right         A pointer to the right \ref NvMediaImage image.
- * \param[out]    output        A pointer to the output \ref NvMediaImage image.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the queuing operation is successful.
- * - \ref NVMEDIA_STATUS_NOT_SUPPORTED if the operation is unsupported.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments are incorrect.
- * - \ref NVMEDIA_STATUS_INSUFFICIENT_BUFFERING if the queue is full.
- *    (Call NvMediaVPIFlush() to flush the queue.)
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIProcessStereoPairDesc(
-    NvMediaVPI *vpi,
-    NvMediaVPIProcessStereoDescriptor *descriptor,
-    NvMediaImage *left,
-    NvMediaImage *right,
-    NvMediaImage *output
-);
-
-/**
  * \brief NvMediaVPIConvertMV descriptor.
  */
 typedef struct NvMediaVPIConvertMVDescriptor NvMediaVPIConvertMVDescriptor;
@@ -467,12 +393,12 @@ typedef struct NvMediaVPIConvertMVDescriptor NvMediaVPIConvertMVDescriptor;
  */
 NvMediaVPIConvertMVDescriptor *
 NvMediaVPICreateConvertMVDescriptor(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     const uint32_t width,
     const uint32_t height,
     const NvMediaSurfaceType type,
-    const float strength,
-    const float scale
+    const float_t strength,
+    const float_t scale
 );
 
 /**
@@ -512,7 +438,7 @@ NvMediaVPIConvertMVDesc(
     NvMediaVPI *vpi,
     NvMediaVPIConvertMVDescriptor *descriptor,
     NvMediaImage *inputMVImage,
-    NvMediaImage *inputColor,
+    const NvMediaImage *inputColor,
     NvMediaImage *output,
     const NvMediaVPIOFSTOutputType outputType
 );
@@ -535,10 +461,10 @@ typedef struct NvMediaVPIStereoPostprocessDescriptor NvMediaVPIStereoPostprocess
  */
 NvMediaVPIStereoPostprocessDescriptor *
 NvMediaVPICreateStereoPostprocessDescriptor(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     const uint32_t width,
     const uint32_t height,
-    const float scale
+    const float_t scale
 );
 
 /**
@@ -608,7 +534,7 @@ typedef struct NvMediaVPIStereoPreprocessDescriptor NvMediaVPIStereoPreprocessDe
  */
 NvMediaVPIStereoPreprocessDescriptor *
 NvMediaVPICreateStereoPreprocessDescriptor(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     const uint32_t width,
     const uint32_t height,
     const NvMediaVPIOFSTOutputType outputType
@@ -633,58 +559,6 @@ typedef struct {
 
 /*! Minimum capacity of \ref NvMediaArray holding Confidence Table.*/
 #define NVMEDIA_VPI_CONFIDENCE_TABLE_MIN_CAPACITY (128)
-
-/**
- * \brief  Performs stereo preprocessing to produce a disparity image or
- *  motion vector hints. Motion vector hints are generated as a 2-D image.
- * \note  NvMediaVPIFlush() must be called to actually flush the queue to
- *  the engine.
- *
- * \param[in]     vpi           A pointer to the \ref NvMediaVPI returned by
- *                              NvMediaVPICreate().
- * \param[in,out] descriptor    A pointer returned by
- *                              NvMediaVPICreateStereoPreprocessDescriptor().
- * \param[in]     params        A pointer to an
-                                \ref NvMediaVPIStereoPreprocessParams.
- * \param[in]     confidenceTable
- *                              A pointer to an \ref NvMediaArray containing
- *                              mapped confidence. The array must be of
- *                              unsigned @c int16 type with a capacity at least
- *                              @c NVMEDIA_VPI_CONFIDENCE_TABLE_MIN_CAPACTY.
- * \param[in]     leftImage     A pointer to the input left image.
- * \param[in]     rightImage    A pointer to the input right image.
- * \param[out]    output0       A pointer to the first output image. It contains
- *                              hints if \ref NvMediaVPIOFSTOutputType is
- *                              \ref NVMEDIA_VPI_MV_HINTS. It contains the left
- *                              disparity if \ref NvMediaVPIOFSTOutputType
- *                              is \ref NVMEDIA_VPI_STEREO_DISPARITY.
- * \param[out]    output1       A pointer to the second output image. Contains
- *                              Confidence image if
- *                              \ref NvMediaVPIOFSTOutputType is
- *                              \ref NVMEDIA_VPI_MV_HINTS, or right disparity if
- *                              \ref NvMediaVPIOFSTOutputType is
- *                              \ref NVMEDIA_VPI_STEREO_DISPARITY.
- *
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_NOT_SUPPORTED if the operation was unsupported.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_INSUFFICIENT_BUFFERING if the queue was full.
- *        (Call NvMediaVPIFlush() to flush the queue.)
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIStereoPreprocessDesc(
-    NvMediaVPI *vpi,
-    NvMediaVPIStereoPreprocessDescriptor *descriptor,
-    NvMediaVPIStereoPreprocessParams *params,
-    NvMediaArray *confidenceTable,
-    NvMediaImage *leftImage,
-    NvMediaImage *rightImage,
-    NvMediaImage *output0,
-    NvMediaImage *output1
-);
 
 /*! Minimum capacity (in bytes) of \ref NvMediaArray holding Motion Vector Hints Array.*/
 #define NVMEDIA_VPI_HINT_ARRAY_MIN_CAPACITY_BYTES (261376)
@@ -808,13 +682,13 @@ typedef struct {
     const uint32_t blockSize;
     /*! Holds the minimum threshold with which to eliminate Harris Corner
      scores. */
-    const float strengthThresh;
+    const float_t strengthThresh;
     /*! Holds the sensitivity threshold from the Harris-Stephens equation. */
-    const float sensitivity;
+    const float_t sensitivity;
     /*! Holds the post-process non-maximum suppression type. */
     const NvMediaVPINonMaxSuppressionType nonMaxSuppressionType;
     /*! Holds the radial Euclidean distance for non-maximum suppression. */
-    const float minDistance;
+    const float_t minDistance;
 } NvMediaVPIGetKeyPointsHarrisParams;
 
 /**
@@ -843,10 +717,7 @@ typedef struct {
  *                          A pointer to an \ref NvMediaArray containing
  *                          keypoints to track. Optional. If NULL,
  *                          @a trackedScores must be NULL.
- *                          The array must be of type
- *                          \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT,
- *                          created by a call to NvMediaVPIArrayCreate(), or
- *                          must be created by a call to NvMediaArrayCreate()
+ *                          The array must be created by a call to NvMediaArrayCreate()
  *                          with \a stride passed as size of
  *                          \ref NvMediaVPIPoint2DFrac.
  * \param[in]     trackedScores
@@ -854,11 +725,8 @@ typedef struct {
  *                          scores of keypoints to track. Optional. If NULL,
  *                          @a trackedKeypoints must be NULL.
  * \param[out]    keypoints A pointer to an \ref NvMediaArray containing
- *                          keypoints. \a array must be of
- *                          \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT type
- *                          created by a call to NvMediaVPIArrayCreate(), or
- *                          must be created by a call to NvMediaArrayCreate()
- *                          with \a stride passed as size of
+ *                          keypoints. \a array must be created by a call to
+ *                          NvMediaArrayCreate() with \a stride passed as size of
  *                          \ref NvMediaVPIPoint2DFrac.
  * \param[out]    scores    A pointer to an \ref NvMediaArray containing scores.
  * \return  Status indicator.
@@ -926,11 +794,8 @@ NvMediaVPICreateGetKeyPointsFastDescriptor(
  * \param[in]     nonmaxSupression
  *                          Indicates whether to apply non-maximum suppression.
  * \param[in,out] keypoints A pointer to an \ref NvMediaArray containing
- *                          keypoints. \a array must be of
- *                          \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT type
- *                          created by a call to NvMediaVPIArrayCreate(), or
- *                          must be created by a call to NvMediaArrayCreate()
- *                          with \a stride passed as size of
+ *                          keypoints. \a array must be created by a call to
+ *                          NvMediaArrayCreate() with \a stride passed as size of
  *                          \ref NvMediaVPIPoint2DFrac.
  * \param[out]    scores    A pointer to an \ref NvMediaArray containing scores.
  * \return  Status indicator.
@@ -973,7 +838,7 @@ typedef struct {
     /*! Holds the termination criteria. */
     const NvMediaVPITerminationCriterion termination;
     /*! Holds the error for terminating the algorithm. */
-    float epsilon;
+    float_t epsilon;
     /*! Holds the number of points. */
     uint32_t numPoints;
     /*! Holds the number of iterations. */
@@ -1003,7 +868,7 @@ typedef struct NvMediaVPIGetSparseFlowPyrLKDescriptor NvMediaVPIGetSparseFlowPyr
  */
 NvMediaVPIGetSparseFlowPyrLKDescriptor *
 NvMediaVPICreateGetSparseFlowPyrLKDescriptor(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     const NvMediaVPIGetSparseFlowPyrLKParams *params
 );
 
@@ -1025,19 +890,13 @@ NvMediaVPICreateGetSparseFlowPyrLKDescriptor(
  *                          destination (new) images.
  * \param[in]     oldPoints A pointer to an array of keypoints in the
  *                          \a oldImages high resolution pyramid.
- *                          \a array must be of
- *                          \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT type
- *                          created by a call to NvMediaVPIArrayCreate(), or
- *                          must be created by a call to NvMediaArrayCreate()
+ *                          \a array must be created by a call to NvMediaArrayCreate()
  *                          with \a stride passed as size of
  *                          \ref NvMediaVPIPoint2DFrac.
  * \param[in,out] newPoints A pointer to an array of keypoints in the
  *                          \a newImages high resolution pyramid. It is used
  *                          for starting a search in \a newImages.
- *                          \a array must be of
- *                          \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT type
- *                          created by a call to NvMediaVPIArrayCreate(), or
- *                          must be created by a call to NvMediaArrayCreate()
+ *                          \a array must be created by a call to NvMediaArrayCreate()
  *                          with \a stride passed as size of
  *                          \ref NvMediaVPIPoint2DFrac.
  * \param[out]    newStatus A pointer to an array for tracking status for each
@@ -1079,15 +938,14 @@ typedef struct NvMediaVPIKLTDescriptor NvMediaVPIKLTDescriptor;
  */
 NvMediaVPIKLTDescriptor *
 NvMediaVPICreateKLTDescriptor(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     const uint32_t width,
     const uint32_t height,
     const NvMediaSurfaceType type
 );
 
 /** Specifies the types of KLT Tracking. */
-typedef enum NvMediaVPIKltTrackType
-{
+typedef enum {
     /** Specifies Inverse Compositional tracking type. */
     NVMEDIA_VPI_KLT_INVERSE_COMPOSITIONAL = 0,
 } NvMediaVPIKltTrackType;
@@ -1105,15 +963,15 @@ typedef struct {
     /*! Num Iterations Fine. */
     uint32_t numIterationsFine;
     /*! Maximum Pixel Tolerance. */
-    float maxPixelTolerance;
+    float_t maxPixelTolerance;
     /*! Threshold Update. */
-    float thresholdUpdate;
+    float_t thresholdUpdate;
     /*! Threshold Kill. */
-    float thresholdKill;
+    float_t thresholdKill;
     /*! Threshold Stop. */
-    float thresholdStop;
+    float_t thresholdStop;
     /*! Maximum Scale Change. */
-    float maxScaleChange;
+    float_t maxScaleChange;
     /*! Tracking Type. */
     NvMediaVPIKltTrackType trackingType;
 } NvMediaVPIKLTParams;
@@ -1135,33 +993,22 @@ typedef struct {
  * \param[in]     templateImage A pointer to an \ref NvMediaImage template
  *                              image.
  * \param[in]     inputBoxList  A pointer to an \ref NvMediaArray input
- *                              bounding box list. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              bounding box list. The array must be
+ *                              created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPIAABB.
  * \param[in]     predictedBoxList
  *                              A pointer to an \ref NvMediaArray predicted
- *                              bounding box list. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              bounding box list. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPITranslationWithScale.
  * \param[out]    outputBoxList A pointer to an \ref NvMediaArray output
- *                              bounding box list. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              bounding box list. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPIAABB.
  * \param[out]    estimationList
  *                              A pointer to an \ref NvMediaArray output
- *                              estimated motion. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              estimated motion. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPITranslationWithScale.
  * \return  Status indicator.
@@ -1203,7 +1050,7 @@ NvMediaVPIKLTDesc(
  */
 NvMediaStatus
 NvMediaVPIGetScratchpadSize(
-    void *descriptor,
+    const void *descriptor,
     uint32_t *scratchpadSizeBytes
 );
 
@@ -1228,33 +1075,21 @@ NvMediaVPIGetScratchpadSize(
  * \param[in]     templateImage
  *                              A pointer to an \ref NvMediaImage template image.
  * \param[in]     inputBoxList  A pointer to an \ref NvMediaArray input
- *                              bounding box list. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              bounding box list. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPIAABB.
  * \param[in]     predictedBoxList
  *                              A pointer to an \ref NvMediaArray predicted
- *                              bounding box list. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              bounding box list. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPITranslationWithScale.
  * \param[out]    outputBoxList A pointer to an \ref NvMediaArray output
- *                              bounding box list. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              bounding box list. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPIAABB.
  * \param[out]    estimationList
  *                              A pointer to an \ref NvMediaArray output
- *                              estimated motion. The array must be of type
- *                              \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM,
- *                              created by a call to NvMediaVPIArrayCreate(), or
- *                              must be created by a call to
+ *                              estimated motion. The array must be created by a call to
  *                              NvMediaArrayCreate() with \a stride passed as
  *                              size of \ref NvMediaVPITranslationWithScale.
  * \return  Status indicator.
@@ -1270,7 +1105,7 @@ NvMediaStatus
 NvMediaVPIKLTFastDesc(
     NvMediaVPI *vpi,
     NvMediaVPIKLTDescriptor *descriptor,
-    NvMediaCVScratchpad *scratchpad,
+    const NvMediaCVScratchpad *scratchpad,
     const NvMediaVPIKLTParams *params,
     NvMediaImage *referenceImage,
     NvMediaImage *templateImage,
@@ -1336,39 +1171,10 @@ NvMediaStatus
 NvMediaVPIConvolveImage(
     NvMediaVPI *vpi,
     NvMediaImage *input,
-    const float *kernelData,
+    const float_t *kernelData,
     const uint32_t kernelWidth,
     const uint32_t kernelHeight,
     NvMediaImage *output
-);
-
-/**
- * \brief NvMediaVPIConvolveImageSeparableDescriptor.
- */
-typedef struct NvMediaVPIConvolveImageSeparableDescriptor \
-               NvMediaVPIConvolveImageSeparableDescriptor;
-
-/**
- * \brief  Creates a pointer to the
- *  \ref NvMediaVPIConvolveImageSeparableDescriptor.
- *
- * \param[in]  vpi          A pointer to the \ref NvMediaVPI object returned by
- *                          NvMediaVPICreate().
- * \param[in]  type         \ref NvMediaSurfaceType of the input image.
- * \param[in]  kernelX      A pointer to the x convolution kernel coefficients.
- * \param[in]  kernelXSize  Size of the x convolution kernel.
- * \param[in]  kernelY      A pointer to the y convolution kernel coefficients.
- * \param[in]  kernelYSize  Size of the y convolution kernel.
- * \return  A pointer to the \ref NvMediaVPIConvolveImageSeparableDescriptor.
- */
-NvMediaVPIConvolveImageSeparableDescriptor *
-NvMediaVPICreateConvolveImageSeparableDescriptor(
-    NvMediaVPI *vpi,
-    NvMediaSurfaceType type,
-    const float *kernelX,
-    const uint32_t kernelXSize,
-    const float *kernelY,
-    const uint32_t kernelYSize
 );
 
 /**
@@ -1398,9 +1204,9 @@ NvMediaStatus
 NvMediaVPIConvolveImageSeparable(
     NvMediaVPI *vpi,
     NvMediaImage *input,
-    const float *kernelX,
+    const float_t *kernelX,
     const uint32_t kernelXSize,
-    const float *kernelY,
+    const float_t *kernelY,
     const uint32_t kernelYSize,
     NvMediaImage *output
 );
@@ -1436,263 +1242,6 @@ NvMediaVPIFilterImageBox(
 );
 
 /**
- * \brief  Helper function; converts an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT type to an array of type
- *  \ref NvMediaVPIPoint2Df.
- *
- * \param[in]  array        A pointer to the input \ref NvMediaArray. The array
- *                          must be created with NvMediaVPIArrayCreate().
- * \param[in]  startIndex   Index offset (number of elements) into the array.
- *                          Currently 0 (zero) is the only value supported.
- * \param[in]  numElements  Number of elements to write to the destination.
- * \param[out] destPtr      A pointer to the location where the output array is
- *                          to be written.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayGetPoint2Df(
-    NvMediaArray *array,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaVPIPoint2Df *destPtr
-);
-
-/**
- * \brief  Helper function; converts an array of type \ref NvMediaVPIPoint2Df
- *  to an \ref NvMediaArray of type \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT.
- *
- * \param[in]  inputPtr     A pointer to the input array.
- * \param[in]  startIndex   Index offset (number of elements) into the
- *                          destination array.
- * \param[in]  numElements  Number of elements to write to the destination.
- * \param[out] destArray    A pointer to the output \ref NvMediaArray.
- *                          \a destArray must be created by a call to
- *                          NvMediaVPIArrayCreate() with @a type set to
- *                          \ref NVMEDIA_VPI_ARRAY_TYPE_KEYPOINT.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayUpdatePoint2Df(
-    NvMediaVPIPoint2Df *inputPtr,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaArray *destArray
-);
-
-/**
- * \brief  Helper function; converts an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM type to an array of type
- *  \ref NvMediaVPIAABB.
- *
- * \param[in]  array        A pointer to an input \ref NvMediaArray. The array
- *                          must be created with NvMediaVPIArrayCreate().
- * \param[in]  startIndex   Index offset (number of elements) into array.
- * \param[in]  numElements  Number of elements to write to destination.
- * \param[out] destPtr      A pointer to the location at which to write
- *                          the output array.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayGetAABB(
-    NvMediaArray *array,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaVPIAABB *destPtr
-);
-
-/**
- * \brief  Helper function; converts an array of type \ref NvMediaVPIAABB to an
- *  \ref NvMediaArray of type \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM.
- *
- * \param[in]  inputPtr     A pointer to the input array.
- * \param[in]  startIndex   Index offset (number of elements) into the
- *                          destination array.
- * \param[in]  numElements  Number of elements to write to the destination.
- * \param[out] destArray    A pointer to the output \ref NvMediaArray.
- *                          \a destArray must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayUpdateAABB(
-    NvMediaVPIAABB *inputPtr,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaArray *destArray
-);
-
-/**
- * \brief  Helper function; converts an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM type to an array of type
- *  \ref NvMediaVPIBoundingBoxWithTransform.
- *
- * \param[in]  array        A pointer to the input \ref NvMediaArray. The array
- *                          must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \param[in]  startIndex   Index offset (number of elements) into array.
- * \param[in]  numElements  Number of elements to write to destination.
- * \param[out] destPtr      A pointer to a location in which to write the
- *                          output array.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayGetBoundingBoxWithTransform(
-    NvMediaArray *array,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaVPIBoundingBoxWithTransform *destPtr
-);
-
-/**
- * \brief  Helper function; converts an array of type
- *  \ref NvMediaVPIBoundingBoxWithTransform to an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_BBOX_XFORM.
- *
- * \param[in]  inputPtr     A pointer to the input array.
- * \param[in]  startIndex   Index offset (number of elements) into destination
- *                          array.
- * \param[in]  numElements  Number of elements to write to the destination.
- * \param[out] destArray    A pointer to an output \ref NvMediaArray.
- *                          \a destArray must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayUpdateBoundingBoxWithTransform(
-    NvMediaVPIBoundingBoxWithTransform *inputPtr,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaArray *destArray
-);
-
-/**
- * \brief  Helper function; converts an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM to an array of type
- *  \ref NvMediaVPITranslationWithScale.
- *
- * \param[in]  array        A pointer to the input \ref NvMediaArray. The array
- *                          must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \param[in]  startIndex   Index offset (number of elements) into array.
- * \param[in]  numElements  Number of elements to write to destination.
- * \param[out] destPtr      A pointer to a location at which to write the
- *                          output array.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-
-NvMediaStatus
-NvMediaVPIArrayGetTranslationWithScale(
-    NvMediaArray *array,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaVPITranslationWithScale *destPtr
-);
-
-/**
- * \brief  Helper function; converts an array of type
- *  \ref NvMediaVPITranslationWithScale to an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM.
- *
- * \param[in]  inputPtr     A pointer to the input array.
- * \param[in]  startIndex   Index offset (number of elements) into
- *                          destination array.
- * \param[in]  numElements  Number of elements to write to destination.
- * \param[out] destArray    A pointer to the output \ref NvMediaArray.
- *                          \a destArray must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayUpdateTranslationWithScale(
-    NvMediaVPITranslationWithScale *inputPtr,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaArray *destArray
-);
-
-/**
- * \brief  Helper function; converts an \ref NvMediaArray of type
- *  \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM type to an array of type
- *  \ref NvMediaVPI2DTransform.
- *
- * \param[in]  array        A pointer to the input \ref NvMediaArray. The array
- *                          must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \param[in]  startIndex   Index offset (number of elements) into array.
- * \param[in]  numElements  Number of elements to write to destination.
- * \param[out] destPtr      A pointer to a location in which to write the
- *                          output array.
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayGet2DTransform(
-    NvMediaArray *array,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaVPI2DTransform *destPtr
-);
-
-/**
- * \brief  Helper function; converts an array of \ref NvMediaVPI2DTransform to
- * \ref NvMediaArray of \ref NVMEDIA_VPI_ARRAY_TYPE_TRANSFORM type.
- *
- * \param[in]  inputPtr     A pointer to the input array.
- * \param[in]  startIndex   Index offset (number of elements) into array.
- * \param[in]  numElements  Number of elements to write to destination.
- * \param[out] destArray    A pointer to output \ref NvMediaArray.
- *                          \a destArray must be created by a call to
- *                          NvMediaVPIArrayCreate().
- * \return  Status indicator.
- * Possible values are:
- * - \ref NVMEDIA_STATUS_OK if the operation was queued successfully.
- * - \ref NVMEDIA_STATUS_BAD_PARAMETER if one or more arguments were incorrect.
- * - \ref NVMEDIA_STATUS_ERROR for any other error.
- */
-NvMediaStatus
-NvMediaVPIArrayUpdate2DTransform(
-    NvMediaVPI2DTransform *inputPtr,
-    const uint32_t startIndex,
-    const uint32_t numElements,
-    NvMediaArray *destArray
-);
-
-/**
  * \brief  Destroys an NvMediaVPI function descriptor.
  *
  * \param[in] vpi           A pointer to an \ref NvMediaVPI object returned by
@@ -1708,7 +1257,7 @@ NvMediaVPIArrayUpdate2DTransform(
  */
 NvMediaStatus
 NvMediaVPIDestroyDescriptor(
-    NvMediaVPI *vpi,
+    const NvMediaVPI *vpi,
     void *descriptor
 );
 
@@ -1742,12 +1291,42 @@ NvMediaVPIDestroyDescriptor(
  * <b> Version 2.6 </b> March 22, 2019
  * - Unnecessary header include nvmedia_common.h has been removed
  *
+ * <b> Version 3.0 </b> July 12, 2019
+ * - Deprecate NvMediaVPICreateProcessStereoPairDescriptor, NvMediaVPIProcessStereoPairDesc,
+ *   NvMediaVPIStereoPreprocessDesc, NvMediaVPIArrayCreate,
+ *   NvMediaVPIArrayGetPoint2Df, NvMediaVPIArrayUpdatePoint2Df,
+ *   NvMediaVPIArrayGetAABB, NvMediaVPIArrayUpdateAABB,
+ *   NvMediaVPIArrayGetBoundingBoxWithTransform, NvMediaVPIArrayUpdateBoundingBoxWithTransform,
+ *   NvMediaVPIArrayGetTranslationWithScale, NvMediaVPIArrayUpdateTranslationWithScale,
+ *   NvMediaVPIArrayGet2DTransform, NvMediaVPIArrayUpdate2DTransform
+ *
+ * <b> Version 3.1 </b> July 26, 2019
+ * - Update NVMEDIA_VPI_MAX_QUEUED_TASKS to be unsigned
+ *
+ * <b> Version 3.2 </b> April 13, 2020
+ * - Replace all float instances with float_t
+ * - Update NvMediaVPICreate, NvMediaVPIImageRegister, NvMediaVPIImageUnregister,
+ *   NvMediaVPIArrayRegister, NvMediaVPIArrayUnregister, NvMediaVPIScratchpadRegister,
+ *   NvMediaVPIScratchpadUnregister, NvMediaVPIPyramidRegister, NvMediaVPIPyramidUnregister,
+ *   NvMediaVPICreateConvertMVDescriptor, NvMediaVPIConvertMVDesc,
+ *   NvMediaVPICreateStereoPostprocessDescriptor, NvMediaVPICreateStereoPreprocessDescriptor,
+ *   NvMediaVPIGetKeyPointsHarrisParams, NvMediaVPIGetSparseFlowPyrLKParams,
+ *   NvMediaVPICreateGetSparseFlowPyrLKDescriptor, NvMediaVPICreateKLTDescriptor,
+ *   NvMediaVPIGetScratchpadSize, NvMediaVPIGetScratchpadSize, NvMediaVPIKLTFastDesc,
+ *   NvMediaVPIConvolveImage, NvMediaVPICreateConvolveImageSeparableDescriptor,
+ *   NvMediaVPIConvolveImageSeparable, NvMediaVPIDestroyDescriptor function parameters to be
+ *   const
+ * - Fix minor MISRA violations
+ *
+ * <b> Version 3.3 </b> June 5, 2020
+ * Remove NvMediaVPICreateConvolveImageSeparableDescriptor and NvMediaVPIConvolveImageSeparableDescriptor.
+ *
  */
 
 /** @} */
-
+/** @} */
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NVMEDIA_VPI_H */
+#endif /* NVMEDIA_VPI_H */

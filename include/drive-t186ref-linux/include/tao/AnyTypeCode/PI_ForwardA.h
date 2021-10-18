@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_ANYTYPECODE_PI_FORWARDA_P7ZR9M_H_
-#define _TAO_IDL_ANYTYPECODE_PI_FORWARDA_P7ZR9M_H_
+#ifndef _TAO_IDL_ANYTYPECODE_PI_FORWARDA_C64LPJ_H_
+#define _TAO_IDL_ANYTYPECODE_PI_FORWARDA_C64LPJ_H_
 
 #include /**/ "ace/pre.h"
 

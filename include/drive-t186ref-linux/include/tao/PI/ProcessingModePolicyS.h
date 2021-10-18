@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_PROCESSINGMODEPOLICYS_9A52UO_H_
-#define _TAO_IDL_PROCESSINGMODEPOLICYS_9A52UO_H_
+#ifndef _TAO_IDL_PROCESSINGMODEPOLICYS_0OHS17_H_
+#define _TAO_IDL_PROCESSINGMODEPOLICYS_0OHS17_H_
 
 #include /**/ "ace/pre.h"
 

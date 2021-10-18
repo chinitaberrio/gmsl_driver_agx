@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2013-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -49,7 +49,7 @@ typedef enum
     NVMEDIA_2D_STRETCH_FILTER_OFF = 0x1,
     /** Specifies enable low quality filtering. */
     NVMEDIA_2D_STRETCH_FILTER_LOW,
-    /** Specifies enable media quality filtering. */
+    /** Specifies enable medium quality filtering. */
     NVMEDIA_2D_STRETCH_FILTER_MEDIUM,
     /** Specifies enable the best quality filtering. */
     NVMEDIA_2D_STRETCH_FILTER_HIGH
@@ -288,16 +288,20 @@ NvMedia2DDestroy(
  * \param[in]  params      A pointer to parameters.
  * \param[out] paramsOut   Reserved for future use. Currently, set @a paramsOut
  *                          to NULL.
- * \return  NVMEDIA_STATUS_OK if succcessful, or
- *  NVMEDIA_STATUS_BAD_PARAMETER if any required pointer parameter was invalid.
+ * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
+ *  were invalid.
+ * \retval  NVMEDIA_STATUS_TIMED_OUT indicates that no command buffer was
+ *  available to use for this operation.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  * \ingroup blit
  */
 NvMediaStatus
 NvMedia2DBlitEx(
     const NvMedia2D                 *i2d,
-    NvMediaImage                    *dstSurface,
+    const NvMediaImage              *dstSurface,
     const NvMediaRect               *dstRect,
-    NvMediaImage                    *srcSurface,
+    const NvMediaImage              *srcSurface,
     const NvMediaRect               *srcRect,
     const NvMedia2DBlitParameters   *params,
     NvMedia2DBlitParametersOut      *paramsOut
@@ -318,6 +322,8 @@ NvMedia2DBlitEx(
  *  were invalid.
  * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the requested operation
  *  was not supported.
+ * \retval  NVMEDIA_STATUS_TIMED_OUT indicates that no command buffer was
+ *  available to use for this operation.
  * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  * \ingroup blit
  */
@@ -353,8 +359,8 @@ NvMedia2DCopyPlaneNew(
  *  of memory.
  * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the input surface types
  *  were not the same.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
- *  pointer parameters were invalid.
+ * \retval  NVMEDIA_STATUS_TIMED_OUT indicates that no command buffer was
+ *  available to use for this operation.
  **/
 NvMediaStatus
 NvMedia2DWeaveNew(
@@ -367,21 +373,16 @@ NvMedia2DWeaveNew(
 /**
  * \brief Registers an \ref NvMediaImage for use with an NvMedia2D handle.
  *
- * \note  This function is not supported in this release, and currently
- *  returns only the status code NVMEDIA_STATUS_NOT_SUPPORTED.)
- *
- * The NvMedia2D handle maintains a record of all the images registered by
+ * NvMedia2D maintains a record of all the images registered by
  * this function.
  *
- * This is an optional function call. Skipping it results in nondeterministic
- * NvMedia2DBlitEx() execution time.
  * To ensure deterministic execution time for %NvMedia2DBlitEx():
  * - You must call NvMedia2DImageRegister() for every input and output
  *   \ref NvMediaImage to be used with NvMedia2D.
  * - You must make all calls to %NvMedia2DImageRegister() before the first
  *   call to %NvMedia2DBlitEx().
  *
- * You can register a maximum of 32 \ref NvMediaImage handles per access mode.
+ * You can register a maximum of 128 \ref NvMediaImage handles per access mode.
  *
  * \param[in] i2d        An NvMedia 2D device handle.
  * \param[in] image      A pointer to an NvMedia image.
@@ -397,36 +398,35 @@ NvMedia2DWeaveNew(
  **/
 NvMediaStatus
 NvMedia2DImageRegister(
-    const NvMedia2D  *i2d,
-    NvMediaImage     *image,
-    NvMediaAccessMode accessMode
+    const NvMedia2D        *i2d,
+    const NvMediaImage     *image,
+    NvMediaAccessMode      accessMode
 );
 
 /**
  * \brief  Unregisters an \ref NvMediaImage registered with NvMedia2D by a
  * call to NvMedia2DImageRegister().
  *
- * \note  This function currently is not fully implemented. It returns only
- *  the status code NVMEDIA_STATUS_NOT_SUPPORTED.
- *
  * This function must be called for all \ref NvMediaImage handles registered
  * with NvMedia2D before NvMedia2DDestroy() is called.
  *
  * To ensure deterministic execution of NvMedia2DBlitEx(), you must call
- * this function only after the last call to %NvMedia2DBlitEx().
+ * this function only after the last call to %NvMedia2DBlitEx() is completed.
  *
  * \param[in] i2d       An NvMedia 2D device handle.
  * \param[in] image     A pointer to an NvMedia image
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a i2d was invalid,
  *  the image had already been unregistered, or the image never was registered.
+ * \retval  NVMEDIA_STATUS_PENDING indicates that image is still being used by
+ *  VIC.
  * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that this function currently
  *  is not supported.
  **/
 NvMediaStatus
 NvMedia2DImageUnRegister(
-    const NvMedia2D  *i2d,
-    NvMediaImage     *image
+    const NvMedia2D        *i2d,
+    const NvMediaImage     *image
 );
 
 /*
@@ -485,6 +485,10 @@ NvMedia2DImageUnRegister(
  *
  * <b> Version 3.7 </b> March 22, 2019
  * - Unnecessary header include nvmedia_common.h has been removed
+ *
+ * <b> Version 3.8 </b> May 18, 2020
+ * - Changes related to MISRA-C Rule 8.13 Violations fixes.
+ *
  */
 /** @} */
 

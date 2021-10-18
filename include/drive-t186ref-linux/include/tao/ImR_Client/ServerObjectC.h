@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_IDL_SERVEROBJECTC_HTGSLL_H_
-#define _TAO_IDL_SERVEROBJECTC_HTGSLL_H_
+#ifndef _TAO_IDL_SERVEROBJECTC_49JA0Y_H_
+#define _TAO_IDL_SERVEROBJECTC_49JA0Y_H_
 
 #include /**/ "ace/pre.h"
 

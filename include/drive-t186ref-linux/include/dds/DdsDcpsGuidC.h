@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_IDL_DDSDCPSGUIDC_LISGUH_H_
-#define _TAO_IDL_DDSDCPSGUIDC_LISGUH_H_
+#ifndef _TAO_IDL_DDSDCPSGUIDC_OL3R36_H_
+#define _TAO_IDL_DDSDCPSGUIDC_OL3R36_H_
 
 #include /**/ "ace/pre.h"
 

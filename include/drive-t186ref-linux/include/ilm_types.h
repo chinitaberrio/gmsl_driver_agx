@@ -51,17 +51,12 @@
 #define ILM_EXPORT
 #endif
 
-/**
- * TODO: ReEnable deprecated attribute ASAP 
- * WAR for now is to disable it, since some of Nvidia code
- * is still using these deprecated functions
- */
 /* Deprecated attribute */
-//#if defined(__GNUC__) && __GNUC__ >= 4
-//#define ILM_DEPRECATED __attribute__ ((deprecated))
-//#else
+#if defined(__GNUC__) && __GNUC__ >= 4
+#define ILM_DEPRECATED __attribute__ ((deprecated))
+#else
 #define ILM_DEPRECATED
-//#endif
+#endif
 
 /**
  * \brief Enumeration on possible error codes

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_IOP_CODEC_INCLUDES_DKON4E_H_
-#define _TAO_IDL_IOP_CODEC_INCLUDES_DKON4E_H_
+#ifndef _TAO_IDL_IOP_CODEC_INCLUDES_ADUJ5B_H_
+#define _TAO_IDL_IOP_CODEC_INCLUDES_ADUJ5B_H_
 
 #include /**/ "ace/pre.h"
 

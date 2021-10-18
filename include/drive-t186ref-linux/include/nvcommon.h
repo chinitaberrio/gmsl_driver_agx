@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 NVIDIA Corporation.  All Rights Reserved.
+ * Copyright (c) 2006-2019 NVIDIA Corporation.  All Rights Reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -10,7 +10,9 @@
 
 #ifndef INCLUDED_NVCOMMON_H
 #define INCLUDED_NVCOMMON_H
-
+#if (defined(__QNX__) && defined(NV_IS_SAFETY) && (NV_IS_SAFETY == 1))
+#include "nvcommon_tegra_safety.h"
+#else
 /**
  * @file
  * <b> NVIDIA Common Definitions</b>
@@ -38,7 +40,7 @@
 /// Include headers that provide NULL, size_t, offsetof, and [u]intptr_t.  In
 /// the event that the toolchain doesn't provide these, provide them ourselves.
 #include <stddef.h>
-#if defined(__hos__) || (defined(__linux__) && !defined(__KERNEL__)) || defined(__arm) || defined(__APPLE__) || defined(__QNX__) || defined(__INTEGRITY)
+#if defined(__hos__) || (defined(__linux__) && !defined(__KERNEL__)) || defined(__arm) || defined(__APPLE__) || defined(__QNX__) || defined(__INTEGRITY) || defined(NV_HYPERVISOR)
 #include <stdint.h>
 #endif
 
@@ -88,10 +90,6 @@
 #define NV_LIKELY(c)   (c)
 #define NV_UNLIKELY(c) (c)
 #define NV_UNUSED
-
-#ifdef _MSC_VER
-#define __func__ __FUNCTION__
-#endif
 
 #elif defined(__ghs__) // GHS COMP
 #define NV_NAKED
@@ -186,6 +184,20 @@
 #else
 #define NV_ANALYSIS_ASSUME(x)
 #endif
+
+/**
+ * A physical address type sized such that it matches the addressing support of
+ * the hardware modules with which HW drivers typically interfaces.
+ */
+typedef NvU64 NvPhysAddr64;
+
+/**
+ * This is deprecated and shouldn't be used.
+ *
+ * NvU32 is no longer enough to hold physical address.
+ * NvPhysAddr64 should be used in place of NvRmPhysAddr.
+ */
+typedef NvU32 NvRmPhysAddr;
 
 /**
  * Performs the 64-bit division and returns the quotient.
@@ -305,4 +317,5 @@ typedef struct NvSizeRec
 } NvSize;
 
 /** @} */
+#endif
 #endif // INCLUDED_NVCOMMON_H

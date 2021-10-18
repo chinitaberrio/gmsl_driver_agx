@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -8,8 +8,8 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
-#ifndef NVSCIIPC_H
-#define NVSCIIPC_H
+#ifndef INCLUDED_NVSCIIPC_H
+#define INCLUDED_NVSCIIPC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +18,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <nvscierror.h>
+
 /**
  * @file
  *
@@ -34,7 +35,6 @@ extern "C" {
  * The NvSciIpc library provides interfaces for any two entities in a system to
  * communicate with each other irrespective of where they are placed. Entities
  * can be in:
- * - The same thread
  * - Different threads in the same process
  * - The same process
  * - Different processes in the same VM
@@ -45,41 +45,58 @@ extern "C" {
  * unified communication (read/write) APIs to entities. The communication
  * consists of two bi-directional send/receive queues.
  *
+ * When INIT operation group APIs are used, the user should call them in the
+ * following order.
+ * - NvSciIpcInit
+ * - NvSciIpcOpenEndpoint
+ * - NvSCiIpcGetEndpointInfo
+ * - NvSciIpcGetLinuxEventFd (Linux OS specific)
+ * - NvSciIpcSetQnxPulseParam (QNX OS specific)
+ * - NvSciIpcResetEndpoint
+ * - ... R/W APIs ...
+ * - NvSciIpcCloseEndpoint
+ * - NvSciIpcDeinit
+ *
+ * Regarding Inter-VM and Inter-Process backend usecase on QNX OS,
+ * if client user tries to use receiving and sending thread separately for
+ * same endpoint handle, event blocking OS API (i.e. MsgReceivePulse) shall
+ * be used in either single thread in order to get remote notification.
+ * Once remote notification is arrived to one thread, that should be forwared
+ * to the other thread through any OS synchronization method (i.e. sem_post,
+ * pthread_cond_signal or MsgSendPulse etc.)
+ * Mostly, using single thread is recommended to handle both TX and RX data.
+ *
+ * Before using any read/write APIs, user shall check if NV_SCI_IPC_EVENT_READ
+ * or NV_SCI_IPC_EVENT_WRITE event is available through NvSciIpcGetEvent().
+ * NvSciIpcGetEvent() has function to establish connection between two endpoint
+ * S/W entities.
+ *
  */
-/*******************************************************************/
-/************************ OS SPECIFIC ******************************/
-/*******************************************************************/
-#ifdef QNX
-#include <sys/neutrino.h>
-
-/* This default code can be used by Application in NvSciIpcSetQnxPulseParam() */
-/// @cond (SWDOCS_NVSCIIPC_INTERNAL)
-#define NV_SCI_IPC_NOTIFY_CODE (_PULSE_CODE_MINAVAIL + 1)
-/// @endcond
-#endif // QNX
 
 /*******************************************************************/
 /************************ DATA TYPES *******************************/
 /*******************************************************************/
+/* implements_unitdesign QNXBSP_NVSCIIPC_LIBNVSCIIPC_40 */
+
 /**
- * @brief Handle to the IPC endpoint.
+ * @brief Handle to the NvSciIpc endpoint.
  */
 typedef uint64_t NvSciIpcEndpoint;
 
-/* NvSciIpcEventNotifier type is for Drive OS internal use only */
-/// @cond (SWDOCS_NVSCIIPC_INTERNAL)
-typedef int32_t NvSciIpcEventNotifier;
-/// @endcond
-
 /**
- * @brief Defines information about the IPC endpoint.
+ * @brief Defines information about the NvSciIpc endpoint.
  */
 struct NvSciIpcEndpointInfo {
     /*! Holds the number of frames. */
     uint32_t nframes;
-    /*! Holds the frame size. */
+    /*! Holds the frame size in bytes. */
     uint32_t frame_size;
 };
+
+/** Specifies maximum Endpoint name length
+ * including null terminator
+ */
+#define NVSCIIPC_MAX_ENDPOINT_NAME   64U
 
 /* NvSciIPC Event type */
 /** Specifies the IPC read event. */
@@ -90,8 +107,14 @@ struct NvSciIpcEndpointInfo {
 #define	NV_SCI_IPC_EVENT_CONN_EST   4U
 /** Specifies the IPC connection reset event. */
 #define	NV_SCI_IPC_EVENT_CONN_RESET 8U
+/** Specifies single event mask to check IPC connection establishment */
+#define	NV_SCI_IPC_EVENT_CONN_EST_ALL \
+	(NV_SCI_IPC_EVENT_CONN_EST | \
+	NV_SCI_IPC_EVENT_WRITE | \
+	NV_SCI_IPC_EVENT_READ)
 
-/********************* FUNCTION TYPES *******************************/
+/*******************************************************************/
+/********************* FUNCTION TYPES ******************************/
 /*******************************************************************/
 
 /**
@@ -101,7 +124,20 @@ struct NvSciIpcEndpointInfo {
  * an internal database of NvSciIpc endpoints that exist in a system.
  *
  * @return ::NvSciError, the completion code of the operation.
- * - ::NvSciError_Success Indicates a successful operation.
+ * - ::NvSciError_Success      Indicates a successful operation.
+ * - ::NvSciError_NotPermitted Indicates initialization is failed.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler(QNX): No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : Yes
+ *   - Run time        : No
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcInit(void);
 
@@ -109,24 +145,40 @@ NvSciError NvSciIpcInit(void);
  * @brief De-initializes the NvSciIpc library.
  *
  * This function cleans up the NvSciIpc endpoint internal database
- * created by NvSciIpcInit( ).
+ * created by NvSciIpcInit().
+ * Before calling this API, all existing opened endpoints must be closed
+ * by NvSciIpcCloseEndpoint().
  *
  * @return @c void
+ *
+ * @pre Invocation of NvSciIpcInit() shall be successful.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : No
+ *   - De-initialization: Yes
  */
 void NvSciIpcDeinit(void);
 
 /**
- * Opens an endpoint with the given name.
+ * @brief Opens an endpoint with the given name.
  *
  * The function locates the NvSciIpc endpoint with the given name in the
  * NvSciIpc configuration table in the internal database, and returns a handle
- * to the endpoint if found. When the operation is successful, two endpoints can
+ * to the endpoint if found. When the operation is successful, endpoint can
  * utilize the allocated shared data area and the corresponding signaling
  * mechanism setup. If the operation fails, the state of the NvSciIpc endpoint
  * is undefined.
  *
- * @param endpoint The name of the NvSciIpc endpoint to open.
- * @param handle   A handle to the endpoint on success.
+ * @param[in]  endpoint The name of the NvSciIpc endpoint to open.
+ * @param[out] handle   A handle to the endpoint on success.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates a successful operation.
@@ -135,241 +187,402 @@ void NvSciIpcDeinit(void);
  * - ::NvSciError_NoSuchEntry        Indicates the @a endpoint was not found.
  * - ::NvSciError_Busy               Indicates the @a endpoint is already in use.
  * - ::NvSciError_InsufficientMemory Indicates memory allocation failed for the operation.
+ * - ::NvSciError_NotSupported       Indicates API is not supported on provided
+ *                                   endpoint backend type
+ *
+ * @pre Invocation of NvSciIpcInit() shall be successful.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler(QNX): No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): PROCMGR_AID_MEM_PHYS
+ * - API Group
+ *   - Initialization  : Yes
+ *   - Run time        : No
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcOpenEndpoint(const char *endpoint, NvSciIpcEndpoint *handle);
 
 /**
- * Closes an endpoint with the given handle.
+ * @brief Closes an endpoint with the given handle.
  *
  * The function frees the NvSciIpc endpoint associated with the given @a handle.
  *
- * @param handle A handle to the endpoint to close.
+ * @param[in] handle A handle to the endpoint to close.
  *
  * @return @c void
+ *
+ * @pre Invocation of NvSciIpcOpenEndpoint() shall be successful.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler(QNX): No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : No
+ *   - De-initialization: Yes
  */
 void NvSciIpcCloseEndpoint(NvSciIpcEndpoint handle);
 
 /**
- * Resets an endpoint.
+ * @brief Resets an endpoint.
  *
  * Initiates a reset on the endpoint and notifies the remote endpoint.
  * Applications must call this function and complete the reset operation before
  * using the endpoint for communication.
+ * Once this API is called, all existing data in channel will be discarded.
+ * After invoking this function, client user shall call NvSciIpcGetEvent()
+ * to get specific event type (READ, WRITE etc.). if desired event is not
+ * returned from GetEvent API, OS specific blocking call (select/poll/epoll
+ * or MsgReceivePulse) should be called to wait remote notification.
+ * This sequence shall be done repeatedly to get event type that
+ * endpoint wants.
  *
- * @param handle A handle to the endpoint to reset.
+ * @param[in] handle A handle to the endpoint to reset.
  *
  * @return @c void
+ *
+ * @pre Invocation of NvSciIpcOpenEndpoint() shall be successful.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : Yes
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
 void NvSciIpcResetEndpoint(NvSciIpcEndpoint handle);
 
 /**
- * Returns the contents of the next frame from an endpoint.
+ * @brief Returns the contents of the next frame from an endpoint.
  *
  * This function removes the next frame and copies its contents
  * into a buffer. If the destination buffer is smaller than the configured
  * frame size of the endpoint, the trailing bytes are discarded.
  *
- * This is a non-blocking call. The endpoint must not be empty.
- * If the endpoint was previously full, then the function notifies the
- * remote endpoint.
+ * This is a non-blocking call. Read channel of the endpoint must not be empty.
+ * If read channel of the endpoint was previously full, then the function
+ * notifies the remote endpoint.
  *
  * This operation cannot proceed if the endpoint is being reset. However,
  * if the remote endpoint has called NvSciIpcResetEndpoint(), calls to this
  * function can still succeed until the next event notification on the local
  * endpoint.
  *
- * @param handle The handle to the endpoint to read from.
- * @param buf    A pointer to a destination buffer to receive the contents
- *               of the next frame.
- * @param size   The number of bytes to copy from the frame. If @a size
- *               is greater than the size of the destination buffer, the
- *               remaining bytes are discarded.
- * @param bytes  The number of bytes read.
+ * The user shall make sure if actual input buffer size is equal or bigger than
+ * requested size before using this API.
+ *
+ * @param[in]  handle The handle to the endpoint to read from.
+ * @param[out] buf    A pointer to a destination buffer to receive the contents
+ *                    of the next frame.
+ * @param[in]  size   The number of bytes to copy from the frame. If @a size
+ *                    is greater than the size of the destination buffer, the
+ *                    remaining bytes are discarded.
+ * @param[out] bytes  The number of bytes read on success.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates a successful operation.
  * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
  * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_InsufficientMemory Indicates memory allocation failed,
- *                                   the frames cannot be read.
+ * - ::NvSciError_InsufficientMemory Indicates read channel is empty and the read
+ *                                   operation aborted.
  * - ::NvSciError_TooBig             Indicates @a size is larger than the
  *                                   configured frame size of the endpoint.
  * - ::NvSciError_ConnectionReset    Indicates the endpoint is being reset.
+ * - ::NvSciError_NotSupported       Indicates API is not supported on provided
+ *                                   endpoint backend type
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcRead(NvSciIpcEndpoint handle, void *buf, size_t size,
 	int32_t *bytes);
 
 /**
- * Returns a pointer to the location of the next frame from an endpoint.
+ * @brief Returns a pointer to the location of the next frame from an endpoint.
  *
  * This is a non-blocking call.
- *
  * This operation cannot proceed if the endpoint is being reset. However,
  * if the remote endpoint has called NvSciIpcResetEndpoint(), calls to this
  * function can still succeed until the next event notification on the local
  * endpoint.
+ * Between NvSciIpcReadGetNextFrame() and NvSciIpcReadAdvance(), Do not perform
+ * any other NvSciIpc read operations with same endpoint handle.
+ * Once read frame is released by NvSciIpcReadAdvance(), Do not use previously
+ * returned pointer of NvSciIpcReadGetNextFrame() since it's already invalid.
+ * Do not write through returned pointer of NvSciIpcReadGetNextFrame().
+ * Do not read same memory location in multiple times. If required, copy specific
+ * memory location to local buffer before using it
  *
- * @param handle The handle to the endpoint to read from.
- * @param buf    A pointer to a destination buffer to receive the contents of
- *               the next frame.
+ * @param[in]  handle The handle to the endpoint to read from.
+ * @param[out] buf    A pointer to a destination buffer to receive
+ *                    the contents of the next frame on success.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates a successful operation.
  * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
  * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_InsufficientMemory Indicates an empty endpoint with no frames
- *                                   available for reading.
+ * - ::NvSciError_InsufficientMemory Indicates read channel is empty and the read
+ *                                   operation aborted.
  * - ::NvSciError_ConnectionReset    Indicates the endpoint is being reset.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
-NvSciError NvSciIpcReadGetNextFrame(NvSciIpcEndpoint handle, void **buf);
+NvSciError NvSciIpcReadGetNextFrame(NvSciIpcEndpoint handle,
+    const volatile void **buf);
 
 /**
- * Removes the next frame from an endpoint.
+ * @brief Removes the next frame from an endpoint.
  *
- * This is a non-blocking call. The endpoint must not be empty.
- * If the endpoint was previously full, then this function notifies the remote
- * endpoint.
+ * This is a non-blocking call. Read channel of the endpoint must not be empty.
+ * If read channel of the endpoint was previously full, then this function
+ * notifies the remote endpoint.
  *
  * This operation cannot proceed if the endpoint is being reset. However,
  * if the remote endpoint has called NvSciIpcResetEndpoint(), calls to this
  * function can still succeed until the next event notification on the local
  * endpoint.
  *
- * @param handle The handle to the endpoint to read from.
+ * @param[in] handle The handle to the endpoint to read from.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates the frame was removed successfully.
  * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
  * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_InsufficientMemory Indicates an empty endpoint with no frames
- *                                   available for reading.
+ * - ::NvSciError_InsufficientMemory Indicates read channel is empty and the read
+ *                                   operation aborted.
  * - ::NvSciError_ConnectionReset    Indicates the endpoint is being reset.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcReadAdvance(NvSciIpcEndpoint handle);
 
 /**
- * Writes a new frame to the endpoint.
+ * @brief Writes a new frame to the endpoint.
  *
- * If space is available in the endpoint, this functions posts a new frame,
+ * If space is available in the endpoint, this function posts a new frame,
  * copying the contents from the provided data buffer.
  * If @a size is less than the frame size, then the remaining bytes of the frame
  * are undefined.
  *
  * This is a non-blocking call.
- * If the endpoint was previously empty, then the function notifies the remote
- * endpoint.
+ * If write channel of the endpoint was previously empty, then the function
+ * notifies the remote endpoint.
  *
  * This operation cannot proceed if the endpoint is being reset.
  *
- * @param handle The handle to the endpoint to write to.
- * @param buf    A pointer to a destination buffer for the contents of the next frame.
- * @param size   The number of bytes to copy from the frame, not to exceed the
- *               length of the destination buffer.
- * @param bytes  The number of bytes written.
+ * The user shall make sure if actual input buffer size is equal or bigger than
+ * requested size before using this API.
+ *
+ * @param[in]  handle The handle to the endpoint to write to.
+ * @param[in]  buf    A pointer to a source buffer for the contents of
+ *                    the next frame.
+ * @param[in]  size   The number of bytes to be copied to the frame,
+ *                    not to exceed the length of the destination buffer.
+ * @param[out] bytes  The number of bytes written on success.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates a successful operation.
  * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
  * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_InsufficientMemory Indicates the endpoint is full and the write
+ * - ::NvSciError_InsufficientMemory Indicates write channel is full and the write
  *                                   operation aborted.
  * - ::NvSciError_TooBig             Indicates @a size is larger than the
  *                                   configured frame size of the endpoint.
  * - ::NvSciError_ConnectionReset    Indicates the endpoint is being reset.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcWrite(NvSciIpcEndpoint handle, const void *buf, size_t size,
 	int32_t *bytes);
 
 /**
- * Returns a pointer to the location of the next frame for writing data.
+ * @brief Returns a pointer to the location of the next frame for writing data.
  *
- * This is a non-blocking call. The endpoint must not be full.
+ * This is a non-blocking call. write channel of the endpoint must not be full.
  *
  * This operation cannot proceed if the endpoint is being reset. However,
  * if the remote endpoint has called NvSciIpcResetEndpoint(), calls to this
  * function can still succeed until the next event notification on the local
  * endpoint.
+ * Between NvSciIpcWriteGetNextFrame() and NvSciIpcWriteAdvance(), Do not perform
+ * any other NvSciIpc write operations with same endpoint handle.
+ * Once transmit message is committed by NvSciIpcWriteAdvance(), Do not use
+ * previously returned pointer of NvSciIpcWriteGetNextFrame() since it's already invalid.
  *
- * @param handle The handle to the endpoint to write to.
- * @param buf    A pointer to a destination buffer to hold the contents of the
- *               next frame.
+ * @param[in]  handle The handle to the endpoint to write to.
+ * @param[out] buf    A pointer to a destination buffer to hold the contents of
+ *                    the next frame on success.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates successful operation.
  * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
  * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_InsufficientMemory Indicates the endpoint is full and the write
+ * - ::NvSciError_InsufficientMemory Indicates write channel is full and the write
  *                                   operation aborted.
  * - ::NvSciError_ConnectionReset    Indicates the endpoint is being reset.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
-NvSciError NvSciIpcWriteGetNextFrame(NvSciIpcEndpoint handle, void **buf);
+NvSciError NvSciIpcWriteGetNextFrame(NvSciIpcEndpoint handle,
+    volatile void **buf);
 
 /**
- * Writes the next frame to the endpoint.
+ * @brief Writes the next frame to the endpoint.
  *
  * This is a non-blocking call.
- * If the endpoint is not full, then post the next frame.
- * If the endpoint was previously empty, then this function notifies the
- * remote endpoint.
+ * If write channel of the endpoint is not full, then post the next frame.
+ * If write channel of the endpoint was previously empty, then this function
+ * notifies the remote endpoint.
  *
  * This operation cannot proceed if the endpoint is being reset. However,
  * if the remote endpoint has called NvSciIpcResetEndpoint(), calls to this
  * function can still succeed until the next event notification on the local
  * endpoint.
  *
- * @param handle The handle to the endpoint to write to.
+ * @param[in] handle The handle to the endpoint to write to.
  *
  * @return ::NvSciError, the completion code of the operation:
  * - ::NvSciError_Success            Indicates successful operation.
  * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
  * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_InsufficientMemory Indicates the endpoint is full and the write
+ * - ::NvSciError_InsufficientMemory Indicates write channel is full and the write
  *                                   operation aborted.
  * - ::NvSciError_ConnectionReset    Indicates the endpoint is being reset.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : No
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcWriteAdvance(NvSciIpcEndpoint handle);
 
 /**
- * Returns endpoint information.
+ * @brief Returns endpoint information.
  *
- * @param handle NvSciIpc endpoint handle.
- * @param info   A pointer to NvSciIpcEndpointInfo object that this function
- *               copies the info to.
+ *
+ * @param[in]  handle NvSciIpc endpoint handle.
+ * @param[out] info   A pointer to NvSciIpcEndpointInfo object that
+ *                    this function copies the info to on success.
  *
  * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success        Indicates a successful operation.
- * - ::NvSciError_NotInitialized Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_BadParameter   Indicates an invalid or NULL argument.
+ * - ::NvSciError_Success            Indicates a successful operation.
+ * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
+ * - ::NvSciError_BadParameter       Indicates an invalid or NULL argument.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre Invocation of NvSciIpcOpenEndpoint() shall be successful.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : Yes
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcGetEndpointInfo(NvSciIpcEndpoint handle,
                 struct NvSciIpcEndpointInfo *info);
 
 /**
- * @if (SWDOCS_NVSCIIPC_INTERNAL)
- * Returns NvSciIpc event notifier.
- *
- * This API is for Drive OS internal use only.
- *
- * @param handle        NvSciIpc endpoint handle.
- * @param eventNotifier A pointer to NvSciIpcEventNotifier object.
- *
- * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success         Indicates a successful operation.
- * - ::NvSciError_NotInitialized  Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_BadParameter    Indicates an invalid or NULL argument.
- * @endif
- */
-/// @cond (SWDOCS_NVSCIIPC_INTERNAL)
-/* For internal use only. */
-NvSciError NvSciIpcGetEventNotifier(NvSciIpcEndpoint handle,
-               NvSciIpcEventNotifier *eventNotifier);
-/// @endcond
-
-/**
  * Returns the NvSciIpc file descriptor for a given endpoint.
  *
  * <b> This API is specific to Linux OS. </b>
- *
  * Event handle will be used to plug OS event notification
  * (can be read, can be written, established, reset etc.)
  *
@@ -377,13 +590,17 @@ NvSciError NvSciIpcGetEventNotifier(NvSciIpcEndpoint handle,
  * @param fd     A pointer to the endpoint file descriptor.
  *
  * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success         Indicates a successful operation.
- * - ::NvSciError_NotInitialized  Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_BadParameter    Indicates an invalid or NULL argument.
+ * - ::NvSciError_Success            Indicates a successful operation.
+ * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
+ * - ::NvSciError_BadParameter       Indicates an invalid or NULL argument.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type or OS environment.
  */
 NvSciError NvSciIpcGetLinuxEventFd(NvSciIpcEndpoint handle, int32_t *fd);
 
 /**
+ * @brief Get Events
+ *
  * Returns a bitwise OR operation on new events that occurred since the
  * last call to this function.
  *
@@ -439,54 +656,49 @@ NvSciError NvSciIpcGetLinuxEventFd(NvSciIpcEndpoint handle, int32_t *fd);
  * An @c NV_SCI_IPC_EVENT_CONN_RESET event occurs on an endpoint when the user
  * calls NvSciIpcResetEndpoint.
  *
- * @param handle NvSciIpc endpoint handle.
- * @param event  A pointer to the variable into which to store the bitwise OR
- *               result of new events.
+ * If this function doesn't return desired events, user must call
+ * OS provided blocking API to wait for notification from remote endpoint.
+ * (i.e. QNX: MsgReceivePulse_r(), LINUX: select(), epoll() etc.)
+ *
+ * @param[in]  handle NvSciIpc endpoint handle.
+ * @param[out] events  A pointer to the variable into which to store
+ *                    the bitwise OR result of new events on success.
  *
  * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success         Indicates a successful operation.
- * - ::NvSciError_NotInitialized  Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_BadParameter    Indicates an invalid or NULL argument.
+ * - ::NvSciError_Success            Indicates a successful operation.
+ * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
+ * - ::NvSciError_BadParameter       Indicates an invalid or NULL argument.
+ * - ::NvSciError_InvalidState       Indicates invalid operation state.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type.
+ *
+ * @pre NvSciIpcResetEndpoint() shall be called.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): None
+ * - API Group
+ *   - Initialization  : Yes
+ *   - Run time        : Yes
+ *   - De-initialization: No
  */
-NvSciError NvSciIpcGetEvent(NvSciIpcEndpoint handle, uint32_t *event);
+NvSciError NvSciIpcGetEvent(NvSciIpcEndpoint handle, uint32_t *events);
 
 /**
- * @if (SWDOCS_NVSCIIPC_INTERNAL)
- * Sets the pulse parameters for event notifier.
- *
- * This API is for Drive OS internal use only and specific to QNX OS.
- *
- * @param handle        NvSciIpc endpoint handle.
- * @param chid          The channel ID which was created by @c ChannelCreate_r().
- * @param pulsePriority The pulse priority.
- * @param pulseCode     An 8-bit positive pulse code.
- * @param pulseValue    A 32-bit pulse value specified by the user.
- *
- * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success         Indicates a successful operation.
- * - ::NvSciError_NotInitialized  Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_BadParameter    Indicates an invalid @a handle.
- * @endif
- */
-/// @cond (SWDOCS_NVSCIIPC_INTERNAL)
-/* For internal use only. */
-NvSciError NvSciIpcSetEventNotifierPulseParam(NvSciIpcEndpoint handle,
-    int32_t chid, int16_t pulsePriority, int16_t pulseCode,
-    int32_t pulseValue);
-/// @endcond
-
-/**
- * Sets the event pulse parameters for QNX.
+ * @brief Sets the event pulse parameters for QNX.
  *
  * <b>This API is specific to QNX OS.</b>
- *
  * When a notification from a peer endpoint is available, the NvSciIpc library
  * sends a pulse message to the application.
  * This API is to connect @a coid to the endpoint, plug OS event notification
  * and set pulse parameters (@a pulsePriority, @a pulseCode and @a pulseValue),
  * thereby enabling the application to receive peer notifications from the
  * NvSciIpc library.
- * An application can fetch notifications from a peer endpoint using
+ * An application can receive notifications from a peer endpoint using
  * @c MsgReceivePulse_r() which is blocking call.
  *
  * Prior to calling this function, both @c ChannelCreate_r() and @c ConnectAttach_r()
@@ -503,55 +715,42 @@ NvSciError NvSciIpcSetEventNotifierPulseParam(NvSciIpcEndpoint handle,
  * reserved for this purpose by the application. @a pulseValue can be used
  * for the application cookie data.
  *
- * @param handle        NvSciIpc endpoint handle.
- * @param coid          The connection ID created from calling @c ConnectAttach_r().
- * @param pulsePriority The value for pulse priority.
- * @param pulseCode     The 8-bit positive pulse code specified by the user. The
- *                      values must be between @c _PULSE_CODE_MINAVAIL and
- *                      @c _PULSE_CODE_MAXAVAIL
- * @param pulseValue    A pointer to the user-defined pulse value.
+ * @param[in] handle        NvSciIpc endpoint handle.
+ * @param[in] coid          The connection ID created from calling @c ConnectAttach_r().
+ * @param[in] pulsePriority The value for pulse priority.
+ * @param[in] pulseCode     The 8-bit positive pulse code specified by the user. The
+ *                          values must be between @c _PULSE_CODE_MINAVAIL and
+ *                          @c _PULSE_CODE_MAXAVAIL
+ * @param[in] pulseValue    A pointer to the user-defined pulse value.
  *
  * @return ::NvSciError, the completion code of the operation:
- * - ::NvSciError_Success         Indicates a successful operation.
- * - ::NvSciError_NotInitialized  Indicates NvSciIpc is uninitialized.
- * - ::NvSciError_BadParameter    Indicates an invalid @a handle.
+ * - ::NvSciError_Success            Indicates a successful operation.
+ * - ::NvSciError_NotInitialized     Indicates NvSciIpc is uninitialized.
+ * - ::NvSciError_BadParameter       Indicates an invalid @a handle.
+ * - ::NvSciError_NotSupported       Indicates API is not supported in provided
+ *                                   endpoint backend type or OS environment.
+ *
+ * @pre Invocation of NvSciIpcOpenEndpoint() shall be successful.
+ *
+ * @note
+ * - Allowed context for the API call
+ *   - Interrupt     : No
+ *   - Signal handler: No
+ *   - Thread        : Yes
+ * - Is thread safe  : Yes
+ * - Required Privileges(QNX): PROCMGR_AID_INTERRUPTEVENT
+ * - API Group
+ *   - Initialization  : Yes
+ *   - Run time        : No
+ *   - De-initialization: No
  */
 NvSciError NvSciIpcSetQnxPulseParam(NvSciIpcEndpoint handle,
 	int32_t coid, int16_t pulsePriority, int16_t pulseCode,
 	void *pulseValue);
-
-/**
- * @if (SWDOCS_NVSCIIPC_INTERNAL)
- * Converts an OS-specific error code to a value in NvSciError.
- *
- * @param err OS-specific error code.
- *
- * @return Error code from ::NvSciError.
- * @endif
- */
-/// @cond (SWDOCS_NVSCIIPC_INTERNAL)
-/* For internal use only. */
-NvSciError NvSciIpcErrnoToNvSciErr(int32_t err);
-/// @endcond
-
-/**
- * @if (SWDOCS_NVSCIIPC_INTERNAL)
- * Converts an error code from NvSciError to an OS-specific error code.
- *
- * @param nvSciErr An error from NvSciError.
- *
- * @return
- * OS specific error code.
- * @endif
- */
-/// @cond (SWDOCS_NVSCIIPC_INTERNAL)
-/* For internal use only. */
-int32_t NvSciIpcNvSciErrToErrno(NvSciError nvSciErr);
-/// @endcond
 
 /** @} */
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* NVSCIIPC_H */
+#endif /* INCLUDED_NVSCIIPC_H */

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_IMPLREPOS_SU61RS_H_
-#define _TAO_IDL_IMPLREPOS_SU61RS_H_
+#ifndef _TAO_IDL_IMPLREPOS_URYHR6_H_
+#define _TAO_IDL_IMPLREPOS_URYHR6_H_
 
 #include /**/ "ace/pre.h"
 

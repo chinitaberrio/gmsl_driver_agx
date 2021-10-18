@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#include "nvmedia_common.h"
+#include "nvmedia_common_decode.h"
 #include "nvmedia_core.h"
 #include "nvmedia_image.h"
 
@@ -43,7 +43,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_IMAGEDEC_VERSION_MAJOR   2
 /** \brief Minor Version number */
-#define NVMEDIA_IMAGEDEC_VERSION_MINOR   4
+#define NVMEDIA_IMAGEDEC_VERSION_MINOR   8
 
 /**
  * \brief Image codec type
@@ -53,6 +53,8 @@ typedef enum {
     NVMEDIA_IMAGE_CODEC_H264 = 0,
     /** \brief H265 codec */
     NVMEDIA_IMAGE_CODEC_HEVC = 8,
+    /** \brief VP9 codec */
+    NVMEDIA_IMAGE_CODEC_VP9  = 9,
 } NvMediaImageCodec;
 
 /**
@@ -98,7 +100,15 @@ typedef struct {
  */
 
 #define NVMEDIA_IMAGE_DECODER_PIXEL_REC_2020                       (1U<<2)
-/*@} <!-- Ends decoder_create_flag sub-group --> */
+
+/**
+ * \hideinitializer
+ * \brief Enable decoder profiling support
+ */
+
+#define NVMEDIA_IMAGE_DECODER_PROFILING                            (1U<<5)
+
+/**@} <!-- Ends decoder_create_flag sub-group --> */
 
 /**
  * \brief Checks the version compatibility for the NvMedia Image decoder library.
@@ -164,6 +174,21 @@ NvMediaImageDecoderCreate(
     NvMediaDecoderInstanceId instanceId
 );
 
+
+/** \brief Unpin all the Pinned decode Surfaces used by decoder.
+ *
+ * It is Mandatory for NvMedia Applications to call this API before
+ * Freeing Allocated Output Surfaces.
+ *
+ * \param[in] decoder The decoder object that will perform the
+ *       decode operation.
+ *
+ */
+void
+NvMediaImageDecoderUnRegisterPinnedSurfaces(
+    const NvMediaImageDecoder *decoder
+);
+
 /** \brief Destroys a image decoder object.
  * \param[in] decoder The decoder to be destroyed.
  * \return void
@@ -207,6 +232,22 @@ NvMediaImageDecoderRender(
     NvMediaDecoderInstanceId instanceId
 );
 
+
+/** \brief NvMediaImageDecoder get backward updates counters for VP9
+ *       adaptive entropy contexts.
+ *
+ * \param[in] decoder A pointer to the decoder object that performs the
+ *       decoding operation.
+ * \param[in] backupdates A pointer to a structure that holds the
+ *       backward update counters.
+ */
+NvMediaStatus
+NvMediaImageDecoderGetBackwardUpdates(
+    const NvMediaImageDecoder *decoder,
+    void *backupdates
+);
+
+
 /*
  * \defgroup history_nvmedia_imgdec History
  * Provides change history for the NvMedia Image Decode API.
@@ -243,8 +284,23 @@ NvMediaImageDecoderRender(
  * <b> Version 2.4 </b> February 28, 2019
  * - Added required header include nvmedia_core.h
  *
+ * <b> Version 2.5 </b> July 10, 2019
+ * - Header include nvmedia_common.h is replaced with nvmedia_common_decode.h
+ *
+ * <b> Version 2.6 </b> August 20, 2019
+ * - Added New API \ref NvMediaImageDecoderUnRegisterPinnedSurfaces for
+ *   Unpinning of Pinned Surfaces.
+ *
+ * <b> Version 2.7 </b> August 31, 2019
+ * - Added NVMEDIA_IMAGE_CODEC_VP9 code type entry in \ref NvMediaImageCodec
+ * - Added New API \ref NvMediaImageDecoderGetBackwardUpdates to
+ *   get the backward probality update.
+ *
+ * <b> Version 2.8 </b> November 21, 2019
+ * - Added NVMEDIA_IMAGE_DECODER_PROFILING bit as a part of flags to enable
+ *   decoder per frame profiling information.
  */
-/*@} <!-- Ends decoder_api Image Decoder --> */
+/**@} <!-- Ends decoder_api Image Decoder --> */
 
 #ifdef __cplusplus
 };     /* extern "C" */

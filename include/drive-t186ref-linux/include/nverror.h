@@ -10,7 +10,9 @@
 
 #ifndef INCLUDED_NVERROR_H
 #define INCLUDED_NVERROR_H
-
+#if (defined(__QNX__) && defined(NV_IS_SAFETY) && (NV_IS_SAFETY == 1))
+#include "nverror_tegra_safety.h"
+#else
 /**
  * @defgroup nverror Error Handling
  *
@@ -29,7 +31,8 @@
  */
 typedef enum
 {
-#define NVERROR(_name_, _value_, _desc_) NvError_##_name_ = _value_,
+/**  Helper macro to define nv-error codes */
+#define NVERROR(_name_, _value_, _desc_) NvError_##_name_ = (_value_),
     /* header included for macro expansion of error codes */
     #include "nverrval.h"
 #undef NVERROR
@@ -37,6 +40,7 @@ typedef enum
     // An alias for success
     NvSuccess = NvError_Success,
 
+/** Max value for nv-error */
     NvError_Force32 = 0x7FFFFFFF
 } NvError;
 
@@ -74,4 +78,5 @@ typedef enum
 
 /** @} */
 
+#endif
 #endif // INCLUDED_NVERROR_H

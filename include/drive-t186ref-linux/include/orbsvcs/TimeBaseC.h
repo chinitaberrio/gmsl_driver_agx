@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_IDL_TIMEBASEC_ANDGCP_H_
-#define _TAO_IDL_TIMEBASEC_ANDGCP_H_
+#ifndef _TAO_IDL_TIMEBASEC_N3HEBX_H_
+#define _TAO_IDL_TIMEBASEC_N3HEBX_H_
 
 #include /**/ "ace/pre.h"
 

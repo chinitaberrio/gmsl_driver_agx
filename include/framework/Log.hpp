@@ -34,19 +34,19 @@
 #include <stdio.h>
 #include <dw/core/Logger.h>
 
-enum EConsoleColor {
-  COLOR_DEFAULT,
-  COLOR_RED,
-  COLOR_GREEN,
-  COLOR_YELLOW
+enum EConsoleColor
+{
+    COLOR_DEFAULT,
+    COLOR_RED,
+    COLOR_GREEN,
+    COLOR_YELLOW
 };
 
-void printColored(FILE *fd, EConsoleColor color, const char* msg);
+void printColored(FILE* fd, EConsoleColor color, const char* msg);
 dwLogCallback getConsoleLoggerCallback(bool useColors, bool disableBuffering = false);
 
 void logError(const char* format, ...);
 void logWarn(const char* format, ...);
 void log(const char* format, ...);
-
 
 #endif // SAMPLES_COMMON_CONSOLECOLOR_HPP_

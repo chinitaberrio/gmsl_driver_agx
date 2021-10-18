@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION. All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -19,6 +19,10 @@
 #ifndef INCLUDED_NVSCI_ERROR_H
 #define INCLUDED_NVSCI_ERROR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup NvSciError SCI Error Handling
  *
@@ -36,8 +40,9 @@
  * errno.h codes, indicated [IN BRACKETS], and may result from failures in
  * lower level system calls. Others indicate failures specific to misuse
  * of NvSci library function.
+ *
  */
-typedef enum NvSciErrorRec {
+typedef enum {
     /* Range 0x00000000 - 0x00FFFFFF : Common errors
      * This range is used for errors common to all NvSci libraries. */
 
@@ -185,14 +190,38 @@ typedef enum NvSciErrorRec {
 
 
     /* Range 0x03000000 - 0x03FFFFFF : NvSciStream errors */
+
     /** Unidentified NvSciStream error with no additional info */
     NvSciError_NvSciStreamUnknown       = 0x03000000,
     /** Internal stream resource failure occurred */
-    NvSciError_StreamInternalError      = 0x30000001,
+    NvSciError_StreamInternalError      = 0x03000001,
     /** Operation requires stream be fully connected */
-    NvSciError_StreamNotConnected       = 0x30000200,
+    NvSciError_StreamNotConnected       = 0x03000200,
+    /** Operation can only be performed in setup phase */
+    NvSciError_StreamNotSetupPhase      = 0x03000201,
+    /** Operation can only be performed in safety phase */
+    NvSciError_StreamNotSafetyPhase     = 0x03000202,
     /** No stream packet available */
-    NvSciError_NoStreamPacket           = 0x30001000,
+    NvSciError_NoStreamPacket           = 0x03001000,
+
+    /**
+     * These stream errors represent failures detected from lower level
+     *    system components. They generally are not due to any user error,
+     *    but might be caused by the system running out of resources.
+     */
+    /** Failed to acquire lock on mutex used to ensure thread safety */
+    NvSciError_StreamLockFailed         = 0x03400000,
+
+    /**
+     * These stream errors represent internal failures which should never
+     *    be possible in a production system. They exist only for internal
+     *    unit testing.
+     */
+    /** Invalid input index was passed to a block. */
+    NvSciError_StreamBadSrcIndex        = 0x03800000,
+    /** Invalid output index was passed to a block. */
+    NvSciError_StreamBadDstIndex        = 0x03800001,
+
     /** End of range for NvSciStream errors */
     NvSciError_NvSciStreamEnd           = 0x03FFFFFF,
 
@@ -215,5 +244,9 @@ typedef enum NvSciErrorRec {
 /**
  * @}
 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLUDED_NVSCI_ERROR_H */

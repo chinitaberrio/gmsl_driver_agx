@@ -1,6 +1,6 @@
 /* _NVRM_COPYRIGHT_BEGIN_
  *
- * Copyright 2008-2015 by NVIDIA Corporation.  All rights reserved.  All
+ * Copyright 2008-2019 by NVIDIA Corporation.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -13,8 +13,8 @@
 /*    $NV_ROOT/tools/xapi/inc/xapi-sdk-support.h                               */
 /* which overrides these #defines when actually using xapigen.                 */
 
-#ifndef _XAPI_SDK_H_
-#define _XAPI_SDK_H_
+#ifndef XAPI_SDK_H
+#define XAPI_SDK_H
 
 /* XAPI envelope size & payload size */
 /* Use hard-code header & trailer size to minimize header file burden on nvtypes.h. */
@@ -112,4 +112,4 @@
 #define XAPI_NYI 
 
 
-#endif // _XAPI_SDK_H_
+#endif // XAPI_SDK_H

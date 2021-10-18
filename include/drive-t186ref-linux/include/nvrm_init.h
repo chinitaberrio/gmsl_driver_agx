@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 NVIDIA Corporation.  All rights reserved.
+ * Copyright (c) 2007-2019 NVIDIA Corporation.  All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -17,54 +17,24 @@ extern "C"
 {
 #endif
 
-
-/** @file
- * @brief <b>NVIDIA Driver Development Kit:
- *     Resource Manager %Initialization API</b>
- *
- * @b Description: Declares the Resource Manager (RM) initialization API.
- */
-
-/** @defgroup nvrm_init RM Initialization
- *
- * This file declares the Resource Manager initialization API.
- * @ingroup nvddk_rm
- *  @{
+/**
+ * This file, APIs and data struct in it are deprecated and shouldn't be
+ * used any longer. Don't include this file any more in new code.
+ * The inclusion of the header in old files would be cleaned up.
  */
 
 #include "nvcommon.h"
 #include "nverror.h"
 
 /**
- * An opaque handle to an RM device.
+ * The usage of NvRmDeviceHandle is deprecated and all the APIs that
+ * take NvRmDeviceHandle as arg should replace it with void pointer and
+ * remove any validations on it and ignore the arg.
  */
-
+#ifndef NVRM_DEVICE_HANDLE
+#define NVRM_DEVICE_HANDLE
 typedef struct NvRmDeviceRec *NvRmDeviceHandle;
-
-
-// XXX We should probably get rid of this and just use NvU32.  It's rather
-// difficult to explain what exactly NvRmPhysAddr is.  Also, what if some units
-// are upgraded to do 64-bit addressing and others remain 32?  Would we really
-// want to increase NvRmPhysAddr to NvU64 across the board?
-//
-// Another option would be to put the following types in nvcommon.h:
-//   typedef NvU32 NvPhysAddr32;
-//   typedef NvU64 NvPhysAddr64;
-// Using these types would then be purely a form of documentation and nothing
-// else.
-//
-// This header file is a somewhat odd place to put this type.  Putting it in
-// memmgr would be even worse, though, because then a lot of header files would
-// all suddenly need to #include nvrm_memmgr.h just to get the NvRmPhysAddr
-// type.  (They already all include this header anyway.)
-
-/**
- * A physical address type sized such that it matches the addressing support of
- * the hardware modules with which RM typically interfaces. May be smaller than
- * an ::NvOsPhysAddr.
- */
-
-typedef NvU32 NvRmPhysAddr;
+#endif
 
 /** Macro to detect presence of NvRmOpenNew/NvRmClose API definition in
  * the header itself.
@@ -72,7 +42,7 @@ typedef NvU32 NvRmPhysAddr;
 #define NVRM_OPEN_CLOSE_DEFINED
 
 /**
- * Deprecated API.
+ * Deprecated API. Don't use this API.
  */
 static NvError NV_UNUSED NvRmOpenNew(NvRmDeviceHandle *pHandle) {
 	*pHandle = (NvRmDeviceHandle)1;
@@ -80,7 +50,7 @@ static NvError NV_UNUSED NvRmOpenNew(NvRmDeviceHandle *pHandle) {
 }
 
 /**
- * Deprecated API.
+ * Deprecated API. Don't use this API.
  */
 static void NV_UNUSED NvRmClose(NvRmDeviceHandle NV_UNUSED hDevice) { }
 

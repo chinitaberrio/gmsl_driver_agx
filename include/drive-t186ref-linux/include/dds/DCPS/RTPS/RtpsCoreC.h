@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_IDL_RTPSCOREC_WXNYQN_H_
-#define _TAO_IDL_RTPSCOREC_WXNYQN_H_
+#ifndef _TAO_IDL_RTPSCOREC_68SBVI_H_
+#define _TAO_IDL_RTPSCOREC_68SBVI_H_
 
 #include /**/ "ace/pre.h"
 

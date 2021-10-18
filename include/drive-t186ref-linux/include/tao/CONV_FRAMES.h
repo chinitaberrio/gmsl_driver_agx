@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_CONV_FRAMES_KLIM8S_H_
-#define _TAO_IDL_CONV_FRAMES_KLIM8S_H_
+#ifndef _TAO_IDL_CONV_FRAMES_YJW7X9_H_
+#define _TAO_IDL_CONV_FRAMES_YJW7X9_H_
 
 #include /**/ "ace/pre.h"
 

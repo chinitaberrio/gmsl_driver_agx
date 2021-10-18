@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -35,65 +35,69 @@
 
 class MouseView3D
 {
-  public:
+public:
     MouseView3D();
 
     //4x4 matrix in col-major format
-    const dwMatrix4f *getModelView() const
+    const dwMatrix4f* getModelView() const
     {
         return &m_modelView;
     }
 
     //4x4 matrix in col-major format
-    const dwMatrix4f *getProjection() const
+    const dwMatrix4f* getProjection() const
     {
         return &m_projection;
     }
 
-    const float *getEye() const {
+    const float32_t* getEye() const
+    {
         return m_eye;
     }
 
-    void setWindowAspect(float aspect);
+    void setWindowAspect(float32_t aspect);
 
-    void setFov(float fovRads) {
+    void setFov(float32_t fovRads)
+    {
         m_fovRads = fovRads;
     }
 
-    void mouseDown(int button, float x, float y);
-    void mouseUp(int button, float x, float y);
-    void mouseMove(float x, float y);
-    void mouseWheel(float dx, float dy);
+    void mouseDown(int button, float32_t x, float32_t y);
+    void mouseUp(int button, float32_t x, float32_t y);
+    void mouseMove(float32_t x, float32_t y);
+    void mouseWheel(float32_t dx, float32_t dy);
 
-    void setCenter(float x, float y, float z);
-    void setRadiusFromCenter(float zoom);
-    const float* getCenter() const {
+    void setCenter(float32_t x, float32_t y, float32_t z);
+    void setRadiusFromCenter(float32_t zoom);
+    void setAngleFromCenter(float32_t yaw, float32_t pitch);
+    const float32_t* getCenter() const
+    {
         return m_center;
     }
 
-  private:
+private:
     dwMatrix4f m_modelView;
     dwMatrix4f m_projection;
 
-    float m_windowAspect; // width/height
-    float m_fovRads;
-    float m_center[3];
-    float m_up[3];
-    float m_eye[3];
+    float32_t m_windowAspect; // width/height
+    float32_t m_fovRads;
+    float32_t m_center[3];
+    float32_t m_up[3];
+    float32_t m_eye[3];
 
-    float m_zNear;
-    float m_zFar;
+    float32_t m_zNear;
+    float32_t m_zFar;
 
     // MOUSE NAVIGATION VARIABLES
-    float m_startAngles[2];
-    float m_startCenter[3];
+    float32_t m_startAngles[2];
+    float32_t m_startCenter[3];
 
-    float m_radius;
-    float m_angles[2];
+    float32_t m_radius;
+    float32_t m_angles[2];
 
     bool m_mouseLeft;
     bool m_mouseRight;
-    float m_currentPos[2];
+    float32_t m_currentPos[2];
 
     void updateEye();
     void updateMatrices();

@@ -200,7 +200,7 @@ extern "C" {
  * \brief Apply transformation on the destination surface.
  */
 #define NVMEDIA_VMP_ATTR_TRANSFORM                     (1<<14)
-/*@} <!-- Ends mixer_attributes sub-group --> */
+/**@} <!-- Ends mixer_attributes sub-group --> */
 
 /**
  * \brief A handle representing a video mixer object.

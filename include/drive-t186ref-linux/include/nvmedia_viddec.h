@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#include "nvmedia_common.h"
+#include "nvmedia_common_decode.h"
 #include "nvmedia_core.h"
 #include "nvmedia_video.h"
 
@@ -42,7 +42,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VIDEODEC_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_VIDEODEC_VERSION_MINOR   10
+#define NVMEDIA_VIDEODEC_VERSION_MINOR   12
 
 /**
  * \brief To Get the decoding status from HW decoder
@@ -186,6 +186,7 @@ typedef struct {
 /**
  * \defgroup decoder_create_flag Decoder Creation Flag
  * Defines decoder flag bit masks for constructing the decoder.
+ *
  * @{
  */
 
@@ -238,7 +239,7 @@ typedef struct {
 
 #define NVMEDIA_VIDEO_DECODER_DUMP_MV     (1U<<6)
 
-/*@} <!-- Ends decoder_create_flag sub-group --> */
+/**@} <!-- Ends decoder_create_flag sub-group --> */
 
 /** \brief Gets the version information for the NvMedia Video Decoder library.
  * \param[in] version A pointer to a \ref NvMediaVersion structure to be filled
@@ -318,6 +319,21 @@ NvMediaVideoDecoderCreateEx(
 void
 NvMediaVideoDecoderDestroy(
    const NvMediaVideoDecoder *decoder
+);
+
+
+/** \brief Unpin all the Pinned decode Surfaces used by decoder.
+ *
+ * It is Mandatory for NvMedia Applications to call this API before
+ * Freeing Allocated Output Surfaces.
+ *
+ * \param[in] decoder The decoder object that will perform the
+ *       decode operation.
+ *
+ */
+void
+NvMediaVideoDecoderUnRegisterPinnedSurfaces(
+    const NvMediaVideoDecoder *decoder
 );
 
 /**
@@ -517,6 +533,13 @@ NvMediaVideoDecoderGetBackwardUpdates(
  *
  * <b> Version 1.10 </b> Feb 28, 2019
  * - Added required header include nvmedia_core.h
+ *
+ * <b> Version 1.11 </b> July 10, 2019
+ * - Header include nvmedia_common.h is replaced with nvmedia_common_decode.h
+ *
+ * <b> Version 1.12 </b> August 20, 2019
+ * - Added New API \ref NvMediaVideoDecoderUnRegisterPinnedSurfaces for
+ *   Unpinning of Pinned Surfaces.
  */
 
 /** @} <!-- Ends decoder_api Video Decoder --> */

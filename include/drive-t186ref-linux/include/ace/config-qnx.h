@@ -14,7 +14,7 @@
 #  error "Could not detect QNX version from macro _NTO_VERSION"
 #endif
 
-#define _POSIX_C_SOURCE 199506
+//#define _POSIX_C_SOURCE 199506
 
 // The following defines the Neutrino compiler.
 // gcc should know to call g++ as necessary

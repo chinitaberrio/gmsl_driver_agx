@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 NVIDIA Corporation.  All Rights Reserved.
+ * Copyright (c) 2011-2020 NVIDIA Corporation.  All Rights Reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property and
  * proprietary rights in and to this software and related documentation.  Any
@@ -46,6 +46,11 @@ typedef enum _NvVideoCompressionStd
     NVCS_H265       =10,    // H265
     NVCS_VP9        =11,    // VP9
     NVCS_H265_MV    =12,    // H265 MV
+#if NV_BUILD_CONFIGURATION_EXPOSING_T23X
+#define NV_T23X_VIDEO_COMPRESSIONSTD_CAPABILITY
+    #include "video_parser_t23x.h"
+#undef NV_T23X_VIDEO_COMPRESSIONSTD_CAPABILITY
+#endif
 } NvVideoCompressionStd;
 
 // Definitions for video_format
@@ -187,8 +192,8 @@ typedef struct _NVMasteringDisplayData
     NvU16 display_primaries_y[3];       // normalized y chromaticity cordinate. It shall be in the range of 0 to 50000
     NvU16 white_point_x;    // normalized x chromaticity cordinate of white point of mastering display
     NvU16 white_point_y;    // normalized y chromaticity cordinate of white point of mastering display
-    NvU32 max_display_parameter_luminance;      // nominal maximum display luminance in units of 0.0001 candelas per square metre
-    NvU32 min_display_parameter_luminance;      // nominal minimum display luminance in units of 0.0001 candelas per square metre
+    NvU16 max_display_parameter_luminance;      // nominal maximum display luminance in units of candelas per square metre
+    NvU16 min_display_parameter_luminance;      // nominal minimum display luminance in units of 0.0001 candelas per square metre
 } NVMasteringDisplayData;
 
 #define MAX_SEQ_HDR_LEN   512U
@@ -1034,6 +1039,12 @@ typedef struct _NVHEVCPictureData
     } mvext;
 } NVHEVCPictureData;
 
+#if NV_BUILD_CONFIGURATION_EXPOSING_T23X
+#define NV_T23X_VIDEO_COMPRESSION_CODEC
+    #include "video_parser_t23x.h"
+#undef NV_T23X_VIDEO_COMPRESSION_CODEC
+#endif
+
 typedef struct _NVDAesMetaData
 {
     NvU32 clearHeaderSize;
@@ -1135,6 +1146,11 @@ typedef struct _NVDPictureData
         NVVP8PictureData vp8;
         NVHEVCPictureData hevc;
         NVVP9PictureData vp9;
+#if NV_BUILD_CONFIGURATION_EXPOSING_T23X
+#define NV_T23X_VIDEO_CODEC_SPECIFIC
+        #include "video_parser_t23x.h"
+#undef NV_T23X_VIDEO_CODEC_SPECIFIC
+#endif
     } CodecSpecific;
     union {
         NVH264HeaderData h264_hdr;

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_DDSDCPSDOMAINS_S8OC5I_H_
-#define _TAO_IDL_DDSDCPSDOMAINS_S8OC5I_H_
+#ifndef _TAO_IDL_DDSDCPSDOMAINS_XKK11U_H_
+#define _TAO_IDL_DDSDCPSDOMAINS_XKK11U_H_
 
 #include /**/ "ace/pre.h"
 

@@ -56,8 +56,7 @@ struct ilm_control_context {
 
     pthread_t thread;
     pthread_mutex_t mutex;
-    int shutdown_fd_read;
-    int shutdown_fd_write;
+    int shutdown_fd;
     uint32_t internal_id_surface;
 };
 

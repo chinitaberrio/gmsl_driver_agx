@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+/* Copyright (c) 2016-2019 NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -12,7 +12,7 @@
 #include <driver_types.h>
 #include <cuda_runtime.h>
 
-namespace dw
+namespace dw_samples
 {
 namespace common
 {
@@ -24,8 +24,8 @@ public:
         : m_isTimeValid(false)
         , m_stream(static_cast<cudaStream_t>(0))
     {
-        cudaEventCreate(&m_start);
-        cudaEventCreate(&m_stop);
+        cudaEventCreateWithFlags(&m_start, cudaEventBlockingSync);
+        cudaEventCreateWithFlags(&m_stop, cudaEventBlockingSync);
     }
     ~CudaTimer()
     {
@@ -60,7 +60,7 @@ public:
         float32_t res;
         cudaEventSynchronize(m_stop);
         cudaEventElapsedTime(&res, m_start, m_stop);
-        return 1e3f*res;
+        return 1e3f * res;
     }
 
 private:

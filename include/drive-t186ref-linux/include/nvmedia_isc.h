@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2015-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -25,6 +25,10 @@ extern "C" {
 /**
  * \defgroup nvmedia_isc_api Image Sensor Control (ISC)
  *
+ * \note NvMedia Image Sensor Control (ISC) APIs are deprecated in this
+ * release. The APIs and the associated sample applications will be removed
+ * in a future release.
+ *
  * The Image Sensor Control API encompasses all NvMedia I2C control related
  * functions, including programming of all I2C controlled components
  * such as deserializers, serializers, EEPROMs, and image sensors.
@@ -46,8 +50,8 @@ extern "C" {
 
 /** \brief Major version number. */
 #define NVMEDIA_ISC_VERSION_MAJOR   3
-/** \brief Minor version number. */
-#define NVMEDIA_ISC_VERSION_MINOR   0
+/** \brief Minor Version number */
+#define NVMEDIA_ISC_VERSION_MINOR   2
 
 /** \brief Device address to use for an ISC simulator device. Select the
  * \ref NVMEDIA_ISC_I2C_SIMULATOR port to use simulator mode for all devices.
@@ -145,16 +149,11 @@ struct NvMediaISCEmbeddedDataInfo;
 
 struct NvMediaISCSensorAttributes;
 
+#if !NV_IS_SAFETY
 struct NvMediaISCModuleConfig;
+#endif
 
 /** @} */ /* Ends Basic ISC Types group */
-
-/**
- * \brief  Holds the handle for an NvMediaISCDevice object.
- */
-typedef struct {
-    void *deviceDriverHandle;
-} NvMediaISCDevice;
 
 /**
  * \defgroup version_info_isc_api ISC Version Information
@@ -164,33 +163,13 @@ typedef struct {
  */
 
 /**
- * \brief Holds version information for the NvMedia ISC library.
- */
-typedef struct {
-    /*! Holds library version information. */
-    NvMediaVersion libVersion;
-} NvMediaISCVersionInfo;
-
-/**
- * \brief Returns the version information for the NvMedia ISC library.
- * \param[in,out] versionInfo   A pointer to an \ref NvMediaISCVersionInfo
- *                               structure that NvMediaISCGetVersionInfo()
- *                               fills with data.
- * \return  A status code; \ref NVMEDIA_STATUS_OK if the operation was
- *  successful, or \ref NVMEDIA_STATUS_BAD_PARAMETER if the @a versionInfo was
- *  invalid.
- */
-NvMediaStatus
-NvMediaISCGetVersionInfo(
-    NvMediaISCVersionInfo *versionInfo
-);
-
-/**
- * \brief Gets version compatibility information for the NvMedia ISC library.
- * \param[in] version A pointer to an \ref NvMediaVersion structure
- *                    for the client.
- * \return A status code; \ref NVMEDIA_STATUS_OK if the operation was
- *  successful, or NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
+ * \brief Gets the version compatibility for the NvMedia ISC library.
+ * \param[in] version A pointer to a \ref NvMediaVersion structure
+ *                    of the client.
+ * \return \ref NvMediaStatus The status of the operation.
+ * Possible values are:
+ * \n \ref NVMEDIA_STATUS_OK
+ * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if the pointer is invalid.
  */
 NvMediaStatus
 NvMediaISCGetVersion(
@@ -198,6 +177,13 @@ NvMediaISCGetVersion(
 );
 
 /**@}*/ /* Ends version_info_isc_api ISC Version Information sub-group. */
+
+/**
+ * \brief  Holds the handle for an NvMediaISCDevice object.
+ */
+typedef struct {
+    void *deviceDriverHandle;
+} NvMediaISCDevice;
 
 /**
  * \defgroup isc_root_device_api ISC Root Device
@@ -290,6 +276,12 @@ NvMediaISCRootDeviceDestroy(
 /**
  * \brief Waits until an error condition is reported or
  *  NvMediaISCRootDeviceAbortWaitForError() is called.
+ *
+ *  For safety use cases, application software shall verify the successful reception of camera
+ *  error GPIO interrupt as a first step of programming the deserializer. This can be implemented
+ *  by calling NvMediaISCRootDeviceWaitForError() followed by programming the deserializer to
+ *  toggle the camera error GPIO pin which would cause NvMediaISCRootDeviceWaitForError() to return.
+ *
  * \param[in] device The root device to use.
  * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a device was NULL.
@@ -312,118 +304,7 @@ NvMediaISCRootDeviceAbortWaitForError(
     NvMediaISCRootDevice *device
 );
 
-/**
- * \hideinitializer
- * \brief Defines ISC power items, objects whose power can be turned on or off
- *  and queried with NvMediaISCRootDevicePowerControl() and
- *  NvMediaISCRootDeviceGetPowerStatus().
- */
-typedef enum {
-    /** Specifies aggregator power. */
-    NVMEDIA_ISC_PWR_AGGREGATOR,
-    /** Specifies LINK 0 power. */
-    NVMEDIA_ISC_PWR_LINK_0,
-    /** Specifies LINK 1 power.*/
-    NVMEDIA_ISC_PWR_LINK_1,
-    /** Specifies LINK 2 power. */
-    NVMEDIA_ISC_PWR_LINK_2,
-    /** Specifies LINK 3 power. */
-    NVMEDIA_ISC_PWR_LINK_3,
-} NvMediaISCPowerItems;
-
-/**
- * \brief Sets a power item's power status (on or off).
- * \param[in] device    The root device to use.
- * \param[in] powerItem The power item of @a device whose power status is to be set.
- * \param[in] powerOn   The power status to set.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a device was NULL.
- * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the device driver
- *            does not support this functionality.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
- */
-NvMediaStatus
-NvMediaISCRootDevicePowerControl(
-    NvMediaISCRootDevice *device,
-    NvMediaISCPowerItems  powerItem,
-    NvMediaBool powerOn
-);
-
-/**
- * \brief Gets a power item's power status (on or off).
- * \param[in]  device       The root device to use.
- * \param[in]  powerItem    The power item of @a device for which to get
- *                           the power status.
- * \param[out] powerStatus  A pointer to the power status.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
- *           pointer parameters were NULL.
- * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the device driver
- *           does not support this functionality.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
- */
-NvMediaStatus
-NvMediaISCRootDeviceGetPowerStatus(
-    NvMediaISCRootDevice *device,
-    NvMediaISCPowerItems  powerItem,
-    NvMediaBool *powerStatus
-);
-
-/**
- * \brief Enables or disables pulse width modulation (PWM) for external
- *  synchronization.
- *
- * \param[in] device    The root device to use.
- * \param[in] enable    The PWM state. Use NVMEDIA_TRUE to enable PWM and
- *                       NVMEDIA_FALSE to disable it.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a device was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
- */
-NvMediaStatus
-NvMediaISCRootDeviceEnableSync(
-    NvMediaISCRootDevice *device,
-    NvMediaBool enable
-);
-
-/**
- * \brief Sets the pulse width modulation (PWM) frequency and duty cycle.
- *
- * \param[in] device The root device to use.
- * \param[in] freq PWM frequency, in hertz.
- * \param[in] dutyRatio PWM duty cycle (fraction of time spent high).
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a device was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
- */
-NvMediaStatus
-NvMediaISCRootDeviceSetSyncConfig(
-    NvMediaISCRootDevice *device,
-    float_t freq,
-    float_t dutyRatio
-);
-
-/**
- * \brief Gets the pulse width modulation (PWM) frequency and duty cycle.
- * \param[in]  device       The root device to use.
- * \param[out] freq         A pointer to PWM frequency.
- * \param[out] dutyRatio    A pointer to PWM duty cycle (fraction of time spent
- *                           high).
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
- *           pointer parameters were NULL.
- * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the device does not
- *           support this functionality.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
- */
-NvMediaStatus
-NvMediaISCRootDeviceGetSyncConfig(
-    NvMediaISCRootDevice *device,
-    float_t *freq,
-    float_t *dutyRatio
-);
-
-/*@} <!-- Ends isc_root_device_api ISC Root Device --> */
+/**@} <!-- Ends isc_root_device_api ISC Root Device --> */
 
 /**
  * \defgroup isc_device_driver_api ISC Device Driver
@@ -522,11 +403,9 @@ typedef struct {
     /** Holds the target device data length in bytes. */
     int32_t dataLength;
 
-    /**
-    * \brief  Holds a pointer to the function that creates a device driver.
-    *
-    * NvMediaISCDeviceCreate() invokes this function.
-    *
+   /** Holds the function that creates device driver
+    * \n This function is invoked by \ref NvMediaISCDeviceCreate function call.
+    * \n
     * @par Sample Pseudo Code:
     *
     * \code
@@ -570,11 +449,9 @@ typedef struct {
         NvMediaISCDevice *handle,
         void *clientContext);
 
-    /**
-    * \brief  Holds a pointer to the function that destroys the device driver.
-    *
-    * NvMediaISCDeviceDestroy() invokes this function.
-    *
+   /** Holds the function that destroy the device driver
+    * \n This function is invoked by \ref NvMediaISCDeviceDestroy function call.
+    * \n
     * @par Sample Pseudo Code:
     *
     * \code
@@ -605,15 +482,10 @@ typedef struct {
     */
     NvMediaStatus (* DriverDestroy)(
         NvMediaISCDevice *handle);
-    /** Holds a pointer to the function that gets module configuration. */
-    NvMediaStatus (* GetModuleConfig)(
-        NvMediaISCDevice *handle,
-        struct NvMediaISCModuleConfig *moduleConfig);
-    /**
-     * \brief Holds the function that sets sensor controls.
-     *
-     * NvMediaISCSetSensorControls() invokes this function.
-     *
+
+    /** Holds the function that sets sensor controls
+     * \n This function is invoked by \ref NvMediaISCSetSensorControls function call.
+     * \n
      * @par Sample Usage:
      *
      * \code
@@ -793,55 +665,7 @@ typedef struct {
         struct NvMediaISCEmbeddedDataInfo *embeddedDataInfo,
         const size_t dataInfoStructSize);
 
-    /**
-     * \brief  Holds a pointer to the function that puts a sensor in
-     *  characterization mode.
-     *
-     * NvMediaISCSetSensorCharMode() invokes this function.
-     *
-     * @par Sample Usage:
-     *
-     * \code
-     *  //Pseudo code for isc device driver function SetSensorCharMode invoked by NvMediaISCSetSensorCharMode function call.
-     *
-     * NvMediaStatus
-     * SetSensorCharMode(
-     *     NvMediaISCDevice *handle,
-     *     uint8_t expNo);
-     *  {
-     *     NvMediaStatus status = NVMEDIA_STATUS_OK;
-     *
-     *     // check input parameters
-     *     if (!handle || !expNo)
-     *     {
-     *        return NVMEDIA_STATUS_BAD_PARAMETER;
-     *     }
-     *
-     *     // set sensor in characterization mode for expNo
-     *     status = ExpBypass(handle, expNo, ...)
-     *     if (status is NOT NVMEDIA_STATUS_OK) {
-     *         // Error Handling
-     *     }
-     *
-     *     // update driver internal state and sensor attributes
-     *     drvrHandle->numActiveExposures = 1;
-     *     drvrHandle->charModeEnabled = NVMEDIA_TRUE;
-     *     drvrHandle->charModeExpNo = expNo;
-     *
-     *     return status;
-     *  }
-     *
-     * \endcode
-     *
-     */
-    NvMediaStatus (* SetSensorCharMode)(
-        NvMediaISCDevice *handle,
-        uint8_t expNo);
-
-    /**
-     * Holds a pointer to the function that gets sensor attributes.
-     *
-     * NvMediaISCGetSensorAttributes() invokes this function.
+    /** Holds the function that gets sensor attributes.
      *
      * @par Sample Usage:
      *
@@ -917,9 +741,58 @@ typedef struct {
         struct NvMediaISCSensorAttributes *sensorAttr,
         const size_t sensorAttrStructSize);
 
+#if !NV_IS_SAFETY
+    /** Holds the function that gets module configuration. */
+    NvMediaStatus (* GetModuleConfig)(
+        NvMediaISCDevice *handle,
+        struct NvMediaISCModuleConfig *moduleConfig);
+
+    /** Holds the function that sets sensor in characterization mode.
+     *
+     * \n This function is invoked by \ref NvMediaISCSetSensorCharMode function call.
+     * \n
+     * @par Sample Usage:
+     *
+     * \code
+     *  //Pseudo code for isc device driver function SetSensorCharMode invoked by NvMediaISCSetSensorCharMode function call.
+     *
+     * NvMediaStatus
+     * SetSensorCharMode(
+     *     NvMediaISCDevice *handle,
+     *     uint8_t expNo);
+     *  {
+     *     NvMediaStatus status = NVMEDIA_STATUS_OK;
+     *
+     *     // check input parameters
+     *     if (!handle || !expNo)
+     *     {
+     *        return NVMEDIA_STATUS_BAD_PARAMETER;
+     *     }
+     *
+     *     // set sensor in characterization mode for expNo
+     *     status = ExpBypass(handle, expNo, ...)
+     *     if (status is NOT NVMEDIA_STATUS_OK) {
+     *         // Error Handling
+     *     }
+     *
+     *     // update driver internal state and sensor attributes
+     *     drvrHandle->numActiveExposures = 1;
+     *     drvrHandle->charModeEnabled = NVMEDIA_TRUE;
+     *     drvrHandle->charModeExpNo = expNo;
+     *
+     *     return status;
+     *  }
+     *
+     * \endcode
+     *
+     */
+    NvMediaStatus (* SetSensorCharMode)(
+        NvMediaISCDevice *handle,
+        uint8_t expNo);
+#endif
 } NvMediaISCDeviceDriver;
 
-/*@} <!-- Ends isc_device_driver_api ISC Device driver --> */
+/**@} <!-- Ends isc_device_driver_api ISC Device driver --> */
 
 /**
  * \defgroup isc_device_api ISC Device
@@ -931,7 +804,7 @@ typedef struct {
  */
 
 /**
- * Holds a pointer to a description of the target I2C device.
+ * Holds the description of the target I2C device.
  */
 typedef struct {
     /** Holds the client context. */
@@ -939,18 +812,16 @@ typedef struct {
 } NvMediaISCAdvancedConfig;
 
 /**
- * \brief Creates an object that describes a device and returns a handle to
- *  the object.
- * \param[in] rootDevice        A pointer to the root device created with
- *                               NvMediaISCRootDeviceCreate().
- * \param[in] deviceAddressList A pointer to a list of I2C device addresses
- *                               corresponding to this NvMediaISCDevice object.
- * \param[in] numDevices        Number of I2C addresses in @a deviceAddressList.
- * \param[in] deviceDriver      A pointer to a structure that defines the
- *                               behavior of the device.
- * \param[in] advancedConfig    A pointer to a structure that defines advanced
- *                               configuration information about the device.
- * \return device  The new device's handle if successful, or NULL otherwise.
+ * \brief Creates an \ref NvMediaISCDevice object.
+ * \param[in] rootDevice A pointer to the root device that you created
+ *            with NvMediaISCRootDeviceCreate().
+ * \param[in] deviceAddressList The list of I2C device addresses corresponding to
+                                this \ref NvMediaISCDevice object
+ * \param[in] numDevices The number of I2C addresses in the above list
+ * \param[in] deviceDriver The driver structure that defines the behavior of the
+ *  device.
+ * \param[in] advancedConfig Advanced configuration.
+ * \return device The new device's handle or NULL if unsuccessful.
  */
 NvMediaISCDevice *
 NvMediaISCDeviceCreate(
@@ -973,9 +844,9 @@ NvMediaISCDeviceDestroy(
 /**
  * \brief Performs a read operation over I2C.
  *
- * For safety use cases, application software must perform a read followed by
- * a read back of the same register locations using %NvMediaISCDeviceRead()
- * and verify that the two values match.
+ * For safety use cases, application software shall call %NvMediaISCDeviceRead() 2 times to read
+ * the contents of the same register location. If a register value is not expected to change,
+ * return values of the two reads should match.
  *
  * \param[in] device A pointer to the device to use.
  * \param[in] deviceIndex Index of the subdevice to use
@@ -1003,10 +874,9 @@ NvMediaISCDeviceRead(
 /**
  * \brief Performs a write operation over I2C.
  *
- * For safety use cases, application software must perform a write using
- * %NvMediaISCDeviceWrite() followed by a read back of the same register
- * locations using NvMediaISCDeviceRead() and verify that the write was
- * successful.
+ * For safety use cases, application software shall call NvMediaISCDeviceRead() after calling
+ * %NvMediaISCDeviceWrite() to verify whether the write operation was successful. If a register
+ * value is not expected to change, read value should match the value written.
  *
  * \param[in] device A pointer to the device to use.
  * \param[in] deviceIndex Index of the subdevice to use.
@@ -1026,44 +896,6 @@ NvMediaISCDeviceWrite(
     uint32_t deviceIndex,
     uint32_t dataLength,
     const uint8_t *data
-);
-
- /**
- * \hideinitializer
- * \brief Holds the ISC Module ISP configuration.
- */
-typedef struct NvMediaISCModuleConfig {
-    /** Holds the camera module name. */
-    char cameraModuleCfgName[128];
-    /**
-     * Holds the camera-specific configuration string.
-     * \deprecated  ISP can now produce two simultaneous outputs, making this
-     *  member unncessary.
-     */
-    const char *cameraModuleConfigPass1;
-    /**
-     * Holds the camera-specific configuration string.
-     * \deprecated  ISP can now produce two simultaneous outputs, making this
-     *  member unncessary.
-     */
-    const char *cameraModuleConfigPass2;
-} NvMediaISCModuleConfig;
-
-/**
- * \brief Gets the module ISP configuration.
- * \param[in] device A pointer to the device to use.
- * \param[out] moduleConfig A pointer to the module ISP configuration.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
- *           pointer parameters was NULL.
- * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the device driver
- *           does not support this functionality.
- * \retval  NVMEDIA_STATUS_ERROR indicates that any other error occurred.
- */
-NvMediaStatus
-NvMediaISCGetModuleConfig(
-    NvMediaISCDevice *device,
-    NvMediaISCModuleConfig *moduleConfig
 );
 
 /**
@@ -1318,7 +1150,6 @@ typedef struct NvMediaISCCRC {
 
 } NvMediaISCCRC;
 
-
 /**
  * \brief  Holds the sensor frame sequence number structure.
  */
@@ -1334,7 +1165,6 @@ typedef struct NvMediaISCFrameSeqNum {
     uint64_t frameSequenceNumber;
 
 } NvMediaISCFrameSeqNum;
-
 
 /**
  * \brief Holds the sensor control structure.
@@ -1384,7 +1214,6 @@ typedef struct NvMediaISCSensorControl {
 
 } NvMediaISCSensorControl;
 
-
 /**
  * \brief Sets sensor control parameters.
  *
@@ -1430,7 +1259,6 @@ NvMediaISCSetSensorControls(
  * all of the others (it sets their @a valid flags to FALSE).
  */
 typedef struct NvMediaISCEmbeddedDataInfo {
-
     /**
      * Holds the parsed embedded data frame number of exposures for the
      * captured frame.
@@ -1475,8 +1303,8 @@ typedef struct NvMediaISCEmbeddedDataInfo {
      * captured frame.
      */
     NvMediaISCFrameSeqNum        frameSeqNumInfo;
-} NvMediaISCEmbeddedDataInfo;
 
+} NvMediaISCEmbeddedDataInfo;
 
 /*
  * \brief  Holds the sensor embedded data chunk structure.
@@ -1492,7 +1320,6 @@ typedef struct NvMediaISCEmbeddedDataChunk {
      */
     const uint8_t *lineData;
 } NvMediaISCEmbeddedDataChunk;
-
 
 /**
  * \brief  Parses sensor embedded data info and
@@ -1530,42 +1357,140 @@ NvMediaISCParseEmbedDataInfo(
     NvMediaISCEmbeddedDataInfo *embeddedDataInfo,
     const size_t dataInfoStructSize);
 
-/** \brief  Set sensor to characterization mode.
- *
- * This function configures
- * the sensor for characterization. Sensor characterization provides optimal
- * parameters, corresponding to the sensor's physical and functional
- * characteristics, for image processing.
- *
- * Sensor characterization for High Dynamic Range (HDR) sensors with
- * multiple exposures (T1, T2,... Tn) requires separately characterizing
- * individual exposures for some sensors. This function can configure
- * the sensor to capture each exposure separately, if required by
- * sensor characterization. It changes sensor static attributes like
- * @a numActiveExposures, @a sensorExpRange, and @a sensorGainRange,
- * and so must be called during sensor initialization.
- *
- * To characterize sensor exposure number @a n,
- * where n = {1,2,3, … , N} for an N-exposure HDR sensor, set
- * @a expNo to @a n. For a non-HDR sensor, set @a expNo to 1.
- *
- * \param[in]  device   A pointer to the sensor control device in use.
- * \param[in]  expNo    Sensor exposure number to be used for characterization.
- *                       Must be in the range
- *                       [0, (\ref NVMEDIA_ISC_MAX_EXPOSURES - 1)].
- *                       For a non-HDR sensor, must be set to 1.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a device was NULL or
- *  invalid.
- * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the device driver does
- *  not support this functionality.
- * \retval  NVMEDIA_STATUS_ERROR indicates that any other error occurred.
+/**@} <!-- Ends isc_device_api ISC Device --> */
+
+#if !NV_IS_SAFETY
+/**
+ * \hideinitializer
+ * \brief ISC Power control items
+ */
+typedef enum {
+    /** Aggregator Power */
+    NVMEDIA_ISC_PWR_AGGREGATOR,
+    /** LINK 0 Power */
+    NVMEDIA_ISC_PWR_LINK_0,
+    /** LINK 1 PWR */
+    NVMEDIA_ISC_PWR_LINK_1,
+    /** LINK 2 PWR */
+    NVMEDIA_ISC_PWR_LINK_2,
+    /** LINK 3 PWR */
+    NVMEDIA_ISC_PWR_LINK_3,
+} NvMediaISCPowerItems;
+
+/**
+ * \hideinitializer
+ * \brief Holds the ISC Module ISP configuration.
+ */
+typedef struct NvMediaISCModuleConfig {
+    /** Holds the camera module name. */
+    char cameraModuleCfgName[128];
+    /** Holds the camera-specific configuration string. */
+    const char *cameraModuleConfigPass1;
+    const char *cameraModuleConfigPass2;
+} NvMediaISCModuleConfig;
+
+/**
+ * \brief Turns ON/OFF the power of a specific sub-device.
+ * \param[in] device The root device to use.
+ * \param[in] powerItem The power item to control the power in the root device.
+ * \param[in] powerOn The power state after this call.
+ * Possible values are:
+ * \li \ref NVMEDIA_TRUE   turn power on
+ * \li \ref NVMEDIA_FALSE  turn power off
+ * \return \ref NvMediaStatus The completion status of the operation.
+ * Possible values are:
+ * \li \ref NVMEDIA_STATUS_OK if successful.
+ * \li \ref NVMEDIA_STATUS_BAD_PARAMETER if an input parameter is NULL.
+ * \li \ref NVMEDIA_STATUS_NOT_SUPPORTED if the functionality is not supported
+ * by the device driver.
+ * \li \ref NVMEDIA_STATUS_ERROR if some other error occurred.
  */
 NvMediaStatus
-NvMediaISCSetSensorCharMode(
-    NvMediaISCDevice *device,
-    uint8_t expNo);
+NvMediaISCRootDevicePowerControl(
+    NvMediaISCRootDevice *device,
+    NvMediaISCPowerItems  powerItem,
+    NvMediaBool powerOn
+);
 
+/**
+ * \brief Gets the power ON/OFF status of a specific sub-device.
+ * \param[in] device The root device to use.
+ * \param[in] powerItem The power item to get  power status in the root device.
+ * \param[in] powerStatus The power state of the power item provided
+ * Possible values are:
+ * \n \ref NVMEDIA_TRUE   power is on
+ * \n \ref NVMEDIA_FALSE  power is off
+ * \return \ref NvMediaStatus The completion status of the operation.
+ * Possible values are:
+ * \n \ref NVMEDIA_STATUS_OK
+ * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameter is NULL.
+ * \n \ref NVMEDIA_STATUS_NOT_SUPPORTED if the functionality is not supported
+ * by the device driver.
+ * \n \ref NVMEDIA_STATUS_ERROR if any other error occurred.
+ */
+NvMediaStatus
+NvMediaISCRootDeviceGetPowerStatus(
+    NvMediaISCRootDevice *device,
+    NvMediaISCPowerItems  powerItem,
+    NvMediaBool *powerStatus
+);
+
+/**
+ * \brief Enables or disables pulse width modulation (PWM) for the external
+ *  synchronization.
+ * \param[in] device The root device to use.
+ * \param[in] enable The PWM state.
+ * Possible values are:
+ * \n \ref NVMEDIA_TRUE   PWM is enabled.
+ * \n \ref NVMEDIA_FALSE  PWM is disabled.
+ * \return \ref NvMediaStatus The completion status of the operation.
+ * Possible values are:
+ * \n \ref NVMEDIA_STATUS_OK
+ * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameter is NULL.
+ * \n \ref NVMEDIA_STATUS_ERROR if other error occurred.
+ */
+NvMediaStatus
+NvMediaISCRootDeviceEnableSync(
+    NvMediaISCRootDevice *device,
+    NvMediaBool enable
+);
+
+/**
+ * \brief Sets the pulse width modulation (PWM) frequency and duty.
+ * \param[in] device The root device to use.
+ * \param[in] freq PWM frequency.
+ * \param[in] dutyRatio High level ratio in one PWM period.
+ * \return \ref NvMediaStatus The completion status of the operation.
+ * Possible values are:
+ * \n \ref NVMEDIA_STATUS_OK
+ * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameter is NULL.
+ * \n \ref NVMEDIA_STATUS_ERROR if other error occurred.
+ */
+NvMediaStatus
+NvMediaISCRootDeviceSetSyncConfig(
+    NvMediaISCRootDevice *device,
+    float_t freq,
+    float_t dutyRatio
+);
+
+/**
+ * \brief Gets the pulse width modulation (PWM) frequency and duty.
+ * \param[in] device The root device to use.
+ * \param[out] freq PWM frequency.
+ * \param[out] dutyRatio High level ratio in one PWM period.
+ * \return \ref NvMediaStatus The completion status of the operation.
+ * Possible values are:
+ * \n \ref NVMEDIA_STATUS_OK
+ * \n \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameter is NULL.
+ * \n \ref NVMEDIA_STATUS_NOT_SUPPORTED if the functionality is not supported.
+ * \n \ref NVMEDIA_STATUS_ERROR if other error occurred.
+ */
+NvMediaStatus
+NvMediaISCRootDeviceGetSyncConfig(
+    NvMediaISCRootDevice *device,
+    float_t *freq,
+    float_t *dutyRatio
+);
 
 /**
  * \brief Defines Exposure mode.
@@ -1644,12 +1569,12 @@ typedef struct NvMediaISCEmbeddedData {
     uint32_t frameSequenceNumber;
 } NvMediaISCEmbeddedData;
 
-
 /**
-* \hideinitializer
-* \brief Defines ISC sensor attributes.
-* \deprecated  Use the new function NvMediaISCGetSensorAttributes() instead.
-*/
+ * \hideinitializer
+ * \brief ISC sensor attributes
+ * \note This enum will not be supported in future release.
+ * It is recommended to use the new API \ref NvMediaISCGetSensorAttributes
+ */
 typedef enum {
     /** Specifies a unique ID per instance of camera module.
       *
@@ -1703,7 +1628,63 @@ typedef enum {
     NVMEDIA_ISC_SENSOR_ATTR_NUM_EXPOSURES,
 } NvMediaISCSensorAttrType;
 
-/*@} <!-- Ends isc_device_api ISC Device --> */
+/** Set sensor in characterization mode.
+ *
+ * @par Description
+ * NvMediaISCSetSensorCharMode API provides ability for the user to configure
+ * the sensor for characterization. Sensor characterization provides optimal
+ * parameters, corresponding to sensor physical and functional
+ * characteristics, for image processing.
+ * \n Sensor characterization for High Dynamic Range (HDR) sensors with
+ * multiple exposures (T1, T2, … , Tn ) involves characterizing induvial
+ * exposures separately, if required by the sensor. This API provides the
+ * ability to configure sensor to capture each exposure separately,
+ * if required by sensor characterization.
+ * This function re-configures the sensor i.e. changes the sensor static
+ * attributes like numActiveExposures, sensorExpRange, sensorGainRange
+ * and hence, should be called during sensor initialization time.
+ * In order to characterize the sensor exposure number ‘n’,
+ * where n = {1,2,3, … , N} for N-exposure HDR sensor, the input parameter
+ * ‘expNo’ should be set to ‘n’.
+ * \n For a non-HDR sensor, the input parameter ‘expNo’ should always be set to ‘1’.
+ *
+ * \param[in]  device A pointer to the sensor control device in use.
+ * \param[in]  expNo  Sensor exposure number to be used for characterization.
+ * Valid range for expNo : [0, (NVMEDIA_ISC_MAX_EXPOSURES-1)]
+ * For Non-HDR sensor, this should be set to '1'
+ *
+ * \return \ref NvMediaStatus  The completion status of the operation.
+ * Possible values are:
+ * \li \ref NVMEDIA_STATUS_OK if successful.
+ * \li \ref NVMEDIA_STATUS_BAD_PARAMETER if an input parameter is NULL or invalid.
+ * \li \ref NVMEDIA_STATUS_NOT_SUPPORTED if the functionality is not supported
+ * by the device driver.
+ * \li \ref NVMEDIA_STATUS_ERROR if some other error occurred.
+ */
+NvMediaStatus
+NvMediaISCSetSensorCharMode(
+    NvMediaISCDevice *device,
+    uint8_t expNo);
+
+/**
+ * \brief Gets the Module ISP configuration.
+ * \param[in] device A pointer to the device to use.
+ * \param[out] moduleConfig A pointer to the module ISP configuration.
+ * \return \ref NvMediaStatus The completion status of the operation.
+ * Possible values are:
+ * \li \ref NVMEDIA_STATUS_OK
+ * \li \ref NVMEDIA_STATUS_BAD_PARAMETER if any of the input parameter is NULL.
+ * \li \ref NVMEDIA_STATUS_NOT_SUPPORTED if the functionality is not supported
+ * by the device driver.
+ * \li \ref NVMEDIA_STATUS_ERROR if any other error occurred.
+ */
+NvMediaStatus
+NvMediaISCGetModuleConfig(
+    NvMediaISCDevice *device,
+    NvMediaISCModuleConfig *moduleConfig
+);
+#endif /* #if !NV_IS_SAFETY */
+
 /*
  * \defgroup history_isc History
  * Provides change history for the NvMedia Image Sensor Control API.
@@ -1875,9 +1856,37 @@ typedef enum {
  *    NvMediaISCWriteRegister
  *    NvMediaISCDumpRegisters
  *
+ * <b> Version 3.1 </b> April 22, 2019
+ * - Move below structures to non-safety
+ *    NvMediaISCVersionInfo
+ *    NvMediaISCModuleConfig
+ *    NvMediaISCExposureControl
+ *    NvMediaISCWBGainControl
+ *    NvMediaISCEmbeddedDataBuffer
+ *    NvMediaISCEmbeddedData
+ * - Move below enums to non-safety
+ *    NvMediaISCPowerItems
+ *    NvMediaISCExposureMode
+ *    NvMediaISCSensorAttrType
+ * - Move the following members of NvMediaISCDeviceDriver to non-safety
+ *    GetModuleConfig
+ *    SetSensorCharMode
+ * - Move the following APIs to non-safety
+ *    NvMediaISCGetVersionInfo
+ *    NvMediaISCGetVersion
+ *    NvMediaISCRootDevicePowerControl
+ *    NvMediaISCRootDeviceGetPowerStatus
+ *    NvMediaISCRootDeviceEnableSync
+ *    NvMediaISCRootDeviceSetSyncConfig
+ *    NvMediaISCRootDeviceGetSyncConfig
+ *    NvMediaISCSetSensorCharMode
+ *    NvMediaISCGetModuleConfig
+ *
+ * <b> Version 3.2 </b> July 22, 2019
+ * - Remove NvMediaISCVersionInfo and NvMediaISCGetVersionInfo
  */
 
-/*@} <!-- Ends nvmedia_isc_api Image Sensor Control --> */
+/**@} <!-- Ends nvmedia_isc_api Image Sensor Control --> */
 
 #ifdef __cplusplus
 };     /* extern "C" */

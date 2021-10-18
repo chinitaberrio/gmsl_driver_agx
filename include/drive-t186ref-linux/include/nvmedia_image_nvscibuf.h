@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -31,7 +31,7 @@ extern "C" {
  * The NvMedia Image NvSciBuf API encompasses all NvMediaImage
  * NvSciBuf handling functions.
  *
- * @ingroup nvmedia_top
+ * @ingroup nvmedia_image_top
  * @{
  */
 
@@ -53,7 +53,7 @@ NvMediaStatus
 NvMediaImageNvSciBufInit(void);
 
 /**
- * \brief  Deinitializes the NvMediaImage NvSciBuf API.
+ * \brief  De-initializes the NvMediaImage NvSciBuf API.
  *
  * You cannot call NvMediaImageFillNvSciBufAttrs() or
  * NvMediaImageCreateFromNvSciBuf() after you call this function.
@@ -70,7 +70,7 @@ NvMediaImageNvSciBufDeinit(void);
  * information in @a type, @a attrs, and @a flags to NvSciBuf attributes and
  * fills them in @a attr_h.
  *
- * The following NvSciBuf input attributes are set by NvMedia, and so may not
+ * The following NvSciBuf input attributes are set by NvMedia, and so must not
  * be set by the application:
  *  - \ref NvSciBufGeneralAttrKey_Types
  *  - \ref NvSciBufGeneralAttrKey_NeedCpuAccess
@@ -99,21 +99,27 @@ NvMediaImageNvSciBufDeinit(void);
  * to create an \ref NvMediaImage from the %NvSciBufObj.
  *
  * \param[in] device    A handle for the \ref NvMediaDevice.
+ *                       It should be a valid non-null handle.
  * \param[in] type      A surface type obtained by calling
  *                       NvMediaSurfaceFormatGetType().
  * \param[in] attrs     A pointer to an array of surface allocation attributes
- *                       for surface creation.
+ *                       for surface creation. It should be non-null.
  * \param[in] numAttrs  Number of attributes in @a attrs.
- * \param[in] flags     Flags for module hint (for future use).
+ *                       Valid range of arguments: [0, @ref NVM_SURF_ALLOC_ATTR_MAX)
+ * \param[in] flags     Flags for module hint (for future use). Please note that
+ *                       the value passed for this argument must be 0, or the
+ *                       API will fail.
  * \param[in,out] attr_h A structure where the %NvSciBuf attributes for the
  *                       requested %NvMediaImage are put.
  * \return  A status code; ::NVMEDIA_STATUS_OK if the function call is
  *  successful, or ::NVMEDIA_STATUS_BAD_PARAMETER if @a type is invalid or
- *  @a attrs contains invalid attributes.
+ *  @a attrs contains invalid attributes, or
+ *  ::NVMEDIA_STATUS_OUT_OF_MEMORY if memory allocation fails, or
+ *  ::NVMEDIA_STATUS_ERROR otherwise
  */
 NvMediaStatus
 NvMediaImageFillNvSciBufAttrs(
-    NvMediaDevice *device,
+    const NvMediaDevice *device,
     NvMediaSurfaceType type,
     const NvMediaSurfAllocAttr *attrs,
     uint32_t numAttrs,
@@ -121,43 +127,43 @@ NvMediaImageFillNvSciBufAttrs(
     NvSciBufAttrList attr_h
 );
 
-
 /**
  * \brief Creates an \ref NvMediaImage from an \ref NvSciBufObj.
  *
- * You must allocate the @a nvscibufObj before you call this function, using
+ * You must allocate the @a nvscibufObject before you call this function, using
  * the \ref NvSciBufAttrList filled by NvMediaImageFillNvSciBufAttrs().
  *
  * When the application is done using @a nvmImage,
  * it must call NvMediaImageDestroy() with @a nvmImage.
  *
  * \param[in] device        A handle for the \ref NvMediaDevice.
- * \param[in] nvscibufObj   An %NvSciBufObj for which an %NvMediaImage is to be
- *                           imported.
+ *                           It should be a valid non-null handle.
+ * \param[in] nvscibufObject An %NvSciBufObj for which an %NvMediaImage is to be
+ *                            imported. It should be non-null.
  * \param[in,out] nvmImage  A pointer to a location in which a pointer to an
- *                           imported %NvMediaImage in stored.
+ *                           imported %NvMediaImage in stored. It should be non-null
  * \retval  NVMEDIA_STATUS_OK indicates that @a nvmImage was successfully
- *           created from @a nvscibufObj.
+ *           created from @a nvscibufObject.
  * \retval  NVMEDIA_STATUS_OUT_OF_MEMORY indicates that memory allocation
  *           failed.
  * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred, such as
- *           failure to create @a nvmImage from @a nvscibufObj.
+ *           failure to create @a nvmImage from @a nvscibufObject.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one of the pointer
- *           parameters is NULL, or %nvscibufObj was not allocated using the
+ *           parameters is NULL, or %nvscibufObject was not allocated using the
  *           attributes filled by %NvMediaImageFillNvSciBufAttrs().
  */
 NvMediaStatus
 NvMediaImageCreateFromNvSciBuf(
     NvMediaDevice *device,
-    NvSciBufObj nvscibufObj,
+    NvSciBufObj nvscibufObject,
     NvMediaImage **nvmImage
 );
 
 /**
  * \brief  Returns version information for the %NvMediaImage NvSciBuf API.
  *
- * \param[out] version  A pointer to a structure in which the function may
- *                       store version information.
+ * \param[in, out] version  A pointer to a structure in which the function may
+ *                       store version information. It should be a valid non-null pointer.
  * \return  A status code; ::NVMEDIA_STATUS_OK if the function call was
  *  successful, or ::NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
  */

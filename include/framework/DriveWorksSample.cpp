@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2017 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -65,7 +65,7 @@ DriveWorksSample::DriveWorksSample(const ProgramArguments& args)
     , m_playSingleFrame(false)
     , m_reset(false)
     , m_processPeriod(0)
-    , m_renderPeriod(convertFrecuencyToPeriod(60))
+    , m_renderPeriod(convertFrequencyToPeriod(60))
     , m_frameIdx(0)
     , m_stopFrameIdx(0)
     , m_commandLineInputActive(false)
@@ -97,30 +97,85 @@ DriveWorksSample::DriveWorksSample(const ProgramArguments& args)
 //------------------------------------------------------------------------------
 void DriveWorksSample::initializeWindow(const char* title, int width, int height, bool offscreen, int samples)
 {
-    m_title  = title;
-    m_width  = width;
-    m_height = height;
-
     // -------------------------------------------
     // Initialize GL
     // -------------------------------------------
-    m_window.reset(WindowBase::create(title, m_width, m_height, offscreen, samples));
-
+    m_window.reset(WindowBase::create(title, width, height, offscreen, samples));
     m_window->makeCurrent();
-    m_window->setOnKeyDownCallback(keyDownCb);
-    m_window->setOnKeyUpCallback(keyUpCb);
-    m_window->setOnKeyRepeatCallback(keyRepeatCb);
-    m_window->setOnCharModsCallback(charModsCb);
-    m_window->setOnMouseUpCallback(mouseUpCb);
-    m_window->setOnMouseDownCallback(mouseDownCb);
-    m_window->setOnMouseMoveCallback(mouseMoveCb);
-    m_window->setOnMouseWheelCallback(mouseWheelCb);
     m_window->setOnResizeWindowCallback(resizeCb);
 
+    // Some window implementations (e.g., on QNX) like to go fullscreen and ignore the arguments,
+    // so query the actual final window size after creation
+    m_width  = m_window->width();
+    m_height = m_window->height();
+    m_title  = title;
+
     glClearColor(0, 0, 0, 0);
+
+    // Start window init thread
+    m_windowInitThreadActive = true;
+    m_windowInitThread       = std::thread([&] {
+        static uint32_t SWAP_INTERVAL_US = 15000;
+
+        std::string tempTitle = "Loading";
+        m_window->setWindowTitle(tempTitle.c_str());
+
+        int32_t dotCount = 0;
+        while (m_windowInitThreadActive)
+        {
+            {
+                if (dotCount > 199)
+                    dotCount = 0;
+
+                std::string newTitle = tempTitle;
+                for (int32_t i = 0; i < dotCount / 50; i++)
+                    newTitle += ".";
+
+                dotCount++;
+                m_window->setWindowTitle(newTitle.c_str());
+            }
+
+            m_window->swapBuffers();
+            usleep(SWAP_INTERVAL_US);
+        }
+
+        m_window->setWindowTitle(m_title.c_str());
+        m_window->setOnKeyDownCallback(keyDownCb);
+        m_window->setOnKeyUpCallback(keyUpCb);
+        m_window->setOnKeyRepeatCallback(keyRepeatCb);
+        m_window->setOnCharModsCallback(charModsCb);
+        m_window->setOnMouseUpCallback(mouseUpCb);
+        m_window->setOnMouseDownCallback(mouseDownCb);
+        m_window->setOnMouseMoveCallback(mouseMoveCb);
+        m_window->setOnMouseWheelCallback(mouseWheelCb);
+    });
+
     CHECK_GL_ERROR();
 }
 
+//------------------------------------------------------------------------------
+void DriveWorksSample::stopWindowInitThread()
+{
+    if (m_windowInitThreadActive)
+    {
+        m_windowInitThreadActive = false;
+
+        if (m_windowInitThread.joinable())
+            m_windowInitThread.join();
+
+        // It's possible the window was resized while we
+        // were spinning here, so call the resize callback
+        // again.
+        resize(m_width, m_height);
+    }
+}
+
+//------------------------------------------------------------------------------
+DriveWorksSample::~DriveWorksSample()
+{
+    g_instance = nullptr;
+    stopWindowInitThread();
+}
 //------------------------------------------------------------------------------
 void DriveWorksSample::initializeCommandLineInput()
 {
@@ -246,7 +301,26 @@ void DriveWorksSample::stop()
 }
 
 //------------------------------------------------------------------------------
-auto DriveWorksSample::convertFrecuencyToPeriod(int loopsPerSecond) -> myclock_t::duration
+void DriveWorksSample::stopWindowCallbacks()
+{
+    // stop any callbacks
+    if (m_window)
+    {
+        m_window->setOnKeyDownCallback(nullptr);
+        m_window->setOnKeyUpCallback(nullptr);
+        m_window->setOnKeyRepeatCallback(nullptr);
+        m_window->setOnCharModsCallback(nullptr);
+        m_window->setOnMouseUpCallback(nullptr);
+        m_window->setOnMouseDownCallback(nullptr);
+        m_window->setOnMouseMoveCallback(nullptr);
+        m_window->setOnMouseWheelCallback(nullptr);
+        m_window->setOnCharModsCallback(nullptr);
+        m_window->setOnResizeWindowCallback(nullptr);
+    }
+}
+
+//------------------------------------------------------------------------------
+auto DriveWorksSample::convertFrequencyToPeriod(int loopsPerSecond) -> myclock_t::duration
 {
     using ns = std::chrono::nanoseconds;
 
@@ -259,13 +333,13 @@ auto DriveWorksSample::convertFrecuencyToPeriod(int loopsPerSecond) -> myclock_t
 //------------------------------------------------------------------------------
 void DriveWorksSample::setProcessRate(int loopsPerSecond)
 {
-    m_processPeriod = convertFrecuencyToPeriod(loopsPerSecond);
+    m_processPeriod = convertFrequencyToPeriod(loopsPerSecond);
 }
 
 //------------------------------------------------------------------------------
 void DriveWorksSample::setRenderRate(int loopsPerSecond)
 {
-    m_renderPeriod = convertFrecuencyToPeriod(loopsPerSecond);
+    m_renderPeriod = convertFrequencyToPeriod(loopsPerSecond);
 }
 
 //------------------------------------------------------------------------------
@@ -286,6 +360,28 @@ void DriveWorksSample::onSignal(int)
 float32_t DriveWorksSample::getCurrentFPS() const
 {
     return m_currentFPS;
+}
+
+//------------------------------------------------------------------------------
+dwPrecision DriveWorksSample::getLowestSupportedFloatPrecision(dwContextHandle_t ctx)
+{
+    const char* gpuArch = nullptr;
+    dwStatus status     = dwContext_getGPUArchitecture(&gpuArch, ctx);
+    if (status != DW_SUCCESS)
+    {
+        throw std::runtime_error("Unable to get GPU architecture.");
+    }
+
+    // Pascal GPU should set precision to FP32
+    if (strcmp(gpuArch, "gp1xx-discrete") == 0)
+    {
+        dwLogger_log(ctx, DW_LOG_WARN, "Warning: Current GPU does not support FP16 inference. The FP32 DNN model is selected instead.\n");
+        return DW_PRECISION_FP32;
+    }
+    else
+    {
+        return DW_PRECISION_FP16;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -412,7 +508,12 @@ void DriveWorksSample::resizeCb(int width, int height)
 void DriveWorksSample::resize(int width, int height)
 {
     m_mouseView.setWindowAspect((float)width / height);
-    onResizeWindow(width, height);
+
+    if (m_initialized)
+        onResizeWindow(width, height);
+
+    m_width  = width;
+    m_height = height;
 }
 
 //------------------------------------------------------------------------------
@@ -474,7 +575,7 @@ const std::string& DriveWorksSample::getArgument(const char* name) const
 }
 
 //------------------------------------------------------------------------------
-dw::common::ProfilerCUDA* DriveWorksSample::getProfilerCUDA()
+ProfilerCUDA* DriveWorksSample::getProfilerCUDA()
 {
     return &m_profiler;
 }
@@ -495,15 +596,15 @@ uint32_t DriveWorksSample::getFrameIndex() const
     return m_frameIdx;
 }
 
-//------------------------------------------------------------------------------
-void DriveWorksSample::tryToSleep(timepoint_t lastRunTime)
+void DriveWorksSample::calculateFPS()
 {
     // This is the time that the previous iteration took
-    auto timeSinceUpdate = myclock_t::now() - lastRunTime;
+    auto timeSinceUpdate = myclock_t::now() - m_lastFPSRunTime;
 
     // Count FPS
     if (!m_pause)
     {
+        m_lastFPSRunTime            = myclock_t::now();
         m_fpsBuffer[m_fpsSampleIdx] = timeSinceUpdate.count();
         m_fpsSampleIdx              = (m_fpsSampleIdx + 1) % FPS_BUFFER_SIZE;
 
@@ -518,15 +619,22 @@ void DriveWorksSample::tryToSleep(timepoint_t lastRunTime)
                                       meanTime)
                                       .count());
     }
+}
+
+//------------------------------------------------------------------------------
+void DriveWorksSample::tryToSleep(timepoint_t lastRunTime)
+{
+    // This is the time that the previous iteration took
+    auto timeSinceUpdate = myclock_t::now() - lastRunTime;
 
     // Decide which is the period for the master run loop
     myclock_t::duration runPeriod;
-    if(!m_window)
+    if (!m_window)
     {
         // UI disabled, only process
         runPeriod = m_processPeriod;
     }
-    if(m_pause)
+    if (m_pause)
     {
         // Process disabled, only render
         runPeriod = m_renderPeriod;
@@ -534,7 +642,7 @@ void DriveWorksSample::tryToSleep(timepoint_t lastRunTime)
     else
     {
         // Use minimum of both to ensure smooth UI
-        if(m_renderPeriod < m_processPeriod)
+        if (m_renderPeriod < m_processPeriod)
             runPeriod = m_renderPeriod;
         else
             runPeriod = m_processPeriod;
@@ -560,7 +668,6 @@ void DriveWorksSample::globalSigHandler(int sig)
     instance()->onSignal(sig);
 }
 
-
 //------------------------------------------------------------------------------
 void DriveWorksSample::onReset()
 {
@@ -570,15 +677,18 @@ void DriveWorksSample::onReset()
 //------------------------------------------------------------------------------
 int DriveWorksSample::run()
 {
-    if (!onInitialize())
-        return -1;
-
     // Main program loop
     m_run = true;
 
+    if (!onInitialize())
+        return -1;
+
+    // Set initialization flag
+    m_initialized = true;
+
     timepoint_t lastRunIterationTime = myclock_t::now() - m_renderPeriod - m_processPeriod;
-    timepoint_t nextOnProcessTime = myclock_t::now();
-    timepoint_t nextOnRenderTime = myclock_t::now();
+    timepoint_t nextOnProcessTime    = myclock_t::now();
+    timepoint_t nextOnRenderTime     = myclock_t::now();
 
     while (shouldRun())
     {
@@ -619,7 +729,10 @@ int DriveWorksSample::run()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             if (m_doProfile)
                 m_profiler.tic("onRender", true);
+
+            stopWindowInitThread();
             onRender();
+            calculateFPS();
             if (m_doProfile)
                 m_profiler.toc();
             m_window->swapBuffers();
@@ -628,7 +741,7 @@ int DriveWorksSample::run()
         if (m_doProfile)
             m_profiler.collectTimers();
 
-        if(!m_pause)
+        if (!m_pause)
             m_frameIdx++;
     }
 
@@ -644,6 +757,8 @@ int DriveWorksSample::run()
             std::cout << ss.str();
         }
 
+    // stop any window calls before destroying resources
+    stopWindowCallbacks();
     onRelease();
 
     if (m_commandLineInputActive)

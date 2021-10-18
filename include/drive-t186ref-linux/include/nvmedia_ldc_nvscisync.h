@@ -171,10 +171,12 @@ NvMediaLDCSetNvSciSyncObjforEOF(
  * \brief  Sets an \ref NvSciSyncFence as a prefence for an NvMediaLDCProcess()
  * operation.
  *
- * The application must call this function before it
- * calls %NvMediaLDCProcess(). The following %NvMediaLDCProcess() operation is
- * assured to be started only after the expiry of the @a prenvscisyncfence.
- * For example, in the below sequence of code,
+ * If you use %NvMediaLDCInsertPreNvSciSyncFence(), you must call it
+ * before calling %NvMediaLDCProcess(). The following %NvMediaLDCProcess()
+ * operation is assured to be started only after the expiry of the
+ * @a prenvscisyncfence.
+ *
+ * For example, in this sequence of code:
  * \code
  * nvmstatus = NvMediaLDCInsertPreNvSciSyncFence(nvmldchdl, prenvscisyncfence);
  * nvmstatus = NvMediaLDCProcess(nvmldchdl, ...);
@@ -215,10 +217,12 @@ NvMediaLDCInsertPreNvSciSyncFence(
  * NvSciSyncFence, and its expiry indicates that the corresponding
  * %NvMediaLDCBlit() operation has finished.
  * NvMediaLDCGetEOFNvSciSyncFence() returns the EOF NvSciSyncFence associated
- * withthe last %NvMediaLDCProcess() call.
+ * with the last %NvMediaLDCProcess() call.
  *
- * %NvMediaLDCGetEOFNvSciSyncFence() must be called after %NvMediaLDCProcess()
- * is called. For example, in the below sequence of code:
+ * If you use %NvMediaLDCGetEOFNvSciSyncFence(), you must be call it after
+ * calling %NvMediaLDCProcess().
+ *
+ * For example, in this sequence of code:
  * \code
  * nvmstatus = NvMediaLDCProcess(nvmldchdl, ...);
  * nvmstatus = NvMediaLDCGetEOFNvSciSyncFence(nvmldchdl, nvscisyncEOF, eofnvscisyncfence);

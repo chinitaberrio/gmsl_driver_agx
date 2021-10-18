@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_SERVANTLOCATORS_VYWEKT_H_
-#define _TAO_IDL_SERVANTLOCATORS_VYWEKT_H_
+#ifndef _TAO_IDL_SERVANTLOCATORS_MHB0QR_H_
+#define _TAO_IDL_SERVANTLOCATORS_MHB0QR_H_
 
 #include /**/ "ace/pre.h"
 

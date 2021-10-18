@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_EXCEPTIONHOLDERA_LZWJP5_H_
-#define _TAO_IDL_EXCEPTIONHOLDERA_LZWJP5_H_
+#ifndef _TAO_IDL_EXCEPTIONHOLDERA_B25KO3_H_
+#define _TAO_IDL_EXCEPTIONHOLDERA_B25KO3_H_
 
 #include /**/ "ace/pre.h"
 

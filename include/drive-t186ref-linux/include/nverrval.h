@@ -94,6 +94,7 @@ NVERROR(DeviceNotFound,                     0x00030011, "requested device is not
 NVERROR(KernelDriverNotFound,               0x00030012, "kernel driver not found")
 NVERROR(FileNotFound,                       0x00030013, "File or directory not found")
 NVERROR(PathAlreadyExists,                  0x00030014, "the path already exists")
+NVERROR(ProcessDoesNotExist,                0x00030015, "Process associated with this request doesn't exist")
 
 /* I/O devices */
 NVERROR(SpiReceiveError,                    0x00040000, "spi receive error" )

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_PI_INCLUDES_ISJV8N_H_
-#define _TAO_IDL_PI_INCLUDES_ISJV8N_H_
+#ifndef _TAO_IDL_PI_INCLUDES_OLD4UE_H_
+#define _TAO_IDL_PI_INCLUDES_OLD4UE_H_
 
 #include /**/ "ace/pre.h"
 

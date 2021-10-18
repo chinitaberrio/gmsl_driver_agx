@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2012-2019, NVIDIA CORPORATION.  All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -46,11 +46,16 @@
  * MS-Byte                                            LS-Byte
  * V9V8V7V6V5V4V3V2 | V1V0XXXXXX | U9U8U7U6U5U4U3U2 | U1U0XXXXXX
  */
-#define DRM_FORMAT_TEGRA_P010 fourcc_code_tegra('P', '0', '1', '0') /* 2x2 subsampled Cr:Cb plane */
+#define DRM_FORMAT_TEGRA_P010 fourcc_code_tegra('P', '0', '1', '0') /* 2x2 subsampled Cr:Cb plane BT.601 */
+#define DRM_FORMAT_TEGRA_P010_709 fourcc_code_tegra('H', 'D', '0', '1') /* 2x2 subsampled Cr:Cb plane BT.709 */
+#define DRM_FORMAT_TEGRA_P010_2020 fourcc_code_tegra('U', 'H', 'D', '0') /* 2x2 subsampled Cr:Cb plane BT.2020 */
 
 #define DRM_TEGRA_GEM_CREATE_TILED        (1 << 0)
 #define DRM_TEGRA_GEM_CREATE_BOTTOM_UP    (1 << 1)
 #define DRM_TEGRA_GEM_CREATE_COMPRESSIBLE (1 << 2)
+
+/* TODO Upstream DRM_TEGRA_GEM_CREATE_PROTECTED */
+#define DRM_TEGRA_GEM_CREATE_PROTECTED    (1 << 3)
 
 struct drm_tegra_gem_create {
 	__u64 size;
@@ -263,7 +268,7 @@ struct drm_tegra_hdr_metadata_smpte_2086 {
 #define DRM_TEGRA_SUBMIT		0x08
 #define DRM_TEGRA_GET_SYNCPT_BASE	0x09
 #define DRM_TEGRA_GEM_SET_TILING	0x0a
-#define DRM_TEGRA_GET_GET_TILING	0x0b
+#define DRM_TEGRA_GEM_GET_TILING	0x0b
 #define DRM_TEGRA_GEM_SET_FLAGS		0x0c
 #define DRM_TEGRA_GEM_GET_FLAGS		0x0d
 #define DRM_TEGRA_SET_CRTC_FLIP_SYNCPT	0x0e

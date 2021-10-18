@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2014-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -34,15 +34,32 @@
 #include "Window.hpp"
 
 #ifdef DW_USE_EGL
-    #define GLFW_INCLUDE_ES3
-    #ifndef VIBRANTE_V5Q
-        #define GLFW_EXPOSE_NATIVE_X11
-    #endif
-    #define GLFW_EXPOSE_NATIVE_EGL
-    #include <EGL/egl.h>
+#define GLFW_INCLUDE_ES3
+#ifndef VIBRANTE_V5Q
+#ifndef GLFW_USE_WAYLAND
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+#endif
+#define GLFW_EXPOSE_NATIVE_EGL
+#include <EGL/egl.h>
 #endif
 
 #include <GLFW/glfw3.h>
+
+// Status is defined by some X11/EGL headers
+// This is needed by GLFW/glfw3.h but can be undefined
+// after it is included to avoid clashes with
+// other things called Status elsewhere in the code.
+#ifdef Status
+#undef Status
+#endif
+
+// ... and similarly with Success
+// defined by the X11/EGL headers
+#ifdef Success
+#undef Success
+#endif
+
 #include <memory>
 
 class WindowGLFW : public WindowBase
@@ -55,17 +72,22 @@ public:
     //   samples: specifies the desired number of samples to use for subsampling
     //   initIvisible: make the window initially invisible, setWindowVisibility can be
     //                 used to change visibility some time after window creation
+    //   fullScreen: create a full screen window
     WindowGLFW(const char* title, int width, int height, bool offscreen, int samples = 0,
-               bool initInvisible = false);
+               bool initInvisible = false, bool fullScreen = false);
     WindowGLFW(int w, int h, bool offscreen = false, int samples = 0)
         : WindowGLFW("DriveWorks", w, h, offscreen, samples)
-    {}
+    {
+    }
 
     // release window
     ~WindowGLFW() override;
 
-    // swap back and front buffers - return false if failed, i.e. window need close
+    // poll events and swap back and front buffers
     bool swapBuffers() override;
+
+    // swap back and front buffers ONLY, does not poll events
+    bool swapBuffersOnly() override;
 
     // release the current context
     bool releaseContext() override;
@@ -88,6 +110,13 @@ public:
     bool shouldClose() override { return glfwWindowShouldClose(m_hWindow) != 0; }
     bool isOffscreen() const override { return m_offscreen; }
 
+#ifdef DW_USE_EGL
+    bool isEGLEnabled() const override
+    {
+        return true;
+    }
+#endif
+
     // Set the window size
     bool setWindowSize(int width, int height) override;
 
@@ -101,11 +130,13 @@ public:
 
     bool setWindowVisibility(bool visible) override;
 
+    bool setWindowTitle(const char* title);
+
     // get EGL display
     EGLDisplay getEGLDisplay(void) override;
     EGLContext getEGLContext(void) override;
 
-    GLFWwindow *getGLFW() const {return m_hWindow;}
+    GLFWwindow* getGLFW() const { return m_hWindow; }
 
     virtual void onKeyCallback(int key, int scancode, int action, int mods);
     virtual void onMouseButtonCallback(int button, int action, int mods);
@@ -115,7 +146,7 @@ public:
     virtual void onResizeWindowCallback(int width, int height);
 
 protected:
-    GLFWwindow *m_hWindow;
+    GLFWwindow* m_hWindow;
 
     bool m_offscreen;
 

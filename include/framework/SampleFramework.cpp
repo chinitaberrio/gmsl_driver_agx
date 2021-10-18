@@ -40,9 +40,9 @@
 
 void (*gUserKeyPressCallback)(int) = 0;
 ProgramArguments gArguments;
-WindowBase *gWindow = nullptr;
-bool gRun = false;
-bool gPause = false;
+WindowBase* gWindow = nullptr;
+bool gRun           = false;
+bool gPause         = false;
 
 void sig_int_handler(int sig)
 {
@@ -53,7 +53,8 @@ void sig_int_handler(int sig)
 
 void keyPressCallback(int key, int /*scancode*/, int action, int /*mods*/)
 {
-    if (action == GLFW_PRESS) {
+    if (action == GLFW_PRESS)
+    {
         // stop application
         if (key == GLFW_KEY_ESCAPE)
             gRun = false;
@@ -67,7 +68,7 @@ void keyPressCallback(int key, int /*scancode*/, int action, int /*mods*/)
     }
 }
 
-void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *boxIds,
+void drawBoxes(const std::vector<dwBox2D>& boxes, const std::vector<uint32_t>* boxIds,
                float32_t normalizationWidth, float32_t normalizationHeight,
                dwRenderBufferHandle_t renderBuffer, dwRendererHandle_t renderer)
 {
@@ -78,13 +79,13 @@ void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *b
     dwRenderer_setFont(DW_RENDER_FONT_VERDANA_20, renderer);
     char idString[64];
 
-    float32_t* coords = nullptr;
-    uint32_t maxVertices = 0;
+    float32_t* coords     = nullptr;
+    uint32_t maxVertices  = 0;
     uint32_t vertexStride = 0;
     dwRenderBuffer_map(&coords, &maxVertices, &vertexStride, renderBuffer);
 
-    uint32_t n_boxes    = static_cast<uint32_t>(boxes.size());
-    uint32_t n_verts    = 8 * n_boxes;
+    uint32_t n_boxes = static_cast<uint32_t>(boxes.size());
+    uint32_t n_verts = 8 * n_boxes;
     if (n_verts > maxVertices)
     {
         n_boxes = maxVertices / 8;
@@ -93,7 +94,7 @@ void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *b
 
     dwRect screenRectangle;
     dwRenderer_getRect(&screenRectangle, renderer);
-    float32_t screenWidth = static_cast<float32_t>(screenRectangle.width);
+    float32_t screenWidth  = static_cast<float32_t>(screenRectangle.width);
     float32_t screenHeight = static_cast<float32_t>(screenRectangle.height);
 
     for (uint32_t i = 0U; i < n_boxes; ++i)
@@ -145,7 +146,7 @@ void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *b
 #endif
             dwRenderer_renderText(static_cast<int32_t>((x_start * screenWidth) / normalizationWidth),
                                   screenRectangle.height -
-                                  static_cast<int32_t>((y_start * screenHeight) / normalizationHeight),
+                                      static_cast<int32_t>((y_start * screenHeight) / normalizationHeight),
                                   idString, renderer);
         }
     }
@@ -153,7 +154,7 @@ void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *b
     dwRenderer_renderBuffer(renderBuffer, renderer);
 }
 
-void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string>> &boxesWithLabels,
+void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string>>& boxesWithLabels,
                          float32_t normalizationWidth, float32_t normalizationHeight,
                          dwRenderBufferHandle_t renderBuffer, dwRendererHandle_t renderer)
 {
@@ -162,13 +163,13 @@ void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string>> &box
 
     dwRenderer_setFont(DW_RENDER_FONT_VERDANA_20, renderer);
 
-    float32_t* coords = nullptr;
-    uint32_t maxVertices = 0;
+    float32_t* coords     = nullptr;
+    uint32_t maxVertices  = 0;
     uint32_t vertexStride = 0;
     dwRenderBuffer_map(&coords, &maxVertices, &vertexStride, renderBuffer);
 
-    uint32_t n_boxes    = static_cast<uint32_t>(boxesWithLabels.size());
-    uint32_t n_verts    = 8 * n_boxes;
+    uint32_t n_boxes = static_cast<uint32_t>(boxesWithLabels.size());
+    uint32_t n_verts = 8 * n_boxes;
     if (n_verts > maxVertices)
     {
         n_boxes = maxVertices / 8;
@@ -177,13 +178,13 @@ void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string>> &box
 
     dwRect screenRectangle;
     dwRenderer_getRect(&screenRectangle, renderer);
-    float32_t screenWidth = static_cast<float32_t>(screenRectangle.width);
+    float32_t screenWidth  = static_cast<float32_t>(screenRectangle.width);
     float32_t screenHeight = static_cast<float32_t>(screenRectangle.height);
 
     for (uint32_t i = 0U; i < n_boxes; ++i)
     {
         std::pair<dwBox2D, std::string> boxClassIdPair = boxesWithLabels[i];
-        dwBox2D &box = boxClassIdPair.first;
+        dwBox2D& box           = boxClassIdPair.first;
         std::string classLabel = boxClassIdPair.second;
         // transform pixel coords into rendered rectangle
         float32_t x_start = static_cast<float32_t>(box.x) - 0.5f;
@@ -225,25 +226,24 @@ void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string>> &box
 
         dwRenderer_renderText(static_cast<int32_t>((x_start * screenWidth) / normalizationWidth),
                               screenRectangle.height -
-                              static_cast<int32_t>((y_start * screenHeight) / normalizationHeight),
+                                  static_cast<int32_t>((y_start * screenHeight) / normalizationHeight),
                               classLabel.c_str(), renderer);
     }
     dwRenderBuffer_unmap(n_verts, renderBuffer);
     dwRenderer_renderBuffer(renderBuffer, renderer);
 }
 
-
-bool initSampleApp( int argc, const char **argv,
-                    const ProgramArguments* arguments,
-                    void (*userKeyPressCallback)(int),
-                    uint32_t width, uint32_t height,
-                    bool offscreen, int samples)
+bool initSampleApp(int argc, const char** argv,
+                   const ProgramArguments* arguments,
+                   void (*userKeyPressCallback)(int),
+                   uint32_t width, uint32_t height,
+                   bool offscreen, int samples)
 {
     gUserKeyPressCallback = userKeyPressCallback;
 
 #if (!WINDOWS)
     struct sigaction action = {};
-    action.sa_handler = sig_int_handler;
+    action.sa_handler       = sig_int_handler;
 
     sigaction(SIGHUP, &action, NULL);  // controlling terminal closed, Ctrl-D
     sigaction(SIGINT, &action, NULL);  // Ctrl-C
@@ -263,17 +263,21 @@ bool initSampleApp( int argc, const char **argv,
         }
 
         std::string argumentString = gArguments.printList();
-        if (argumentString.size() > 0) {
-            std::cout << "Program Arguments:\n" << argumentString << std::endl;
+        if (argumentString.size() > 0)
+        {
+            std::cout << "Program Arguments:\n"
+                      << argumentString << std::endl;
         }
     }
     gRun = true;
 
     // Setup Window for Output, initialize the GL and GLFW
-    try {
+    try
+    {
         gWindow = gWindow ? gWindow : WindowBase::create(width, height, offscreen, samples);
     }
-    catch (const std::exception &/*ex*/) {
+    catch (const std::exception& /*ex*/)
+    {
         gWindow = nullptr;
     }
 

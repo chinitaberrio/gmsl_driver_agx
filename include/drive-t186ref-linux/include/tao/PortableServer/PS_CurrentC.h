@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_PIDL_PS_CURRENTC_HRO9QU_H_
-#define _TAO_PIDL_PS_CURRENTC_HRO9QU_H_
+#ifndef _TAO_PIDL_PS_CURRENTC_SZDLQN_H_
+#define _TAO_PIDL_PS_CURRENTC_SZDLQN_H_
 
 #include /**/ "ace/pre.h"
 

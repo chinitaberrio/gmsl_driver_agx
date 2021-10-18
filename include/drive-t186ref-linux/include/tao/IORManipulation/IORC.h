@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_PIDL_IORC_7ZDBYB_H_
-#define _TAO_PIDL_IORC_7ZDBYB_H_
+#ifndef _TAO_PIDL_IORC_1OAZIA_H_
+#define _TAO_PIDL_IORC_1OAZIA_H_
 
 #include /**/ "ace/pre.h"
 

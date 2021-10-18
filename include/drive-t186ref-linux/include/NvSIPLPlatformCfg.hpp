@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -7,23 +7,19 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
-#ifndef _NVSIPLPLATFORMCFG_HPP_
-#define _NVSIPLPLATFORMCFG_HPP_
+#ifndef NVSIPLPLATFORMCFG_HPP
+#define NVSIPLPLATFORMCFG_HPP
 
-#include "NvSIPLCommon.hpp"
-#include "NvSIPLDeviceBlock.hpp"
-
-#include "nvmedia_icp.h"
+#include "NvSIPLDeviceBlockInfo.hpp"
 
 #include <string>
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Camera Platform Configuration </b>
+ * @brief <b> NVIDIA SIPL: Camera Platform Configuration </b>
  *
  */
 
@@ -35,7 +31,7 @@ namespace nvsipl
  */
 
 /** @brief Defines a list of all external image devices supported by
- * @ref NvSIPLQuery_API and @ref NvSIPLDevBlk_API. */
+ * @ref NvSIPLQuery_API and SIPL Device Block drivers. */
 struct DeviceInfoList
 {
     /** Holds a vector of @ref SensorInfo objects. */
@@ -63,8 +59,8 @@ struct PlatformCfg
     std::string description = "";
 
     /** Holds the number of device blocks.
-     * This value must be less than @ref MAX_DEVICEBLOCKS_PER_PLATFORM. */
-    uint32_t numDeviceBlocks = 0;
+     * This value must be less than or equal to @ref MAX_DEVICEBLOCKS_PER_PLATFORM. */
+    std::uint32_t numDeviceBlocks = 0;
     /** Holds an array of @ref DeviceBlockInfo. */
     DeviceBlockInfo deviceBlockList[MAX_DEVICEBLOCKS_PER_PLATFORM];
 };
@@ -74,4 +70,4 @@ struct PlatformCfg
 }// namespace nvsipl
 
 
-#endif //_NVSIPLPLATFORMCFG_HPP_
+#endif // NVSIPLPLATFORMCFG_HPP

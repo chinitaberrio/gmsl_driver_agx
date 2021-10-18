@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -68,7 +68,7 @@ void MouseView3D::updateEye()
     m_eye[2] = m_radius * sin(m_angles[1]) + m_center[2];
 }
 
-void MouseView3D::mouseDown(int button, float x, float y)
+void MouseView3D::mouseDown(int button, float32_t x, float32_t y)
 {
     m_currentPos[0] = x;
     m_currentPos[1] = y;
@@ -84,7 +84,7 @@ void MouseView3D::mouseDown(int button, float x, float y)
     m_mouseRight = (button == 1);
 }
 
-void MouseView3D::mouseUp(int button, float x, float y)
+void MouseView3D::mouseUp(int button, float32_t x, float32_t y)
 {
     (void)button;
     (void)x;
@@ -93,11 +93,12 @@ void MouseView3D::mouseUp(int button, float x, float y)
     m_mouseRight = false;
 }
 
-void MouseView3D::mouseMove(float x, float y)
+void MouseView3D::mouseMove(float32_t x, float32_t y)
 {
-    float pos[] = {x, y};
+    float32_t pos[] = {x, y};
 
-    if (m_mouseLeft) {
+    if (m_mouseLeft)
+    {
         // update deltaAngle
         m_angles[0] = m_startAngles[0] - 0.01f * (pos[0] - m_currentPos[0]);
         m_angles[1] = m_startAngles[1] + 0.01f * (pos[1] - m_currentPos[1]);
@@ -107,14 +108,16 @@ void MouseView3D::mouseMove(float x, float y)
 
         updateEye();
         updateMatrices();
-    } else if (m_mouseRight) {
+    }
+    else if (m_mouseRight)
+    {
         //Translation
-        float t[3];
+        float32_t t[3];
         t[0] = 0.1f * (pos[0] - m_currentPos[0]);
         t[1] = 0;
         t[2] = 0.1f * (pos[1] - m_currentPos[1]);
 
-        float mt[3];
+        float32_t mt[3];
         Mat4_Rtxp(mt, m_modelView.array, t);
 
         m_center[0] = m_startCenter[0] + mt[0];
@@ -126,22 +129,22 @@ void MouseView3D::mouseMove(float x, float y)
     }
 }
 
-void MouseView3D::mouseWheel(float dx, float dy)
+void MouseView3D::mouseWheel(float32_t dx, float32_t dy)
 {
     (void)dx;
 
-    float tmpRadius = m_radius - dy * 1.5f;
+    float32_t tmpRadius = m_radius - dy * 1.5f;
 
     setRadiusFromCenter(tmpRadius);
 }
 
-void MouseView3D::setWindowAspect(float aspect)
+void MouseView3D::setWindowAspect(float32_t aspect)
 {
     m_windowAspect = aspect;
     updateMatrices();
 }
 
-void MouseView3D::setCenter(float x, float y, float z)
+void MouseView3D::setCenter(float32_t x, float32_t y, float32_t z)
 {
     m_center[0] = x;
     m_center[1] = y;
@@ -150,14 +153,26 @@ void MouseView3D::setCenter(float x, float y, float z)
     updateMatrices();
 }
 
-void MouseView3D::setRadiusFromCenter(float zoom)
+void MouseView3D::setRadiusFromCenter(float32_t zoom)
 {
-    if (zoom > 0.0f) {
+    if (zoom > 0.0f)
+    {
         m_radius = zoom;
         updateEye();
         updateMatrices();
     }
 }
+
+void MouseView3D::setAngleFromCenter(float32_t yaw, float32_t pitch)
+{
+    // Limit the pitch angle (-30 to 85 degrees)
+    m_angles[0] = yaw;
+    m_angles[1] = std::max(std::min(pitch, DEG2RAD(85)), DEG2RAD(-30));
+
+    updateEye();
+    updateMatrices();
+}
+
 void MouseView3D::updateMatrices()
 {
     lookAt(m_modelView.array, m_eye, m_center, m_up);

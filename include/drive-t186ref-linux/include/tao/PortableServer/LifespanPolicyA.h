@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_LIFESPANPOLICYA_E35FQ4_H_
-#define _TAO_IDL_LIFESPANPOLICYA_E35FQ4_H_
+#ifndef _TAO_IDL_LIFESPANPOLICYA_JM5SUP_H_
+#define _TAO_IDL_LIFESPANPOLICYA_JM5SUP_H_
 
 #include /**/ "ace/pre.h"
 

@@ -136,8 +136,10 @@ typedef struct {
 typedef struct {
     uint16_t              width;
     uint16_t              height;
-    uint32_t              embLinesTop;
-    uint32_t              embLinesBottom;
+    uint32_t              embLinesTop; /* the number of top embedded data in the sensor if embDataType is 0
+                                          the number of top + bottom embedded data in the sensor if embDataType is 1 */
+    uint32_t              embLinesBottom; /* the number of bottom embedded data in the sensor if embDataType is 0
+                                             alwasy 0 if embDataType is 1 */
     NvMediaBool           embDataType; /* 0 : EMB coming with pixel data
                                           1 : EMB coming in CSI packet with different data type */
     NvMediaICPInputFormatType   inputFormatType;

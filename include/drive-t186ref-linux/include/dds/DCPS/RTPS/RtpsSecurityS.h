@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_RTPSSECURITYS_XZ2RZ1_H_
-#define _TAO_IDL_RTPSSECURITYS_XZ2RZ1_H_
+#ifndef _TAO_IDL_RTPSSECURITYS_FWZHWF_H_
+#define _TAO_IDL_RTPSSECURITYS_FWZHWF_H_
 
 #include /**/ "ace/pre.h"
 

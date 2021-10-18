@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_IDUNIQUENESSPOLICYS_2WHL6R_H_
-#define _TAO_IDL_IDUNIQUENESSPOLICYS_2WHL6R_H_
+#ifndef _TAO_IDL_IDUNIQUENESSPOLICYS_17HIRR_H_
+#define _TAO_IDL_IDUNIQUENESSPOLICYS_17HIRR_H_
 
 #include /**/ "ace/pre.h"
 

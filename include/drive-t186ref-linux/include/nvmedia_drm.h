@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "nvmedia_common.h"
+#include "nvmedia_common_decode.h"
 #include "nvmedia_core.h"
 
 /**

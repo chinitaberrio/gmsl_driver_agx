@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -34,19 +34,19 @@
 */
 typedef enum
 {
-    NVCCP_STATUS_OK = 0,
-    NVCCP_STATUS_DENIED,
-    NVCCP_STATUS_NOT_REGISTERED,
-    NVCCP_STATUS_ALREADY_ON,
-    NVCCP_STATUS_ALREADY_OFF,
-    NVCCP_STATUS_SLAVE_RUNNING,
-    NVCCP_STATUS_I2C_OWNERSHIP_DENIED,
-    NVCCP_REQ_FILE_OP_FAIL = 1000,
-    NVCCP_REQ_TIMEOUT,
-    NVCCP_REQ_INVALID,
-    NVCCP_REQ_DENIED,
-    NVCCP_REQ_FAILED,
-    NVCCP_REQ_CONNECT_ERR,
+  NVCCP_STATUS_OK = 0,
+  NVCCP_STATUS_DENIED,
+  NVCCP_STATUS_NOT_REGISTERED,
+  NVCCP_STATUS_ALREADY_ON,
+  NVCCP_STATUS_ALREADY_OFF,
+  NVCCP_STATUS_SLAVE_RUNNING,
+  NVCCP_STATUS_I2C_OWNERSHIP_DENIED,
+  NVCCP_REQ_FILE_OP_FAIL = 1000,
+  NVCCP_REQ_TIMEOUT,
+  NVCCP_REQ_INVALID,
+  NVCCP_REQ_DENIED,
+  NVCCP_REQ_FAILED,
+  NVCCP_REQ_CONNECT_ERR,
 } nvccp_return_t;
 
 
@@ -54,45 +54,44 @@ typedef enum
  * Defines the camera group ID.
  */
 typedef enum {
-    NVCCP_GROUP_A = 0x00,
-    NVCCP_GROUP_B = 0x01,
-    NVCCP_GROUP_C = 0x02,
-    NVCCP_GROUP_D = 0x03
+  NVCCP_GROUP_A = 0x00,
+  NVCCP_GROUP_B = 0x01,
+  NVCCP_GROUP_C = 0x02,
+  NVCCP_GROUP_D = 0x03
 } nvccp_cam_group_id;
 
 /**
  * Defines the camera ID.
  */
 typedef enum{
-    /* Camera group A */
-    NVCCP_CAM_A0 = 0x01,
-    NVCCP_CAM_A1 = 0x02,
-    NVCCP_CAM_A2 = 0x04,
-    NVCCP_CAM_A3 = 0x08,
-    /* Camera group B */
-    NVCCP_CAM_B0 = 0x10,
-    NVCCP_CAM_B1 = 0x20,
-    NVCCP_CAM_B2 = 0x40,
-    NVCCP_CAM_B3 = 0x80,
-    /* Camera group C */
-    NVCCP_CAM_C0 = 0x0100,
-    NVCCP_CAM_C1 = 0x0200,
-    NVCCP_CAM_C2 = 0x0400,
-    NVCCP_CAM_C3 = 0x0800,
-    /* Camera group D */
-    NVCCP_CAM_D0 = 0x1000,
-    NVCCP_CAM_D1 = 0x2000,
-    NVCCP_CAM_D2 = 0x4000,
-    NVCCP_CAM_D3 = 0x8000
+  /* Camera group A */
+  NVCCP_CAM_A0 = 0x01,
+  NVCCP_CAM_A1 = 0x02,
+  NVCCP_CAM_A2 = 0x04,
+  NVCCP_CAM_A3 = 0x08,
+  /* Camera group B */
+  NVCCP_CAM_B0 = 0x10,
+  NVCCP_CAM_B1 = 0x20,
+  NVCCP_CAM_B2 = 0x40,
+  NVCCP_CAM_B3 = 0x80,
+  /* Camera group C */
+  NVCCP_CAM_C0 = 0x0100,
+  NVCCP_CAM_C1 = 0x0200,
+  NVCCP_CAM_C2 = 0x0400,
+  NVCCP_CAM_C3 = 0x0800,
+  /* Camera group D */
+  NVCCP_CAM_D0 = 0x1000,
+  NVCCP_CAM_D1 = 0x2000,
+  NVCCP_CAM_D2 = 0x4000,
+  NVCCP_CAM_D3 = 0x8000
 } nvccp_cam_id;
 
 /**
  * Defines the tegra ID.
  */
 typedef enum {
-    NVCCP_TEGRA_A = 0x41,
-    NVCCP_TEGRA_B = 0x42,
-    NVCCP_TEGRA_C = 0x43
+  NVCCP_TEGRA_A = 0x41,
+  NVCCP_TEGRA_B = 0x42
 } nvccp_tegra_id;
 
 /**
@@ -100,8 +99,8 @@ typedef enum {
  * or release ownership (nvccp_release_ownership()).
  */
 typedef enum {
-    NVCCP_CAM_MASTER = 0x01,
-    NVCCP_CAM_SLAVE
+  NVCCP_CAM_MASTER = 0x01,
+  NVCCP_CAM_SLAVE
 } nvccp_cam_mode;
 
 /**

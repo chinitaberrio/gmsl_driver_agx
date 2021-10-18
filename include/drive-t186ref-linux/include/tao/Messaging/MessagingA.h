@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_MESSAGINGA_VYMURA_H_
-#define _TAO_IDL_MESSAGINGA_VYMURA_H_
+#ifndef _TAO_IDL_MESSAGINGA_YRO9VO_H_
+#define _TAO_IDL_MESSAGINGA_YRO9VO_H_
 
 #include /**/ "ace/pre.h"
 

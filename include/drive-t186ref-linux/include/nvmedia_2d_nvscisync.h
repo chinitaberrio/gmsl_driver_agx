@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -68,7 +68,7 @@ NvMedia2DNvSciSyncGetVersion(
  *
  * The application must not set this attribute.
  *
- * \param[in]     i2d       An NvMedia2D device handle.
+ * \param[in]     i2d       An \ref NvMedia2D device handle.
  * \param[out] attrlist     A pointer to an \ref NvSciSyncAttrList structure
  *                           where NvMedia places NvSciSync attributes.
  * \param[in]    clienttype Indicates the \ref NvSciSyncAttrList requested for
@@ -81,8 +81,8 @@ NvMedia2DNvSciSyncGetVersion(
  */
 NvMediaStatus
 NvMedia2DFillNvSciSyncAttrList(
-    NvMedia2D         *i2d,
-    NvSciSyncAttrList attrlist,
+    const NvMedia2D            *i2d,
+    NvSciSyncAttrList          attrlist,
     NvMediaNvSciSyncClientType clienttype
 );
 
@@ -101,7 +101,7 @@ NvMedia2DFillNvSciSyncAttrList(
  * For each NvMediaNvSciSyncObjType a maximum of 16 NvSciSyncObjs can
  * be registered.
  *
- * \param[in] i2d           NvMedia 2D %NvMedia2D device handle.
+ * \param[in] i2d           An \ref NvMedia2D device handle.
  * \param[in] syncobjtype   Determines how @a nvscisync is used by @a i2d.
  * \param[in] nvscisync     The %NvSciSyncObj to be registered with @a i2d.
  * \retval  NVMEDIA_STATUS_OK if the function is successful.
@@ -117,9 +117,9 @@ NvMedia2DFillNvSciSyncAttrList(
 
 NvMediaStatus
 NvMedia2DRegisterNvSciSyncObj(
-    NvMedia2D             *i2d,
-    NvMediaNvSciSyncObjType    syncobjtype,
-    NvSciSyncObj          nvscisync
+    const NvMedia2D             *i2d,
+    NvMediaNvSciSyncObjType     syncobjtype,
+    NvSciSyncObj                nvscisync
 );
 
 /**
@@ -134,7 +134,7 @@ NvMedia2DRegisterNvSciSyncObj(
  * If this function is called while \ref NvSciSyncObj is still in use by any
  * NvMedia2DBlitEx() operation, behavior is undefined.
  *
- * \param[in] i2d       An NvMedia 2D %NvMedia2D device handle.
+ * \param[in] i2d       An \ref NvMedia2D device handle.
  * \param[in] nvscisync An %NvSciSyncObj to be unregistered with @a i2d.
  * \retval  NVMEDIA_STATUS_OK if the call is successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER if @a i2d is NULL or @a nvscisync is
@@ -144,7 +144,7 @@ NvMedia2DRegisterNvSciSyncObj(
  */
 NvMediaStatus
 NvMedia2DUnregisterNvSciSyncObj(
-    NvMedia2D         *i2d,
+    const NvMedia2D   *i2d,
     NvSciSyncObj      nvscisync
 );
 
@@ -159,7 +159,7 @@ NvMedia2DUnregisterNvSciSyncObj(
  * each call to %NvMedia2DBlitEx(). The application may choose to call this
  * function only once before the first call to %NvMedia2DBlitEx().
  *
- * \param[in] i2d           An NvMedia 2D \ref NvMedia2D device handle.
+ * \param[in] i2d           An \ref NvMedia2D device handle.
  * \param[in] nvscisyncEOF  A registered NvSciSyncObj object which is to be
  *                           associated with EOF \ref NvSciSyncFence.
  * \return A status code; \ref NVMEDIA_STATUS_OK if the function is successful,
@@ -169,16 +169,17 @@ NvMedia2DUnregisterNvSciSyncObj(
  */
 NvMediaStatus
 NvMedia2DSetNvSciSyncObjforEOF(
-    NvMedia2D       *i2d,
-    NvSciSyncObj    nvscisyncEOF
+    const NvMedia2D       *i2d,
+    NvSciSyncObj          nvscisyncEOF
 );
 
 /**
  * \brief Sets an \ref NvSciSyncFence as a prefence for an
- *  NvMedia2DBlitEx() NvSciSyncFence operation.
+ *  NvMedia2DBlitEx() operation.
  *
- * You must call %NvMedia2DInsertPreNvSciSyncFence() before you call
- * %NvMedia2DBlitEx(). The %NvMedia2DBlitEx() operation is started only after
+ * If you use %NvMedia2DInsertPreNvSciSyncFence(), you must call it
+ * before calling %NvMedia2DBlitEx().
+ * The %NvMedia2DBlitEx() operation is started only after
  * the expiry of the @a prenvscisyncfence.
  *
  * For example, in this sequence of code:
@@ -196,7 +197,7 @@ NvMedia2DSetNvSciSyncObjforEOF(
  * by %NvMedia2DInsertPreNvSciSyncFence() are removed, and they are not
  * reused for the subsequent %NvMedia2DBlitEx() calls.
  *
- * \param[in] i2d               An NvMedia 2D \ref NvMedia2D device handle.
+ * \param[in] i2d               An \ref NvMedia2D device handle.
  * \param[in] prenvscisyncfence A pointer to an %NvSciSyncFence.
  * \retval  NVMEDIA_STATUS_OK if the function is successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER if @a i2d is not a valid %NvMedia2D
@@ -211,7 +212,7 @@ NvMedia2DSetNvSciSyncObjforEOF(
  */
 NvMediaStatus
 NvMedia2DInsertPreNvSciSyncFence(
-    NvMedia2D                *i2d,
+    const NvMedia2D          *i2d,
     const NvSciSyncFence     *prenvscisyncfence
 );
 
@@ -219,12 +220,13 @@ NvMedia2DInsertPreNvSciSyncFence(
  * \brief  Gets an EOF \ref NvSciSyncFence for an NvMedia2DBlitEx() operation.
  *
  * The EOF %NvSciSyncFence associated with an %NvMedia2DBlitEx() operation is an
- * NvSciSyncFence. Its expiry indicates that the corresponding
+ * NvSciSyncFence, and its expiry indicates that the corresponding
  * %NvMedia2DBlitEx() operation has finished.
  *
  * %NvMedia2DGetEOFNvSciSyncFence() returns the EOF %NvSciSyncFence associated
- * with the last %NvMedia2DBlitEx() call. %NvMedia2DGetEOFNvSciSyncFence()
- * must be called after an %NvMedia2DBlitEx() call.
+ * with the last %NvMedia2DBlitEx() call. If you use
+ * %NvMedia2DGetEOFNvSciSyncFence(), you must call it after calling
+ * %NvMedia2DBlitEx().
  *
  * For example, in this sequence of code:
  * \code
@@ -250,7 +252,7 @@ NvMedia2DInsertPreNvSciSyncFence(
  */
 NvMediaStatus
 NvMedia2DGetEOFNvSciSyncFence(
-    NvMedia2D         *i2d,
+    const NvMedia2D   *i2d,
     NvSciSyncObj      eofnvscisyncobj,
     NvSciSyncFence    *eofnvscisyncfence
 );

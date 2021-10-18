@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2013-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -27,6 +27,8 @@ extern "C" {
  * \defgroup nvmedia_image_top Image Handling API
  *
  * The Image Processing API encompasses all NvMedia image-related functionality.
+ * \note Not all the functions are supported on safety build and refer to nvmedia safety manual
+ * for details of APIs available on safety build.
  *
  * @ingroup nvmedia_top
  * @{
@@ -35,7 +37,7 @@ extern "C" {
 /** \brief Major version number. */
 #define NVMEDIA_IMAGE_VERSION_MAJOR   (1u)
 /** \brief Minor version number. */
-#define NVMEDIA_IMAGE_VERSION_MINOR   (21u)
+#define NVMEDIA_IMAGE_VERSION_MINOR   (24u)
 
 /**
  * \defgroup image_creation_api Image Creation
@@ -46,8 +48,8 @@ extern "C" {
  * storing YUV, RGBA or RAW data. They can store one or more images depending
  * on the class.
  * \ref NvMediaImage objects are created with
- * \ref NvMediaImageCreateNew() and destroyed with
- * \ref NvMediaImageDestroy().
+ * \ref NvMediaImageCreateNew() or \ref NvMediaImageCreateFromNvSciBuf()
+ * and destroyed with \ref NvMediaImageDestroy().
  * @{
  */
 
@@ -66,33 +68,46 @@ extern "C" {
 /**
  * \brief Holds a handle representing image objects.
  */
-typedef struct {
-    /*! Holds image surface type. */
+struct NvMediaImageRec {
+    /*! Holds image surface type. It should be a valid value returned by
+        the \ref NvMediaSurfaceFormatGetType API */
     NvMediaSurfaceType type;
-    /*! Holds image width. */
+    /*! Holds image width. Valid range of width supported is
+        [\ref NVM_SURF_ATTR_MIN_WIDTH, \ref NVM_SURF_ATTR_MAX_WIDTH] */
     uint32_t width;
-    /*! Holds image height. */
+    /*! Holds image height. Valid range of height supported is
+        [\ref NVM_SURF_ATTR_MIN_HEIGHT, \ref NVM_SURF_ATTR_MAX_HEIGHT] */
     uint32_t height;
-    /*! Holds the number of images stored in this image container. */
-    uint32_t imageCount;
-    /*! Holds the size of top embedded data. */
+    /*! Holds the size of the top embedded data. Valid range of
+        embedded data supported is
+        [\ref NVM_SURF_ATTR_MIN_EMB_LINES_TOP, \ref NVM_SURF_ATTR_MAX_EMB_LINES_TOP] */
     uint32_t embeddedDataTopSize;
-    /*! Holds the size of bottom embedded data. */
+    /*! Holds the size of the bottom embedded data. Valid range of
+        embedded data supported is
+        [\ref NVM_SURF_ATTR_MIN_EMB_LINES_TOP, \ref NVM_SURF_ATTR_MAX_EMB_LINES_TOP] */
     uint32_t embeddedDataBottomSize;
-    /*! Holds image attributes. */
-    uint32_t attributes;
+    /*! Holds an image color standard type. Valid range of values is
+        [\ref NVM_SURF_ATTR_COLOR_STD_SRGB, \ref NVM_SURF_ATTR_COLOR_STD_REC2020PQ_ER] */
+    uint32_t colorStd;
     /*! \deprecated  Holds a tag that can be used by the application. NvMedia
         does not change the value of this member. */
     void *tag;
-    /*! Holds an image capture timestamp. */
-    NvMediaTime captureTimeStamp;
     /*! Holds an image capture global timestamp in microseconds. */
     NvMediaGlobalTime captureGlobalTimeStamp;
-    /*! Holds an image color standard type. */
-    uint32_t colorStd;
-    /** Holds an opaque pointer for internal use.*/
+#if (NV_IS_SAFETY == 0)
+    /*! Holds the number of images stored in this image container. */
+    uint32_t imageCount;
+    /*! Holds image attributes. */
+    uint32_t attributes;
+    /*! Holds an image capture timestamp. */
+    NvMediaTime captureTimeStamp;
+#endif
+    /** Holds an opaque pointer for internal use. It should be non-null for
+        a valid NvmediaImage*/
     struct NvMediaImagePriv_ *imgPriv;
-} NvMediaImage;
+};
+
+typedef struct NvMediaImageRec NvMediaImage;
 
 /**
  * \brief Holds a handle representing an image group.
@@ -113,7 +128,7 @@ typedef struct {
 /**
  * \brief Gets the version of the NvMedia Image library.
  * \param[in] version A pointer to an \ref NvMediaVersion structure
- *                    belonging to the client.
+ *                    belonging to the client. It should be a valid non-null pointer.
  * \return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful,
  *  or \ref NVMEDIA_STATUS_BAD_PARAMETER if @a version is an invalid pointer.
  */
@@ -122,6 +137,7 @@ NvMediaImageGetVersion(
     NvMediaVersion *version
 );
 
+#if (NV_IS_SAFETY == 0)
 /**
  * \brief Allocates an image object. Upon creation, the contents are undefined.
  *
@@ -141,22 +157,196 @@ NvMediaImageCreateNew(
     uint32_t numAttrs,
     uint32_t flags
 );
+#endif
 
 /**
- * \brief Destroys an image object created by NvMediaImageCreateNew().
+ * \brief Destroys an \ref NvMediaImage object
  *
  * \param[in] image The image to destroy.
  */
 void
 NvMediaImageDestroy(
-    NvMediaImage *image
+    const NvMediaImage *image
 );
 
-/*@} <!-- Ends image_creation_api Image Creation API --> */
+/**@} <!-- Ends image_creation_api Image Creation API --> */
+
+/**
+ * \brief Returns embedded data stored in a captured image.
+ *
+ * Embedded data can be added to the following image types.
+ * This type must obtained by a call to NvMediaSurfaceFormatGetType() with:
+ * - NVM_SURF_FMT_SET_ATTR_YUV(attr, YUYV, 422, PACKED, UINT, 8, PL)
+ * - NVM_SURF_FMT_SET_ATTR_RGBA(attr, RGBA, UINT, 8, [PL])
+ * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RGGB/BGGR/GRBG/GBRG], [UINT/INT], [8/10/12/16/20], PL)
+ * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RCCB/BCCR/CRBC/CBRC], [UINT/INT], 12, PL)
+ * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RCCC/CCCR/CRCC/CCRC], [UINT/INT], 12, PL)
+ *
+ * To use use this API, while creating an NvMedia image, you must set
+ * \ref NvMediaSurfAllocAttrType in \ref NvMediaSurfAllocAttr to
+ * \ref NVM_SURF_ATTR_CPU_ACCESS_UNCACHED or
+ * \ref NVM_SURF_ATTR_CPU_ACCESS_CACHED.
+ *
+ * Embedded data may contain 8-bit data or data encoded in the
+ * sensor pixel data type, depending on the camera sensor side specification.
+ *
+ * In case of RAW12 DataType, the bit layout may change without warning,
+ * depending on the surface data type specified.
+ *
+ * The VI hardware changes data layout to:
+ * - For RAW12 UINT case: [11][10][9][8][7][6][5][4][3][2][1][0][P][P][P][P]
+ * - For RAW12  INT case: [0][11][10][9][8][7][6][5][4][3][2][1][0][P][P][P]
+ *
+ * Each embedded data pixel has 16 bits. [P] represents a padding bit. Padding
+ * bits duplicate the most significant bits: [11][10][9][8] for UINT, or
+ * [11][10][9] for INT.
+ *
+ * Contact NVIDIA for more information on other DataTypes.
+ *
+ * \param[in] image A pointer to the image from which to get embedded data.
+ * \param[in] imageIndex Index of the sub-image in the case of a multi-image
+ *                      handle, counting from 0. For a single image handle
+ *                      @a imageIndex is ignored. 0 must be passed as this
+ *                      parameter's value, else the API will fail.
+ * \param[in] embeddedBufTop
+ *                      A pointer to a buffer allocated on the caller side to
+ *                      store top data.
+ * \param[in,out] embeddedBufTopSize
+ *                      A pointer to top buffer size (in). Actual size of
+ *                      copied data is returned at this location (out).
+ *                      Top buffer size is calculated from values like
+ *                      frame resolution and \ref NVM_SURF_ATTR_EMB_LINES_TOP.
+ * \param[in] embeddedBufBottom
+ *                      A pointer to a buffer allocated
+ *                      at caller side to store bottom data.
+ * \param[in,out] embeddedBufBottomSize
+ *                      A pointer to bottom buffer size (in).
+ *                      Actual size of copied data is returned at this location
+ *                      (out). Bottom buffer size is calculated from values like
+ *                      frame resolution and
+ *                      \ref NVM_SURF_ATTR_EMB_LINES_BOTTOM.
+ * \retval  NVMEDIA_STATUS_OK indicates that that call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
+ *  pointer parameters were NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that the surface type is not
+ *  supported.
+ */
+NvMediaStatus
+NvMediaImageGetEmbeddedData(
+    const NvMediaImage *image,
+    uint32_t imageIndex,
+    uint8_t *embeddedBufTop,
+    uint32_t *embeddedBufTopSize,
+    uint8_t *embeddedBufBottom,
+    uint32_t *embeddedBufBottomSize
+);
+
+/**
+ * \brief Gets status of the current or most recent operation for an image;
+ *        optionally waits for the current operation to complete or time out.
+ *        It waits only on a write operation to be completed on the image.
+ * \param[in] image A pointer to the image. It should be non-null.
+ * \param[in] millisecondWait
+ *                  Time in milliseconds to wait for the current operation to
+ *                  complete before getting status.
+ *                  Valid range of input is [0, UINT32_MAX]
+ *                  \ref NVMEDIA_IMAGE_TIMEOUT_INFINITE means wait indefinitely.
+ * \param[out] taskStatus
+ *                  A pointer to the status of the operation. It should be non-null.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image or @a status
+ *  was NULL.
+ * \retval NVMEDIA_STATUS_TIMED_OUT indicates that wait for the current operation timed out.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
+ */
+NvMediaStatus
+NvMediaImageGetStatus(
+    const NvMediaImage *image,
+    uint32_t millisecondWait,
+    NvMediaTaskStatus *taskStatus
+);
+
+/**
+ * \brief Sets a tag for an \ref NvMediaImage.
+ *
+ * Associates a tag (an arbitrary pointer) with an NvMediaImage.
+ *
+ * \note  The @c NvMediaImage struct's @a tag member is deprecated, and
+ *  will be retired in a future release. Use %NvMediaImageSetTag() to set
+ *  a tag instead.
+ *
+ * \param[in] image A pointer to image for which a tag is to be set. It should be a valid non-null
+ * pointer
+ * \param[in] tag   A pointer to the tag.
+ * @return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful, or
+ *  \ref NVMEDIA_STATUS_BAD_PARAMETER if @a image was NULL.
+ */
+NvMediaStatus
+NvMediaImageSetTag(
+    NvMediaImage *image,
+    void *tag
+);
+
+/**
+ * \brief Gets the tag from an \ref NvMediaImage.
+ *
+ * \note  The \ref NvMediaImage struct's @a tag member is deprecated, and
+ *  will be retired in a future release. Use NvMediaImageSetTag() to set
+ * a tag and %NvMediaImageGetTag() to get a tag instead.
+ *
+ * \param[in]  image A pointer to image for which to get the tag.
+ *                   It should be a valid non-null pointer.
+ * \param[out] tag   A pointer to a location where the function is to put
+ *                    a pointer to the tag. It should be non-null.
+ * @return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful,
+ *  or \ref NVMEDIA_STATUS_BAD_PARAMETER if @a image or @a tag was NULL.
+ */
+NvMediaStatus
+NvMediaImageGetTag(
+    const NvMediaImage *image,
+    void **tag
+);
+
+#if (NV_IS_SAFETY == 0)
+/**
+ * \brief Gets the capture timestamp of the image.
+ * \param[in] image A pointer to the image for which to get the timestamp.
+ * \param[out] timeStamp A pointer the capture timestamp of the image.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image or
+ *  @a timeStamp was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
+ */
+NvMediaStatus
+NvMediaImageGetTimeStamp(
+    const NvMediaImage *image,
+    NvMediaTime *timeStamp
+);
+
+/**
+ * \brief Gets the global capture timestamp of the image.
+ * The global timestamp is set by the NvMedia IPP Capture component.
+ * \param[in] image             A pointer to the image for which to get the
+ *                               timestamp.
+ * \param[out] globalTimeStamp  A pointer to the global capture timestamp
+ *                               of the image.
+ * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image
+ *  or @a timeStamp was NULL.
+ * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
+ */
+NvMediaStatus
+NvMediaImageGetGlobalTimeStamp(
+    const NvMediaImage *image,
+    NvMediaGlobalTime *globalTimeStamp
+);
 
 /** \defgroup lock_unlock Image Locking and Unlocking
  *
  * Locking and unlocking controls access to the image surfaces.
+ *
+ * \warning These functions are for diagnostics purposes only. They
+ * are not for use in production code.
  */
 
 /**
@@ -198,7 +388,7 @@ typedef struct {
     uint32_t height;
     /*! Holds the number of surfaces in the image. */
     uint32_t surfaces;
-    /*! Holds surface descriptors. Only the first surface number of elements
+    /*! Holds surface descriptors. Only the first surfaces number of elements
      is valid. */
     NvMediaImageSurface surface[6];
     /*! Holds a pointer to metadata associated with the surface. */
@@ -222,6 +412,7 @@ typedef struct {
  * - \ref NVMEDIA_IMAGE_ACCESS_READ_WRITE specifies read/write access.
  * \param[out] surfaceMap A pointer to surface descriptors.
  * \return A status code; NVMEDIA_STATUS_OK if the call was successful,
+ *  NVMEDIA_STATUS_BAD_PARAMETER if the arguments to the function are invalid,
  *  or NVMEDIA_STATUS_ERROR otherwise.
  * \ingroup lock_unlock
  */
@@ -391,166 +582,9 @@ NvMediaImageGetBits(
     void **dstPntrs,
     const uint32_t *dstPitches
 );
+#endif
 
-/**
- * \brief Returns embedded data stored in a captured image.
- *
- * Embedded data can be added to the following image types.
- * This type must obtained by a call to NvMediaSurfaceFormatGetType() with:
- * - NVM_SURF_FMT_SET_ATTR_YUV(attr, YUYV, 422, PACKED, UINT, 8, PL)
- * - NVM_SURF_FMT_SET_ATTR_RGBA(attr, RGBA, UINT, 8, [PL|BL])
- * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RGGB/BGGR/GRBG/GBRG], [UINT/INT], [8/10/12/16/20], PL)
- * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RCCB/BCCR/CRBC/CBRC], [UINT/INT], 12, PL)
- * - NVM_SURF_FMT_SET_ATTR_RAW(attr, [RCCC/CCCR/CRCC/CCRC], [UINT/INT], 12, PL)
- *
- * Embedded data may contain 8-bit data or data encoded in the
- * sensor pixel data type, depending on the camera sensor side specification.
- *
- * In case of RAW12 DataType, the bit layout may change without warning,
- * depending on the surface data type specified.
- *
- * The VI hardware changes data layout to:
- * - For RAW12 UINT case: [11][10][9][8][7][6][5][4][3][2][1][0][P][P][P][P]
- * - For RAW12  INT case: [0][11][10][9][8][7][6][5][4][3][2][1][0][P][P][P]
- *
- * Each embedded data pixel has 16 bits. [P] represents a padding bit. Padding
- * bits duplicate the most significant bits: [11][10][9][8] for UINT, or
- * [11][10][9] for INT.
- *
- * Contact NVIDIA for more information on other DataTypes.
- *
- * \param[in] image A pointer to the image from which to get embedded data.
- * \param[in] imageIndex Index of the sub-image in the case of a multi-image
- *                      handle, counting from 0. For a single image handle
- *                      @a imageIndex is ignored.
- * \param[in] embeddedBufTop
- *                      A pointer to a buffer allocated on the caller side to
- *                      store top data.
- * \param[in,out] embeddedBufTopSize
- *                      A pointer to top buffer size (in). Actual size of
- *                      copied data is returned at this location (out).
- *                      Top buffer size is calculated from values like
- *                      frame resolution and \ref NVM_SURF_ATTR_EMB_LINES_TOP.
- * \param[in] embeddedBufBottom
- *                      A pointer to a buffer allocated
- *                      at caller side to store bottom data.
- * \param[in,out] embeddedBufBottomSize
- *                      A pointer to bottom buffer size (in).
- *                      Actual size of copied data is returned at this location
- *                      (out). Bottom buffer size is calculated from values like
- *                      frame resolution and
- *                      \ref NVM_SURF_ATTR_EMB_LINES_BOTTOM.
- * \retval  NVMEDIA_STATUS_OK indicates that that call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more
- *  pointer parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that the surface type is not
- *  supported.
- */
-NvMediaStatus
-NvMediaImageGetEmbeddedData(
-    const NvMediaImage *image,
-    uint32_t imageIndex,
-    void *embeddedBufTop,
-    uint32_t *embeddedBufTopSize,
-    void *embeddedBufBottom,
-    uint32_t *embeddedBufBottomSize
-);
-
-/**
- * \brief Gets the capture timestamp of the image.
- * \param[in] image A pointer to the image for which to get the timestamp.
- * \param[out] timeStamp A pointer the capture timestamp of the image.
- * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image or
- *  @a timeStamp was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
- */
-NvMediaStatus
-NvMediaImageGetTimeStamp(
-    const NvMediaImage *image,
-    NvMediaTime *timeStamp
-);
-
-/**
- * \brief Gets the global capture timestamp of the image.
- * The global timestamp is set by the NvMedia IPP Capture component.
- * \param[in] image             A pointer to the image for which to get the
- *                               timestamp.
- * \param[out] globalTimeStamp  A pointer to the global capture timestamp
- *                               of the image.
- * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image
- *  or @a timeStamp was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
- */
-NvMediaStatus
-NvMediaImageGetGlobalTimeStamp(
-    const NvMediaImage *image,
-    NvMediaGlobalTime *globalTimeStamp
-);
-
-/**
- * \brief Sets a tag for an \ref NvMediaImage.
- *
- * Associates a tag (an arbitrary pointer) with an NvMediaImage.
- *
- * \note  The @c NvMediaImage struct's @a tag member is deprecated, and
- *  will be retired in a future release. Use %NvMediaImageSetTag() to set
- *  a tag instead.
- *
- * \param[in] image A pointer to image for which a tag is to be set.
- * \param[in] tag   A pointer to the tag.
- * @return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful, or
- *  \ref NVMEDIA_STATUS_BAD_PARAMETER if @a image was NULL.
- */
-NvMediaStatus
-NvMediaImageSetTag(
-    NvMediaImage *image,
-    void *tag
-);
-
-/**
- * \brief Gets the tag from an \ref NvMediaImage.
- *
- * \note  The \ref NvMediaImage struct's @a tag member is deprecated, and
- *  will be retired in a future release. Use NvMediaImageSetTag() to set
- * a tag and %NvMediaImageGetTag() to get a tag instead.
- *
- * \param[in]  image A pointer to image for which to get the tag.
- * \param[out] tag   A pointer to a location where the function is to put
- *                    a pointer to the tag.
- * @return  A status code; \ref NVMEDIA_STATUS_OK if the call was successful,
- *  or \ref NVMEDIA_STATUS_BAD_PARAMETER if @a image or @a tag was NULL.
- */
-NvMediaStatus
-NvMediaImageGetTag(
-    const NvMediaImage *image,
-    void **tag
-);
-
-/**
- * \brief Gets status of the current or most recent operation for an image;
- *        optionally waits for the current operation to complete or time out.
- * \param[in] image A pointer to the image.
- * \param[in] millisecondWait
- *                  Time in milliseconds to wait for the current operation to
- *                  complete before getting status.
- *                  \ref NVMEDIA_IMAGE_TIMEOUT_INFINITE means wait indefinitely.
- * \param[out] status
- *                  A pointer to the status of the operation.
- * \retval  NVMEDIA_STATUS_OK indicates that the call was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a image or @a status
- *  was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that another error occurred.
- */
-NvMediaStatus
-NvMediaImageGetStatus(
-    const NvMediaImage *image,
-    uint32_t millisecondWait,
-    NvMediaTaskStatus *status
-);
-
-/*@} <!-- Ends image_api Image Handling API --> */
+/**@} <!-- Ends image_api Image Handling API --> */
 
 /*
  * \defgroup history_nvmedia_image History
@@ -641,8 +675,21 @@ NvMediaImageGetStatus(
  *<b> Version 1.21 </b> March 28, 2019
  * - Move NvMediaBitsPerPixel and NVMEDIA_MAX_AGGREGATE_IMAGES to nvmedia_icp.h
  * - Move NvMediaRawPixelOrder to nvmedia_ipp.h
+ *
+ *<b> Version 1.22 </b> Dec 24, 2019
+ * - Bypassed non-safety functions and non-safety NvMediaImage struct members
+ *   using NV_IS_SAFETY macro to resolve MISRA-C rule 8.6 violations
+ * - Fixed MISRA 2.4 for unused NvMediaImageRec tag.
+ * - Changed arg type of NvMediaImageGetEmbeddedData from void*  to unit8_t*.
+ *
+ *<b> Version 1.23 </b> Jan 23, 2020
+ *    Modify comments: Add warning for lock/unlock APIs and format support info in
+ *    GetEmbeddedData
+ *
+ *<b> Version 1.24 </b> Feb 7, 2020
+ *    Removed non-safety debug APIs on safety build
+ *
  */
-/*@}*/
 
 #ifdef __cplusplus
 };     /* extern "C" */

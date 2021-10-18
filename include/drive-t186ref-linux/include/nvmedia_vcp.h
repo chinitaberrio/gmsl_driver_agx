@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -26,6 +26,10 @@ extern "C" {
 /**
  * \defgroup capture_api Video Capture
  * \ingroup nvmedia_video_top
+ *
+ * \note NvMedia Video Capture (VCP) APIs are deprecated in this
+ * release. The APIs and the associated sample applications will be removed
+ * in a future release.
  *
  * Captures uncompressed video data, writing
  * the results to a \ref NvMediaVideoSurface "NvMediaVideoSurface".

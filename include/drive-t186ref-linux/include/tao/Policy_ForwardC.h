@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:152
 
-#ifndef _TAO_PIDL_POLICY_FORWARDC_MSOP5T_H_
-#define _TAO_PIDL_POLICY_FORWARDC_MSOP5T_H_
+#ifndef _TAO_PIDL_POLICY_FORWARDC_YBGWHD_H_
+#define _TAO_PIDL_POLICY_FORWARDC_YBGWHD_H_
 
 #include /**/ "ace/pre.h"
 

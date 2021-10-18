@@ -66,7 +66,7 @@ extern "C" {
 /** \brief Core major version number. */
 #define NVMEDIA_CORE_VERSION_MAJOR   1
 /** \brief Core minor version number. */
-#define NVMEDIA_CORE_VERSION_MINOR   12
+#define NVMEDIA_CORE_VERSION_MINOR   14
 
 /** \hideinitializer \brief A true \ref NvMediaBool value. */
 #define NVMEDIA_TRUE  (0 == 0)
@@ -80,7 +80,7 @@ extern "C" {
 typedef uint32_t NvMediaBool;
 
 /**
- * \brief Holds the media time (timespec as defined by the POSIX specification).
+ * \brief Holds the media time in timespec format as defined by the POSIX specification.
  */
 typedef struct timespec NvMediaTime;
 
@@ -152,6 +152,17 @@ typedef struct {
 } NvMediaPoint;
 
 /**
+ * \brief Defines the float-precision location of a point on a two-dimensional
+ *  object.
+ */
+typedef struct {
+    /*! Holds the horizontal location of the point. */
+    float_t x;
+    /*! Holds the vertical location of the point. */
+    float_t y;
+} NvMediaPointFloat;
+
+/**
  * \brief Defines the double-precision location of a point on a two-dimensional
  *  object.
  */
@@ -167,38 +178,38 @@ typedef struct {
  * \brief Defines all possible error codes.
  */
 typedef enum {
-    /** \hideinitializer Specifies that the operation completed successfully
+    /** Specifies that the operation completed successfully
      (with no error). */
     NVMEDIA_STATUS_OK = 0,
     /** Specifies that a bad parameter was passed. */
-    NVMEDIA_STATUS_BAD_PARAMETER,
+    NVMEDIA_STATUS_BAD_PARAMETER = 1,
     /** Specifies that the operation has not finished yet. */
-    NVMEDIA_STATUS_PENDING,
+    NVMEDIA_STATUS_PENDING = 2,
     /** Specifies that the operation timed out. */
-    NVMEDIA_STATUS_TIMED_OUT,
+    NVMEDIA_STATUS_TIMED_OUT = 3,
     /** Specifies that the process is out of memory. */
-    NVMEDIA_STATUS_OUT_OF_MEMORY,
+    NVMEDIA_STATUS_OUT_OF_MEMORY = 4,
     /** Specifies that a component requred by the function call is not
      initialized. */
-    NVMEDIA_STATUS_NOT_INITIALIZED,
+    NVMEDIA_STATUS_NOT_INITIALIZED = 5,
     /** Specifies that the requested operation is not supported. */
-    NVMEDIA_STATUS_NOT_SUPPORTED,
+    NVMEDIA_STATUS_NOT_SUPPORTED = 6,
     /** Specifies a catch-all error, used when no other error code applies. */
-    NVMEDIA_STATUS_ERROR,
+    NVMEDIA_STATUS_ERROR = 7,
     /** Specifies that no operation is pending. */
-    NVMEDIA_STATUS_NONE_PENDING,
+    NVMEDIA_STATUS_NONE_PENDING = 8,
     /** Specifies insufficient buffering. */
-    NVMEDIA_STATUS_INSUFFICIENT_BUFFERING,
+    NVMEDIA_STATUS_INSUFFICIENT_BUFFERING = 9,
     /** Specifies that the size of an object passed to a function was
      invalid. */
-    NVMEDIA_STATUS_INVALID_SIZE,
+    NVMEDIA_STATUS_INVALID_SIZE = 10,
     /** Specifies that a library's version is incompatible with the
      application. */
-    NVMEDIA_STATUS_INCOMPATIBLE_VERSION,
+    NVMEDIA_STATUS_INCOMPATIBLE_VERSION = 11,
     /** Specifies that the operation entered an undefined state. */
-    NVMEDIA_STATUS_UNDEFINED_STATE,
+    NVMEDIA_STATUS_UNDEFINED_STATE = 13,
     /** Specifies an error from Permanent Fault Software Diagnostic. */
-    NVMEDIA_STATUS_PFSD_ERROR,
+    NVMEDIA_STATUS_PFSD_ERROR = 14,
 } NvMediaStatus;
 
 /**
@@ -230,7 +241,7 @@ typedef struct {
     uint8_t minor;
 } NvMediaVersion;
 
-/**
+/*
  ******* Definitions ******************
  * SOFFence - Start of frame \ref NvSciSyncFence. An NvSciSyncFence
  *            whose expiry indicates that the processing has started.
@@ -242,14 +253,14 @@ typedef struct {
  */
 
 /**
- * \brief NvMedia NvSciSync ClientType
+ * \brief NvMedia NvSciSync Client Type
  */
 typedef enum {
-    /* An NvMedia component acts as a signaler. */
+    /** An NvMedia component acts as a signaler. */
     NVMEDIA_SIGNALER,
-    /* An NvMedia component acts as a waiter. */
+    /** An NvMedia component acts as a waiter. */
     NVMEDIA_WAITER,
-    /* An NvMedia component acts as a signaler and waiter also for the same
+    /** An NvMedia component acts as a signaler and waiter also for the same
      \ref NvSciSyncObj. */
     NVMEDIA_SIGNALER_WAITER
 } NvMediaNvSciSyncClientType;
@@ -293,11 +304,11 @@ typedef enum {
 } NvMediaAccessMode;
 
 /**
- * \brief Gets the release version information for the NvMedia library.
- * \param[in] version A pointer to a structure
+ * @brief Gets the release version information for the NvMedia library.
+ * @param[in, out] version A valid non-NULL pointer to a \ref NvMediaVersion structure
  *                      to be filled by the function.
- * \return  NVMEDIA_STATUS_OK if the operation was successful, or
- *  NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
+ * @retval NVMEDIA_STATUS_OK if the operation was successful
+ * @retval NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
  */
 NvMediaStatus
 NvMediaReleaseGetVersion(
@@ -306,10 +317,10 @@ NvMediaReleaseGetVersion(
 
 /**
  * \brief Gets the core version information for the NvMedia library.
- * \param[in] version A pointer to a structure
+ * \param[in, out] version A valid non-NULL pointer to a \ref NvMediaVersion structure
  *                      to be filled by the function.
- * \return  NVMEDIA_STATUS_OK if the operation was successful, or
- *  NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
+ * @retval NVMEDIA_STATUS_OK if the operation was successful
+ * @retval NVMEDIA_STATUS_BAD_PARAMETER if @a version was invalid.
  */
 NvMediaStatus
 NvMediaCoreGetVersion(
@@ -337,8 +348,13 @@ NvMediaCoreGetVersion(
 typedef struct NvMediaDevice NvMediaDevice;
 
 /**
- * \brief Creates an NvMediaDevice.
- * \return The new handle for the device if successful, or NULL otherwise.
+ * @brief Creates an instance of the NvMediaDevice structure
+ *
+ * Memory will be allocated for a NvMediaDevice structure and private SOC specific NvMedia
+ * information will be saved in the created NvMediaDevice.
+ *
+ * @retval NvMediaDevice Valid non-NULL pointer to the new device if successful
+ * @retval NULL incase of failure
  */
 NvMediaDevice *
 NvMediaDeviceCreate(
@@ -346,8 +362,12 @@ NvMediaDeviceCreate(
 );
 
 /**
- * \brief Destroys an NvMediaDevice.
- * \param[in] device A pointer to the device to be destroyed.
+ * \brief Destroys an NvMediaDevice instance.
+ *
+ * Memory allocated for NvMediaDevice using \ref NvMediaDeviceCreate will be freed and the
+ * instance of NvMediaDevice structure will be destroyed.
+ *
+ * \param[in] device A valid non-NULL pointer to the device to be destroyed.
  */
 void
 NvMediaDeviceDestroy(
@@ -419,6 +439,13 @@ NvMediaDeviceDestroy(
  *
  * <b> Version 1.12 </b> April 2, 2019
  * - Added enum value NVMEDIA_STATUS_PFSD_ERROR to \ref NvMediaStatus
+ *
+ * <b> Version 1.13 </b> August 1, 2019
+ * - Added manual enumeration for backward compatibility to \ref NvMediaStatus
+ *
+ * <b> Version 1.14 </b> November 06, 2019
+ * - Add \ref NvMediaPointFloat
+ *
  */
 
 #ifdef __cplusplus

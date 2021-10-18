@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -40,7 +40,7 @@ extern "C" {
 #define NVM_ISP_VERSION_MAJOR   1
 
 /** \brief Minor version number. */
-#define NVM_ISP_VERSION_MINOR   5
+#define NVM_ISP_VERSION_MINOR   6
 
 /**
  * \brief Maximum supported simultaneous outputs.
@@ -84,25 +84,19 @@ extern "C" {
 #define NVM_ISP_LTM_GAIN_POINTS             (9U)
 
 /**
- * \brief Maximum number of windows for local average & clip in a region of
- * interest.
- */
-#define NVM_ISP_MAX_FB_BANDS                (256U)
-
-/**
  * \brief A handle representing ISP object.
  */
-typedef struct _NvMediaISP NvMediaISP;
+typedef struct NvMediaISP NvMediaISP;
 
 /**
  * \brief A handle representing ISP stats surface object.
  */
-typedef struct _NvMediaISPStatsSurface NvMediaISPStatsSurface;
+typedef struct NvMediaISPStatsSurface NvMediaISPStatsSurface;
 
 /**
  * \brief A handle representing ISP settings object.
  */
-typedef struct _NvMediaISPSettings NvMediaISPSettings;
+typedef struct NvMediaISPSettings NvMediaISPSettings;
 
 /**
  * \brief Defines supported ISP pipelines.
@@ -116,7 +110,7 @@ typedef enum {
 
 /**
  * \brief Gives the version information for the NvMedia ISP library.
- * \param[in,out] version \ref NvMediaVersion structure which will be populated.
+ * \param[in,out] version NvMediaVersion structure which will be populated.
  * \return  NVMEDIA_STATUS_OK if successful, or NVMEDIA_STATUS_BAD_PARAMETER
  *  if @a version was invalid.
  */
@@ -144,38 +138,26 @@ NvMediaISPCreate(
 );
 
 /**
- * \brief Stops the image processing.
- * \param[in] isp ISP object to destroy.
- * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a isp was NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
- */
-NvMediaStatus
-NvMediaISPStop(
-    NvMediaISP *isp
-);
-
-/**
  * \brief Destroys an Image Signal Processing object.
- * \param[in] isp ISP object.
+ * \param[in] nvmisp ISP object.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
- * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a isp was NULL.
+ * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that @a nvmisp was NULL.
  * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPDestroy(
-    NvMediaISP *isp
+    NvMediaISP *nvmisp
 );
 
 /**
  * \brief Allocates an ISP statistics surface object.
- * \param[in] isp ISP object.
+ * \param[in] nvmisp ISP object.
  * \return  A handle to the ISP statistics surface if successful, or NULL
  *  otherwise.
  */
 NvMediaISPStatsSurface *
 NvMediaISPStatsSurfaceCreate(
-    NvMediaISP *isp
+    NvMediaISP *nvmisp
 );
 
 /**
@@ -193,7 +175,7 @@ NvMediaISPStatsSurfaceDestroy(
 
 /**
  * \brief Allocates an ISP settings object.
- * \param[in] isp ISP object.
+ * \param[in] nvmisp ISP object.
  * \param[in] pipelineEnum
  *      ISP pipeline configuration, reserved for future extension.
         For now this must be same as value given in \ref NvMediaISPCreate
@@ -202,7 +184,7 @@ NvMediaISPStatsSurfaceDestroy(
  */
 NvMediaISPSettings *
 NvMediaISPSettingsCreate(
-    NvMediaISP *isp,
+    const NvMediaISP *nvmisp,
     NvMediaISPPipelineEnum pipelineEnum
 );
 
@@ -211,6 +193,7 @@ NvMediaISPSettingsCreate(
  * \param[in] settings ISP settings object.
  * \param[in] blob Pointer to the binary blob.
  * \param[in] blobSize Size of binary blob memory.
+ *            Supported values: [176, 6 x 1024 x 1024].
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
  *  were invalid.
@@ -220,7 +203,7 @@ NvMediaStatus
 NvMediaISPSettingsLoadConfig(
     NvMediaISPSettings* settings,
     const uint8_t* blob,
-    size_t blobSize
+    uint64_t blobSize
 );
 
 /**
@@ -229,7 +212,6 @@ NvMediaISPSettingsLoadConfig(
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameter
  *  was invalid.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSettingsDestroy(
@@ -261,16 +243,18 @@ typedef struct {
      * @li Constrains: Either X or Y coordinate of the 1st knee point must be 0.0
      * @li Constrains: Knee points must be monotonically non-decreasing
      */
-    NvMediaPointDouble kneePoints[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_LIN_KNEE_POINTS];
+    NvMediaPointFloat kneePoints[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_LIN_KNEE_POINTS];
 } NvMediaISPLinearization;
 
 /**
  * \brief Programs linearizartion block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a linearization
  *                      block.
  * \param[in] size      Size of the linearization block control structure.
+ *                      Supported value: sizeof(NvMediaISPLinearization).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -281,7 +265,7 @@ NvMediaISPSetLinearization(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPLinearization *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -297,28 +281,29 @@ typedef struct {
      * for each plane & each color component.
      * @li Supported values: [0.0, 1.0]
      */
-    double_t pedestal[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_COLOR_COMPONENT];
+    float_t pedestal[NVM_ISP_MAX_INPUT_PLANES][NVM_ISP_MAX_COLOR_COMPONENT];
 } NvMediaISPBlackLevelCorrection;
 
 /**
  * \brief Programs black level correction block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a black level
  *                      correction block.
  * \param[in] size      Size of the black level correction block control
  *                      structure.
+ *                      Supported value: sizeof(NvMediaISPBlackLevelCorrection).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetBlackLevelCorrection(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPBlackLevelCorrection *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -341,21 +326,22 @@ typedef struct {
  * \brief Programs white balance correction block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a white balance
  *                      correction block.
  * \param[in] size      Size of the white balance correction block control
  *                      structure.
+ *                      Supported value: sizeof(NvMediaISPWhiteBalanceCorrection).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetWhiteBalanceCorrection(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPWhiteBalanceCorrection *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -381,7 +367,7 @@ typedef enum {
     /**
      * Specifies blend all planes.
      */
-    NVM_ISP_EXP_FUSION_BLEND_ALL = 4,
+    NVM_ISP_EXP_FUSION_BLEND_ALL = 4
 } NvMediaISPExposureFusionMode;
 
 /**
@@ -408,9 +394,11 @@ typedef struct {
  * \brief Programs exposure fusion block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for an exposure
  *                      fusion block.
  * \param[in] size      Size of the exposure fusion block control structure.
+ *                      Supported value: sizeof(NvMediaISPExposureFusion).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -421,7 +409,7 @@ NvMediaISPSetExposureFusion(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPExposureFusion *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -459,10 +447,12 @@ typedef struct {
  * \brief Programs bad pixel correction block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      control structure for a bad pixel correction block.
  * \param[in] size      Size of the bad pixel correction block control
  *                      structure.
+ *                      Supported value: sizeof(NvMediaISPBadPixelCorrection).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -473,7 +463,7 @@ NvMediaISPSetBadPixelCorrection(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPBadPixelCorrection *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -501,7 +491,7 @@ typedef struct {
     /**
      * Holds compression factor from N to 20-bit depth, where N >= 20.
      * @li Supported values: [0.75, 1.0]
-     * \note Recommened alpha = 20 / (sensor-caputred data bit N).
+     * \note Recommened alpha = 20 / (sensor bit-depth N​).
      */
     float_t alpha;
 } NvMediaISPLensShadingCorrection;
@@ -510,10 +500,12 @@ typedef struct {
  * \brief Programs lens shading correction block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a lens shading
  *                      correction block.
  * \param[in] size      Size of the lens shading correction block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPLensShadingCorrection).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -524,7 +516,7 @@ NvMediaISPSetLensShadingCorrection(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPLensShadingCorrection *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -543,19 +535,20 @@ typedef struct {
  * \brief Programs demosaic block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a demosaic block.
  * \param[in] size      Size of the demosaic block control structure.
+ *                      Supported value: sizeof(NvMediaISPDemosaic).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetDemosaic(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPDemosaic *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -579,10 +572,12 @@ typedef struct {
  * \brief Programs level adjusted saturation block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a level
  *                      adjusted saturation block.
  * \param[in] size      Size of the level adjusted saturation block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPLevelAdjSat).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -593,7 +588,7 @@ NvMediaISPSetLevelAdjSat(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPLevelAdjSat *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -637,8 +632,8 @@ typedef struct {
     /**
      * Holds a radial transfer function.
      *
-	 * Supported values are described in the declaration of
-	 * \ref NvMediaISPRadialTF.
+     * Supported values are described in the declaration of
+     * \ref NvMediaISPRadialTF.
      */
     NvMediaISPRadialTF radialTF;
 } NvMediaISPNoiseReduction;
@@ -647,9 +642,11 @@ typedef struct {
  * \brief Programs noise reduction block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      noise reduction block.
  * \param[in] size      Size of the noise reduction block control structure.
+ *                      Supported value: sizeof(NvMediaISPNoiseReduction).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -660,7 +657,7 @@ NvMediaISPSetNoiseReduction(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPNoiseReduction *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -674,6 +671,10 @@ typedef struct {
     /**
      * Holds color correction matrix.
      * @li Supported values: [-8.0, 8.0]
+     *
+     * Note: When CCM and corresponding iCSC are enabled at the same time,
+     * each element in the final matrix of (iCSC x CCM) should be in the range of [-8.0, 8.0].
+     * For example, iCSC-0 x CCM0, iCSC-1 x CCM-1.
      */
     float_t matrix[NVM_ISP_MAX_COLORMATRIX_DIM][NVM_ISP_MAX_COLORMATRIX_DIM];
 } NvMediaISPColorCorrectionMatrix;
@@ -682,21 +683,22 @@ typedef struct {
  * \brief Programs color correction matrix block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a
  *                      color correction matrix block.
  * \param[in] size      Size of the color correction matrix block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPColorCorrectionMatrix).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetColorCorrectionMatrix(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPColorCorrectionMatrix *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -720,20 +722,21 @@ typedef struct {
  * \brief Programs global tone map block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a
  *                      global tone map block.
  * \param[in] size      Size of the global tone map block control structure.
+ *                      Supported value: sizeof(NvMediaISPGlobalToneMap).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetGlobalToneMap(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPGlobalToneMap *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -772,9 +775,11 @@ typedef struct {
  * \brief Programs local tone map block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      local tone map block.
  * \param[in] size      Size of the local tone map block control structure.
+ *                      Supported value: sizeof(NvMediaISPLocalToneMap).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -785,7 +790,7 @@ NvMediaISPSetLocalToneMap(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPLocalToneMap *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -807,42 +812,48 @@ typedef struct {
  * \brief Programs color space conversion block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 2].
  * \param[in] controls  A pointer to a control structure for a
  *                      color space conversion block.
  * \param[in] size      Size of the color space conversion block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPColorSpaceConversion).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetColorSpaceConversion(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPColorSpaceConversion *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Programs inverse color space conversion block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for an
  *                      inverse color space conversion block.
  * \param[in] size      Size of the inverse color space conversion block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPColorSpaceConversion).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
+ *
+ * Note : When iCSC and corresponding CCM are enabled at the same time,
+ * each element in the final matrix of (iCSC x CCM) should be in the range of [-8.0, 8.0].
+ * For example, iCSC-0 x CCM0, iCSC-1 x CCM-1.
  */
 NvMediaStatus
 NvMediaISPSetInvColorSpaceConversion(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPColorSpaceConversion *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -865,19 +876,20 @@ typedef struct {
  * \brief Programs saturation block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a saturation block.
  * \param[in] size      Size of the saturation block control structure.
+ *                      Supported value: sizeof(NvMediaISPSaturation).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetSaturation(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPSaturation *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -900,8 +912,10 @@ typedef struct {
  * \brief Programs sharpness block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a sharpness block.
  * \param[in] size      Size of the sharpness block control structure.
+ *                      Supported value: sizeof(NvMediaISPSharpness).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
@@ -912,7 +926,7 @@ NvMediaISPSetSharpness(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPSharpness *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -939,19 +953,20 @@ typedef struct {
  * \brief Programs downscale block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 2].
  * \param[in] controls  A pointer to a control structure for a downscale block.
  * \param[in] size      Size of the downscale block control structure.
+ *                      Supported value: sizeof(NvMediaISPDownscale).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetDownscale(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPDownscale *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -970,7 +985,7 @@ typedef struct {
      */
     float_t min[NVM_ISP_MAX_COLOR_COMPONENT];
     /**
-     * Holds minimum clip value for each color component, component order is
+     * Holds maximum clip value for each color component, component order is
      * RGGB/RCCB/RCCC for bayer data & RGB/YUV for RGB/YUV data.
      * @li Supported values for non-chroma data: [-0.125, 2.0], max >= min
      * @li Supported values for chroma data: [-0.5, 0.5], max >= min
@@ -982,19 +997,20 @@ typedef struct {
  * \brief Programs clip block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 2].
  * \param[in] controls  A pointer to a control structure for a clip block.
  * \param[in] size      Size of the clip block control structure.
+ *                      Supported value: sizeof(NvMediaISPClip).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetClip(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPClip *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -1016,19 +1032,20 @@ typedef struct {
  * \brief Programs offset block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 2].
  * \param[in] controls  A pointer to a control structure for an offset block.
  * \param[in] size      Size of the offset block control structure.
+ *                      Supported value: sizeof(NvMediaISPOffset).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetOffset(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPOffset *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
@@ -1050,130 +1067,136 @@ typedef struct {
  * \brief Programs digital gain block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      digital gain block.
  * \param[in] size      Size of the digital gain block control structure.
+ *                      Supported value: sizeof(NvMediaISPDigitalGain).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetDigitalGain(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPDigitalGain *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Programs histogram statistics block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a
  *                      histogram statistics block.
  * \param[in] size      Size of the histogram statistics block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPHistogramStats).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetHistogramStats(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPHistogramStats *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Programs local average and clip statistics block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported values: [0, 1].
  * \param[in] controls  A pointer to a control structure for a
  *                      local average and clip statistics block.
  * \param[in] size      Size of the local average and clip statistics block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPLocalAvgClipStats).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetLocalAvgClipStats(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPLocalAvgClipStats *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Programs bad pixel statistics block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      control structure for a bad pixel statistics block.
  * \param[in] size      Size of the bad pixel statistics block control
  *                      structure.
+ *                      Supported value: sizeof(NvMediaISPBadPixelStats).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetBadPixelStats(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPBadPixelStats *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Programs local tone map statistics block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      local tone map statistics block.
  * \param[in] size      Size of the local tone map statistics block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPLocalToneMapStats).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetLocalToneMapStats(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPLocalToneMapStats *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Programs flicker band statistics block controls.
  * \param[in] settings  Handle representing the ISP settings object.
  * \param[in] instance  Instance of the block to be programmed.
+ *                      Supported value: 0.
  * \param[in] controls  A pointer to a control structure for a
  *                      flicker band statistics block.
  * \param[in] size      Size of the flicker band statistics block
  *                      control structure.
+ *                      Supported value: sizeof(NvMediaISPFlickerBandStats).
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more pointer
  *  parameters were NULL.
- * \retval  NVMEDIA_STATUS_ERROR indicates that some other error occurred.
  */
 NvMediaStatus
 NvMediaISPSetFlickerBandStats(
     NvMediaISPSettings *settings,
     uint32_t instance,
     const NvMediaISPFlickerBandStats *controls,
-    size_t size
+    uint64_t size
 );
 
 /**
  * \brief Registers an image group as input to isp engine
- * \param[in] isp ISP object.
+ * \param[in] nvmisp   ISP object.
  * \param[in] imageGrp Image group to be registered to isp engine
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1182,13 +1205,13 @@ NvMediaISPSetFlickerBandStats(
  */
 NvMediaStatus
 NvMediaISPRegisterInputImageGroup(
-    NvMediaISP *isp,
-    NvMediaImageGroup *imageGrp
+    const NvMediaISP *nvmisp,
+    const NvMediaImageGroup *imageGrp
 );
 
 /**
  * \brief Unregisters an image group from input to isp engine
- * \param[in] isp ISP object.
+ * \param[in] nvmisp   ISP object.
  * \param[in] imageGrp Image group to be unregistered from isp engine
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1197,14 +1220,14 @@ NvMediaISPRegisterInputImageGroup(
  */
 NvMediaStatus
 NvMediaISPUnregisterInputImageGroup(
-    NvMediaISP *isp,
-    NvMediaImageGroup *imageGrp
+    const NvMediaISP *nvmisp,
+    const NvMediaImageGroup *imageGrp
 );
 
 /**
  * \brief Registers an image as output to isp engine
- * \param[in] isp ISP object.
- * \param[in] image Image to be registered to isp engine
+ * \param[in] nvmisp ISP object.
+ * \param[in] image  Image to be registered to isp engine
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
  *  were invalid.
@@ -1212,14 +1235,14 @@ NvMediaISPUnregisterInputImageGroup(
  */
 NvMediaStatus
 NvMediaISPRegisterOutputImage(
-    NvMediaISP *isp,
-    NvMediaImage *image
+    const NvMediaISP *nvmisp,
+    const NvMediaImage *image
 );
 
 /**
  * \brief Unregisters an image from output to isp engine
- * \param[in] isp ISP object.
- * \param[in] image Image to be unregistered from isp engine
+ * \param[in] nvmisp ISP object.
+ * \param[in] image  Image to be unregistered from isp engine
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
  *  were invalid.
@@ -1227,8 +1250,8 @@ NvMediaISPRegisterOutputImage(
  */
 NvMediaStatus
 NvMediaISPUnregisterOutputImage(
-    NvMediaISP *isp,
-    NvMediaImage *image
+    const NvMediaISP *nvmisp,
+    const NvMediaImage *image
 );
 
 /**
@@ -1237,17 +1260,20 @@ NvMediaISPUnregisterOutputImage(
 typedef struct {
     /**
      * Holds input image(s).
+     * - Supported input image size: width [128, 4096] and height [128,4096]
+     * - Input image's width and height should be even number.
      */
     NvMediaImageGroup input;
     /**
      * Holds cropping rectangle for input image.
      *
-     * Coordinates of image top-left & bottom-right points are (0, 0) &
+     * - Coordinates of image top-left & bottom-right points are (0, 0) &
      * (width, height) respectively. Either memset the rectangle to 0 or set it
      * to include full image for no cropping.
-     *
-     * Input crop only supports cropping in vertical direction, meaning
-     * left & bottom cordinated must be 0 & input width respectively.
+     * - Input crop only supports cropping in vertical direction, meaning
+     * left & right coordinates must be 0 & input width, respectively.
+     * - Vertical and horizontal cropped sizes should be even number.
+     * - Supported vertical cropped height: [128, 4096]
      */
     NvMediaRect inputCropRect;
     /**
@@ -1265,7 +1291,7 @@ typedef struct {
      *
      * Rectangle must be within input image or downscaled image if downscaling
      * is enabled. Cropped width & height must be same as output width & height
-     * respectively and cropped width must be even.
+     * respectively and cropped width and height must be even.
      *
      */
     NvMediaRect outputCropRect[NVM_ISP_MAX_OUTPUTS];
@@ -1282,7 +1308,7 @@ typedef struct {
 
 /**
  * \brief ISP processing function.
- * \param[in] isp ISP object.
+ * \param[in] nvmisp  ISP object.
  * \param[in] params  ISP processing parameters.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1291,15 +1317,16 @@ typedef struct {
  */
 NvMediaStatus
 NvMediaISPProcess(
-    NvMediaISP *isp,
+    NvMediaISP *nvmisp,
     const NvMediaISPProcessParams *params
 );
 
 /**
  * \brief Gets the histogram statistics data.
- * \param[in] isp           ISP object.
+ * \param[in] nvmisp        ISP object.
  * \param[in] statsSurface  Statistics surface.
  * \param[in] instance      Instance of the block to get statistics.
+ *                          Supported value: [0, 1].
  * \param[in,out] statsData A pointer to histogram statistics data.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1308,7 +1335,7 @@ NvMediaISPProcess(
  */
 NvMediaStatus
 NvMediaISPGetHistogramStatsData(
-    NvMediaISP *isp,
+    const NvMediaISP *nvmisp,
     NvMediaISPStatsSurface *statsSurface,
     uint32_t instance,
     NvMediaISPHistogramStatsData *statsData
@@ -1316,9 +1343,10 @@ NvMediaISPGetHistogramStatsData(
 
 /**
  * \brief Gets the local average & clip statistics data.
- * \param[in] isp           ISP object.
+ * \param[in] nvmisp        ISP object.
  * \param[in] statsSurface  A pointer to a statistics surface.
  * \param[in] instance      Instance of the block to get statistics.
+ *                          Supported values: [0, 1].
  * \param[in,out] statsData A pointer to local average & clip statistics data.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1327,7 +1355,7 @@ NvMediaISPGetHistogramStatsData(
  */
 NvMediaStatus
 NvMediaISPGetLocalAvgClipStatsData(
-    NvMediaISP *isp,
+    const NvMediaISP *nvmisp,
     NvMediaISPStatsSurface *statsSurface,
     uint32_t instance,
     NvMediaISPLocalAvgClipStatsData *statsData
@@ -1335,9 +1363,10 @@ NvMediaISPGetLocalAvgClipStatsData(
 
 /**
  * \brief Gets the local tone map statistics data.
- * \param[in] isp           ISP object.
+ * \param[in] nvmisp        ISP object.
  * \param[in] statsSurface  A pointer to a statistics surface.
  * \param[in] instance      Instance of the block to get statistics.
+ *                          Supported value: 0.
  * \param[in,out] statsData A pointer to local tone map statistics data.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1346,7 +1375,7 @@ NvMediaISPGetLocalAvgClipStatsData(
  */
 NvMediaStatus
 NvMediaISPGetLocalToneMapStatsData(
-    NvMediaISP *isp,
+    const NvMediaISP *nvmisp,
     NvMediaISPStatsSurface *statsSurface,
     uint32_t instance,
     NvMediaISPLocalToneMapStatsData *statsData
@@ -1354,9 +1383,10 @@ NvMediaISPGetLocalToneMapStatsData(
 
 /**
  * \brief Gets the bad pixel statistics data.
- * \param[in] isp           ISP object.
+ * \param[in] nvmisp        ISP object.
  * \param[in] statsSurface  A pointer to a statistics surface.
  * \param[in] instance      Instance of the block to get statistics.
+ *                          Supported value: 0.
  * \param[in,out] statsData A pointer to bad pixel statistics data.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1365,7 +1395,7 @@ NvMediaISPGetLocalToneMapStatsData(
  */
 NvMediaStatus
 NvMediaISPGetBadPixelStatsData(
-    NvMediaISP *isp,
+    const NvMediaISP *nvmisp,
     NvMediaISPStatsSurface *statsSurface,
     uint32_t instance,
     NvMediaISPBadPixelStatsData *statsData
@@ -1373,9 +1403,10 @@ NvMediaISPGetBadPixelStatsData(
 
 /**
  * \brief Gets the flicker band statistics data.
- * \param[in] isp           ISP object.
+ * \param[in] nvmisp        ISP object.
  * \param[in] statsSurface  A pointer to a statistics surface.
  * \param[in] instance      Instance of the block to get statistics.
+ *                          Supported value: 0.
  * \param[in,out] statsData A pointer to flicker band statistics data.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
@@ -1384,13 +1415,13 @@ NvMediaISPGetBadPixelStatsData(
  */
 NvMediaStatus
 NvMediaISPGetFlickerBandStatsData(
-    NvMediaISP *isp,
+    const NvMediaISP *nvmisp,
     NvMediaISPStatsSurface *statsSurface,
     uint32_t instance,
     NvMediaISPFlickerBandStatsData *statsData
 );
 
-/*@} <!-- Ends nvmedia_isp_api Image Signal Processing --> */
+/** @} <!-- Ends nvmedia_isp_api Image Signal Processing --> */
 
 #ifdef __cplusplus
 };     /* extern "C" */

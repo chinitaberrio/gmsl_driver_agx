@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_POLLABLES_IJ86ZY_H_
-#define _TAO_IDL_POLLABLES_IJ86ZY_H_
+#ifndef _TAO_IDL_POLLABLES_HCPBXJ_H_
+#define _TAO_IDL_POLLABLES_HCPBXJ_H_
 
 #include /**/ "ace/pre.h"
 

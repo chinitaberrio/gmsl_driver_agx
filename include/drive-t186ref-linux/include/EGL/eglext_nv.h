@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /*
- * Copyright (c) 2008 - 2016, NVIDIA Corporation.  All rights reserved.
+ * Copyright (c) 2008 - 2019, NVIDIA Corporation.  All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -214,6 +214,30 @@ typedef EGLBoolean (EGLAPIENTRYP PFNEGLQUERYWAYLANDBUFFERWL) (EGLDisplay dpy, vo
 #define EGL_X_AXIS_NV                        0x336F
 #define EGL_Y_AXIS_NV                        0x3370
 #endif /* EGL_NV_stream_origin */
+
+#ifndef EGL_NV_stream_dma
+#define EGL_NV_stream_dma 1
+#define EGL_STREAM_DMA_NV                    0x3371
+#define EGL_STREAM_DMA_SERVER_NV             0x3372
+#endif /* EGL_NV_stream_dma */
+
+#ifndef EGL_NV_stream_consumer_eglimage
+#define EGL_NV_stream_consumer_eglimage 1
+#define EGL_STREAM_CONSUMER_IMAGE_NV         0x3373
+#define EGL_STREAM_IMAGE_ADD_NV              0x3374
+#define EGL_STREAM_IMAGE_REMOVE_NV           0x3375
+#define EGL_STREAM_IMAGE_AVAILABLE_NV        0x3376
+#ifdef EGL_EGLEXT_PROTOTYPES
+EGLAPI EGLBoolean EGLAPIENTRY eglStreamImageConsumerConnectNV(EGLDisplay dpy, EGLStreamKHR stream);
+EGLAPI EGLBoolean EGLAPIENTRY eglQueryStreamConsumerEventNV(EGLDisplay dpy, EGLStreamKHR stream, EGLTime timeout, EGLenum *event, EGLAttrib *aux);
+EGLAPI EGLBoolean EGLAPIENTRY eglStreamAcquireImageNV(EGLDisplay dpy, EGLStreamKHR stream, EGLImage *pImage, EGLSync sync);
+EGLAPI EGLBoolean EGLAPIENTRY eglStreamReleaseImageNV(EGLDisplay dpy, EGLStreamKHR stream, EGLImage image, EGLSync sync);
+#endif
+typedef EGLBoolean (EGLAPIENTRYP PFNEGLSTREAMIMAGECONSUMERCONNECTNV) (EGLDisplay dpy, EGLStreamKHR stream);
+typedef EGLBoolean (EGLAPIENTRYP PFNEGLQUERYSTREAMCONSUMEREVENTNV) (EGLDisplay dpy, EGLStreamKHR stream, EGLTime timeout, EGLenum *event, EGLAttrib *aux);
+typedef EGLBoolean (EGLAPIENTRYP PFNEGLSTREAMACQUIREIMAGENV) (EGLDisplay dpy, EGLStreamKHR stream, EGLImage *pImage, EGLSync sync);
+typedef EGLBoolean (EGLAPIENTRYP PFNEGLSTREAMRELEASEIMAGENV) (EGLDisplay dpy, EGLStreamKHR stream, EGLImage image, EGLSync sync);
+#endif /* EGL_NV_stream_consumer_eglimage */
 
 #ifdef __cplusplus
 }

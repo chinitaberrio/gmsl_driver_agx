@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_INVALIDSLOTA_48JIOX_H_
-#define _TAO_IDL_INVALIDSLOTA_48JIOX_H_
+#ifndef _TAO_IDL_INVALIDSLOTA_YTSNCK_H_
+#define _TAO_IDL_INVALIDSLOTA_YTSNCK_H_
 
 #include /**/ "ace/pre.h"
 

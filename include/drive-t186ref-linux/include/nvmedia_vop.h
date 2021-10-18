@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2019, NVIDIA CORPORATION.  All rights reserved.  All
+ * Copyright (c) 2017 - 2020, NVIDIA CORPORATION.  All rights reserved.  All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -38,7 +38,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_VOP_VERSION_MAJOR   3
 /** \brief Minor Version number */
-#define NVMEDIA_VOP_VERSION_MINOR   0
+#define NVMEDIA_VOP_VERSION_MINOR   1
 
 /**
  * \brief Video output object created by \ref NvMediaVideoOutputCreate.
@@ -214,6 +214,8 @@ NvMediaVideoOutputSetAttributes(
  * NvMediaVideoOutputCreate() created.
  * \param[in] output The video output handle.
  * \param[in] videoSurface The video surface to be displayed.
+ * <b> Note: </b> NvMediaVideoOutputFlip suppports YUV 420,422 planar/semi-planar 8 bit
+ *                and RGBA,ARGB,BGRA 8 bit surface types
  * \param[in] srcRect
  *       A structure containing co-ordinates of the rectangle in the source surface
  *       from which the client surface is to be copied. Setting \a srcRect to NULL
@@ -270,6 +272,10 @@ NvMediaVideoOutputFlip(
  *   colorStandard support from \ref NvMediaVideoOutputSetAttributes.
  * - Updated description of \ref NvMediaVideoOutputSetAttributes API to
  *   add composition, depth and position attributes
+ *
+ *  <b> Version 3.1 </b> April 28, 2020
+ * - Added supported surface format types in NvMediaVideoOutputFlip API
+ *
  */
 
 #ifdef __cplusplus

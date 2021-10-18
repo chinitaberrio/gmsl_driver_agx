@@ -7,13 +7,13 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
-#ifndef INVSIPLTRACE_H
-#define INVSIPLTRACE_H
+#ifndef NVSIPLTRACE_HPP
+#define NVSIPLTRACE_HPP
 
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Trace Interface </b>
+ * @brief <b> NVIDIA SIPL: Trace Interface </b>
  *
  */
 
@@ -26,9 +26,9 @@ namespace nvsipl
 
 /** @class INvSIPLTrace NvSIPLTrace.hpp
  *
- * @brief Defines the public interfaces to control the logging/tracing of the libnvsipl.so
- * library for debug purposes.
+ * @brief Defines the public interfaces to control the logging/tracing of SIPL.
  */
+#if !NV_IS_SAFETY
 class INvSIPLTrace
 {
 public:
@@ -86,9 +86,10 @@ public:
     /** @brief Default destructor. */
     virtual ~INvSIPLTrace() = default;
 };
+#endif //!NV_IS_SAFETY
 
 /** @} */
 
 } // namespace nvsipl
 
-#endif // INVSIPLTRACE_H
+#endif // NVSIPLTRACE_HPP

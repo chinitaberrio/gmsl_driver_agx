@@ -119,7 +119,6 @@ typedef enum CUeglResourceLocationFlags_enum {
 
 /**
   * CUDA EGL Color Format - The different planar and multiplanar formats currently supported for CUDA_EGL interops.
-  * Three channel formats are currently not supported for ::CU_EGL_FRAME_TYPE_ARRAY
   */
 typedef enum CUeglColorFormat_enum {
     CU_EGL_COLOR_FORMAT_YUV420_PLANAR              = 0x00,  /**< Y, U, V in three surfaces, each in a separate surface, U/V width = 1/2 Y width, U/V height = 1/2 Y height. */
@@ -194,6 +193,7 @@ typedef enum CUeglColorFormat_enum {
     CU_EGL_COLOR_FORMAT_BAYER_ISP_BGGR             = 0x45,  /**< Nvidia proprietary Bayer ISP format - one channel in one surface with interleaved BGGR ordering and mapped to opaque integer datatype. */
     CU_EGL_COLOR_FORMAT_BAYER_ISP_GRBG             = 0x46,  /**< Nvidia proprietary Bayer ISP format - one channel in one surface with interleaved GRBG ordering and mapped to opaque integer datatype. */
     CU_EGL_COLOR_FORMAT_BAYER_ISP_GBRG             = 0x47,  /**< Nvidia proprietary Bayer ISP format - one channel in one surface with interleaved GBRG ordering and mapped to opaque integer datatype. */
+    CU_EGL_COLOR_FORMAT_Y                          = 0x52, /**< Color format for single Y plane. */
     CU_EGL_COLOR_FORMAT_MAX
 } CUeglColorFormat;
 
@@ -344,6 +344,9 @@ CUresult CUDAAPI cuEGLStreamConsumerConnectWithFlags(CUeglStreamConnection *conn
  *
  * Disconnect CUDA as a consumer to EGLStreamKHR.
  *
+ * The EGLStreamKHR is an EGL object that transfers a sequence of image frames from one
+ * API to another.
+
  * \param conn            - Conection to disconnect.
  *
  * \return
@@ -360,9 +363,7 @@ CUresult CUDAAPI cuEGLStreamConsumerDisconnect(CUeglStreamConnection *conn);
 /**
  * \brief Acquire an image frame from the EGLStream with CUDA as a consumer.
  *
- * Acquire an image frame from EGLStreamKHR. This API can also acquire an old frame presented
- * by the producer unless explicitly disabled by setting EGL_SUPPORT_REUSE_NV flag to EGL_FALSE
- * during stream initialization. By default, EGLStream is created with this flag set to EGL_TRUE.
+ * Acquire an image frame from EGLStreamKHR.
  * ::cuGraphicsResourceGetMappedEglFrame can be called on \p pCudaResource to get
  * ::CUeglFrame.
  *
@@ -370,9 +371,7 @@ CUresult CUDAAPI cuEGLStreamConsumerDisconnect(CUeglStreamConnection *conn);
  * \param pCudaResource   - CUDA resource on which the stream frame will be mapped for use.
  * \param pStream         - CUDA stream for synchronization and any data migrations
  *                          implied by ::CUeglResourceLocationFlags.
- * \param timeout         - Desired timeout in usec for a new frame to be acquired.
- *                          After timeout occurs CUDA consumer tries to acquire an old frame
- *                          if available and EGL_SUPPORT_REUSE_NV flag is set.
+ * \param timeout         - Desired timeout in usec.
  *
  * \return
  * ::CUDA_SUCCESS,
@@ -389,9 +388,9 @@ CUresult CUDAAPI cuEGLStreamConsumerAcquireFrame(CUeglStreamConnection *conn,
  * \brief Releases the last frame acquired from the EGLStream.
  *
  * Release the acquired image frame specified by \p pCudaResource to EGLStreamKHR.
- * If EGL_SUPPORT_REUSE_NV flag is set to EGL_TRUE, at the time of EGL creation
- * this API doesn't release the last frame acquired on the EGLStream.
- * By default, EGLStream is created with this flag set to EGL_TRUE.
+ *
+ * The EGLStreamKHR is an EGL object that transfers a sequence of image frames from one
+ * API to another.
  *
  * \param conn            - Connection on which to release
  * \param pCudaResource   - CUDA resource whose corresponding frame is to be released
@@ -438,6 +437,9 @@ CUresult CUDAAPI cuEGLStreamProducerConnect(CUeglStreamConnection *conn, EGLStre
  *
  * Disconnect CUDA as a producer to EGLStreamKHR.
  *
+ * The EGLStreamKHR is an EGL object that transfers a sequence of image frames from one
+ * API to another.
+
  * \param conn            - Conection to disconnect.
  *
  * \return
@@ -454,14 +456,9 @@ CUresult CUDAAPI cuEGLStreamProducerDisconnect(CUeglStreamConnection *conn);
 /**
  * \brief Present a CUDA eglFrame to the EGLStream with CUDA as a producer.
  *
- * When a frame is presented by the producer, it gets associated with the EGLStream
- * and thus it is illegal to free the frame before the producer is disconnected.
- * If a frame is freed and reused it may lead to undefined behavior.
- *
- * If producer and consumer are on different GPUs (iGPU and dGPU) then frametype
- * ::CU_EGL_FRAME_TYPE_ARRAY is not supported. ::CU_EGL_FRAME_TYPE_PITCH can be used for
- * such cross-device applications.
- *
+ * The EGLStreamKHR is an EGL object that transfers a sequence of image frames from one
+ * API to another.
+
  * The ::CUeglFrame is defined as:
  * \code
  * typedef struct CUeglFrame_st {
@@ -503,8 +500,12 @@ CUresult CUDAAPI cuEGLStreamProducerPresentFrame(CUeglStreamConnection *conn,
 /**
  * \brief Return the CUDA eglFrame to the EGLStream released by the consumer.
  *
+ * The EGLStreamKHR is an EGL object that transfers a sequence of image frames from one
+ * API to another.
+ *
  * This API can potentially return CUDA_ERROR_LAUNCH_TIMEOUT if the consumer has not 
  * returned a frame to EGL stream. If timeout is returned the application can retry.
+ *
  *
  * \param conn            - Connection on which to return
  * \param eglframe        - CUDA Eglstream Proucer Frame handle returned from the consumer over EglStream.
@@ -527,7 +528,7 @@ CUresult CUDAAPI cuEGLStreamProducerReturnFrame(CUeglStreamConnection *conn,
  *
  * Returns in \p *eglFrame an eglFrame pointer through which the registered graphics resource
  * \p resource may be accessed.
- * This API can only be called for registered EGL graphics resources.
+ * This API can only be called for EGL graphics resources.
  *
  * The ::CUeglFrame is defined as:
  * \code

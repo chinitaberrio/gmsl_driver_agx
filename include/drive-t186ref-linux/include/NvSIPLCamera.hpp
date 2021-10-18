@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION.  All rights reserved.
  *
  * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
@@ -7,26 +7,39 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
-#ifndef _NVSIPLCAMERA_HPP_
-#define _NVSIPLCAMERA_HPP_
+#ifndef NVSIPLCAMERA_HPP
+#define NVSIPLCAMERA_HPP
 
 #include "NvSIPLCommon.hpp"
 #include "NvSIPLPlatformCfg.hpp"
 #include "NvSIPLPipelineMgr.hpp"
+#include "INvSiplControlAuto.hpp"
+#include "NvSIPLClient.hpp"
 
+#include "nvmedia_image.h"
+
+#include "devblk_cdi.h"
+
+#ifdef NVMEDIA_NVSCI_ENABLE
+#include "nvscisync.h"
+#include "nvscistream.h"
+#endif // NVMEDIA_NVSCI_ENABLE
+
+#include <cstdint>
 #include <memory>
+#include <vector>
 
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Camera Interface - @ref NvSIPLCamera_API </b>
+ * @brief <b> NVIDIA SIPL: Camera Interface - @ref NvSIPLCamera_API </b>
  *
  */
 
-/** @defgroup NvSIPLCamera_API NvSIPL Camera (libnvsipl.so)
+/** @defgroup NvSIPLCamera_API NvSIPL Camera
  *
  * @brief Provides top-level interfaces to program external image devices and Tegra to create and
- * manage image processing pipelines to receives outputs in NvMediaImage surfaces.
+ * manage image processing pipelines to receive outputs in NvMediaImage surfaces.
  *
  * @ingroup NvSIPL */
 
@@ -44,143 +57,313 @@ namespace nvsipl
 class INvSIPLCamera
 {
  public:
-    /** @brief Gets a handle to INvSIPLCamera instance.
+    /** @brief Gets a handle to an INvSIPLCamera instance.
      *
-     * Static function to create an instance of implementation class and return the handle. The object
-     * is automatically destroyed when the variable holding the return value goes out of scope.
+     * Static function to create an instance of the implementation class and return the handle. The
+     * object is automatically destroyed when the variable holding the return value goes out of
+     * scope.
      *
-     * @returns unique_ptr A pointer to an INvSIPLCamera instance. */
+     * @returns a pointer to an INvSIPLCamera instance.
+     */
     static std::unique_ptr<INvSIPLCamera> GetInstance(void);
 
     /** @brief Sets a platform configuration.
      *
-     * Function sets a PlatformCfg camera platform configuration. NvSIPLCamera uses the
+     * The method sets a @ref PlatformCfg camera platform configuration. NvSIPLCamera uses the
      * information in the platform configuration to create the necessary DeviceBlock(s)
-     * and Pipeline Manager(s).
+     * and Pipeline Manager(s). This function must be called before @ref SetPipelineCfg().
      *
      * @param[in] platformCfg @ref PlatformCfg
-     * The external devices referenced in the platform configurations must be
-     * supported by the @ref NvSIPLDevBlk_API
+     * The external devices referenced in the platform configuration must be supported by the
+     * SIPL Device Block drivers.
      *
-     * @returns::SIPLStatus. The completion status of the operation. */
+     * @returns::SIPLStatus the completion status of the operation.
+     */
     virtual SIPLStatus SetPlatformCfg(const PlatformCfg* platformCfg) = 0;
 
-    /** @brief Gets the camera platform configuration set by @ref SetPlatformCfg.
-     *
-     * @returns PlatformCfg* A pointer to the PlatformCfg.
-     */
-    virtual const PlatformCfg* GetPlatformCfg(void) const = 0;
+#if !NV_IS_SAFETY
 
-    /** @brief Sets a handler for events from an image processing pipeline.
+    /** @brief Sets a pipeline configuration.
      *
-     * Sets a @ref NvSIPLPipelineNotifier to handle the events from the image processing pipeline.
-     * @param[in] uIndex The ID of the sensor.
-     * @param[in] pNotifier A pointer to @ref NvSIPLPipelineNotifier.
-     *
-     * @returns::SIPLStatus. The completion status of the operation. */
-    virtual SIPLStatus SetNotifier(std::uint32_t uIndex, NvSIPLPipelineNotifier* pNotifier) = 0;
-
-
-    /** @brief Sets an image group writer for an image processing pipeline.
-     *
-     * Sets a @ref NvSIPLImageGroupWriter to feed the images to image processing pipeline.
-     * The API can be used to re-process the RAW frames captured from sensor via Tegra HW ISP.
-     *
-     * The @ref SetPlatformCfg() method must be called with appropriate
-     * platform configuration before calling this API.
-     *
-     * @param[in] uIndex The ID of the sensor.
-     * @param[in] pImageGroupWriter A pointer to @ref NvSIPLImageGroupWriter.
-     *
-     * @returns @ref SIPLStatus. */
-    virtual SIPLStatus SetImageGroupWriterCallback(std::uint32_t uIndex, NvSIPLImageGroupWriter* pImageGroupWriter) = 0;
-
-    /** @brief Sets a vector of @ref INvSIPLClient::ConsumerDesc of consumers of image processing pipeline(s).
-     *
-     * This function must be called after @ref SetPlatformCfg() and before @ref Init()
-     * Each @ref INvSIPLClient::ConsumerDesc describes a consumer of an image processing pipeline output.
-     *
-     * @returns::SIPLStatus. The completion status of the operation. */
-    virtual SIPLStatus SetOutputDesc(std::vector<INvSIPLClient::ConsumerDesc> vDescs) = 0;
-
-    /** @brief Sets attributes of the image pool used by ICP and ISP components of
-     * an image processing pipeline.
-     *
-     * The API can be used to override the default output format of the ISP.
+     * The method sets a camera pipeline configuration. NvSIPLCamera uses the information in the
+     * pipeline configuration to initialize the Pipeline Manager. This function must be called after
+     * @ref SetPlatformCfg() but before @ref Init().
      *
      * @param[in] index The ID of the sensor.
-     * @param[in] outType @ref nvsipl::INvSIPLClient::ConsumerDesc::OutputType.
-     * @param[in] numOfImages Number of images in the pool.
-     * @param[in] imageAttr An @ref NvSIPLImageAttr.
+     * @param[in] pipelineCfg An @ref NvSIPLPipelineCfg to set.
      *
-     * @returns @ref SIPLStatus. */
-    virtual SIPLStatus SetImagePoolAttributes(std::uint32_t index,
-                                              INvSIPLClient::ConsumerDesc::OutputType outType,
-                                              uint32_t numOfImages,
-                                              const NvSIPLImageAttr &imageAttr) = 0;
+     * @returns::SIPLStatus the completion status of the operation.
+     * @deprecated This version of SetPipelineCfg() will be removed in a future release.
+     */
+    virtual SIPLStatus SetPipelineCfg(std::uint32_t index, const NvSIPLPipelineCfg &pipelineCfg) = 0;
+
+#endif // NV_IS_SAFETY
+
+    /** @brief Sets a pipeline configuration.
+     *
+     * The method sets a camera pipeline configuration. NvSIPLCamera uses the information in the
+     * pipeline configuration to initialize the Pipeline Manager. This function must be called after
+     * @ref SetPlatformCfg() but before @ref Init().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] pipelineCfg An @ref NvSIPLPipelineConfiguration to set.
+     * @param[out] queues The queues that will deliver completed frames and events to the client.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus SetPipelineCfg(std::uint32_t index,
+                                      const NvSIPLPipelineConfiguration &pipelineCfg,
+                                      NvSIPLPipelineQueues& queues) = 0;
+
+    /** @brief Register Auto Control plugin to be used for specific pipeline.
+     *
+     * This method must be called for every pipeline with ISP output enabled. This function must be
+     * called after @ref RegisterImages() but before @ref Start().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] type Plugin type.
+     * @param[in] autoControl @ref ISiplControlAuto Handle to plugin implementation.
+     * @param[in] blob Reference to binary blob containing the ISP configuration.
+     *
+     * @note Support for registering more than one auto control plugin is deprecated and will be removed in the future release.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus RegisterAutoControlPlugin(std::uint32_t index,
+                                                 PluginType type,
+                                                 ISiplControlAuto* autoControl,
+                                                 const std::vector<std::uint8_t>& blob) = 0;
 
     /** @brief Initializes @ref NvSIPLCamera_API for the selected platform configuration.
      *
-     * The function internally initializes the @ref NvSIPLDevBlk_API for each device block
+     * The method internally initializes the camera module(s) and deserializer for each device block
      * in the selected platform configuration and creates and initializes the image processing
-     * pipelines based on the number and type of the consumers set via @ref SetOutputDesc.
+     * pipelines based on the number and type of the consumers set via @ref SetPipelineCfg.
      *
-     * This function must be called after @ref SetPlatformCfg and @ref SetOutputDesc.
+     * This method must be called after @ref SetPipelineCfg() but before @ref RegisterImageGroups().
      *
-     * @returns::SIPLStatus. The completion status of the operation. */
+     * @returns::SIPLStatus the completion status of the operation.
+     */
     virtual SIPLStatus Init(void) = 0;
 
-    /** @brief Gets @ref NvSIPLClient_API descriptor for an image processing pipeline output.
+    /** @brief Gets image attributes.
      *
-     * The function returns a handle to @ref INvSIPLClient::ClientDesc for a specific
-     * image processing pipeline output. This descriptor can be used to
-     * initialize a @ref NvSIPLClient_API object.
+     * The method can be used to get the attributes of the images to be used with the image
+     * processing pipeline. The user must reconcile the attributes returned by this function with
+     * the attributes required by the downstream consumers of the output of the pipeline and
+     * allocate the images.
+     *
+     * This method must be called after @ref Init() but before @ref Start().
      *
      * @param[in] index The ID of the sensor.
-     * @param[in] outType @ref INvSIPLClient::ConsumerDesc::OutputType.
+     * @param[in] outType @ref nvsipl::INvSIPLClient::ConsumerDesc::OutputType.
+     * @param[out] imageAttr Reference to the image attributes structure.
      *
-     * this function must be called after @ref Init().
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus GetImageAttributes(std::uint32_t index,
+                                          INvSIPLClient::ConsumerDesc::OutputType outType,
+                                          NvSIPLImageAttr &imageAttr) = 0;
+
+    /** @brief Read from an EEPROM in a camera module.
+     *
+     * This method can be used to perform data reads from an EEPROM in a camera
+     * module. This method can only be called after @ref Init() but before
+     * @ref Start().
+     *
+     * @param[in] index The ID of the sensor to which the EEPROM is associated.
+     * @param[in] address The start address to read from in the EEPROM.
+     * @param[in] length Contiguous size of data to be read. [byte]
+     * @param[out] buffer Buffer that EEPROM data is to be written into, must be
+     *                    at least size length.
      *
      * @returns::SIPLStatus. The completion status of the operation. */
-    virtual INvSIPLClient::ClientDesc* GetClientDesc(std::uint32_t index,
-                                                     INvSIPLClient::ConsumerDesc::OutputType outType) = 0;
+    virtual SIPLStatus ReadEEPROMData(const std::uint32_t index,
+                                      const std::uint16_t address,
+                                      const std::uint32_t length,
+                                      std::uint8_t * const buffer) = 0;
+
+#if !NV_IS_SAFETY
+    /** @brief Get EEPROM CDI handle.
+     *
+     * This method can be used to get the EEPROM CDI handle. This method can only be called after
+     * @ref Init() but before @ref Start().
+     *
+     * WARNING: This API will be deprecated in an imminent future release in favour of
+     *          ReadEEPROMData().
+     *
+     * @param[in] index The ID of the sensor.
+     *
+     * @returns a pointer to the EEPROM CDI handle.
+     */
+    virtual DevBlkCDIDevice* GetE2PHandle(std::uint32_t index) = 0;
+#endif // !NV_IS_SAFETY
+
+    /** @brief Registers image groups.
+     *
+     * The method can be used to register the NvMedia image groups to be used within the image
+     * processing pipelines. @ref NvMediaImageGroup serve as the output of ICP and input to ISP.
+     *
+     * This method must be called after @ref Init() but before @ref Start() and if ISP output is
+     * enabled also before @ref RegisterImages().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] imageGroups Vector of @ref NvMediaImageGroup pointers to be registered.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus RegisterImageGroups(std::uint32_t index,
+                                           const std::vector<NvMediaImageGroup*> &imageGroups) = 0;
+
+    /** @brief Registers images.
+     *
+     * The method can be used to register the images to be used within the image processing
+     * pipelines. @ref NvMediaImage serve as the output of ISP.
+     *
+     * If ISP output is enabled, this method must be called after @ref RegisterImageGroups() but
+     * before @ref RegisterAutoControlPlugin().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] outType @ref nvsipl::INvSIPLClient::ConsumerDesc::OutputType, can be ISP0 or ISP1.
+     * @param[in] images Vector of @ref NvMediaImage pointers to be registered.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus RegisterImages(std::uint32_t index,
+                                      INvSIPLClient::ConsumerDesc::OutputType outType,
+                                      const std::vector<NvMediaImage*> &images) = 0;
 
     /** @brief Starts @ref NvSIPLCamera_API for the selected platform configuration.
      *
-     * The function internally starts the streaming from sensors belonging to each device block
+     * The method internally starts the streaming from sensors belonging to each device block
      * in the selected platform configuration and starts the associated image processing pipelines.
      *
-     * This function must be called after @ref Init().
+     * This method must be called after @ref RegisterImageGroups() @if (NVMEDIA_NVSCI_ENABLE), @else
+     *  and @endif (if ISP output is enabled) @ref RegisterImages()@if (NVMEDIA_NVSCI_ENABLE), and
+     * (if using NvSci) @ref SetNvSciSyncObjForEOF()@endif.
      *
-     * @returns::SIPLStatus. The completion status of the operation. */
+     * @returns::SIPLStatus the completion status of the operation.
+     */
     virtual SIPLStatus Start(void) = 0;
 
     /** @brief Stops @ref NvSIPLCamera_API for the selected platform configuration.
      *
-     * The function internally stops the streaming from sensors belonging to each device block
+     * The method internally stops the streaming from sensors belonging to each device block
      * in the selected platform configuration and stops the associated image processing pipelines.
      *
-     * This function must be called after @ref Start().
+     * This method must be called after @ref Start().
      *
-     * @returns::SIPLStatus. The completion status of the operation. */
+     * @returns::SIPLStatus the completion status of the operation.
+     */
     virtual SIPLStatus Stop(void) = 0;
 
-    /** @brief De-initializes @ref NvSIPLCamera_API for the selected platform configuration.
+    /** @brief Deinitializes @ref NvSIPLCamera_API for the selected platform configuration.
      *
-     * The function internally De-initializes the @ref NvSIPLDevBlk_API for each device block in
-     * the selected platform configuration and De-initializes and destroys the image
-     * processing pipelines.
+     * The method internally deinitializes the camera module(s) and deserializer for each device block in the
+     * selected platform configuration and deinitializes and destroys the image processing
+     * pipelines.
      *
-     * This function must be called after @ref Stop().
+     * Any registered images are automatically deregistered and can be safely destroyed.
      *
-     * @returns @ref SIPLStatus. */
-
+     * This method must be called after @ref Stop().
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
     virtual SIPLStatus Deinit(void) = 0;
+
+    /** @brief Attempts to recover a given link.
+     *
+     * The method tries to recover a link that has failed.
+     *
+     * If this method is called on a link that has not failed, nothing will happen.
+     *
+     * This method should only be called after @ref Start() and before @ref Stop().
+     *
+     * @param[in] index The ID of the sensor.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus RecoverLink(std::uint32_t index) = 0;
+
+#if !NV_IS_SAFETY
+    /** @brief Control the LED on the associated camera module.
+     *
+     * The method tries to enable or disable the LED on the specific module.
+     *
+     * This method is valid only if there is an LED on the camera module and it is controlled by the sensor.
+     *
+     * This method should only be called after @ref Start() and before @ref Stop().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] enable Enable or disable LED.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus ToggleLED(std::uint32_t index, bool enable) = 0;
+#endif // !NV_IS_SAFETY
 
     /** @brief Default destructor. */
     virtual ~INvSIPLCamera(void) = default;
 
-    // TODO: Add APIs to get deviceblock errors and handle recovery.
+#ifdef NVMEDIA_NVSCI_ENABLE
+    /** @brief Fills an @ref NvSciSyncAttrList.
+     *
+     * The method can be used to fetch the NvSciSync attributes required for compatiblility
+     * with the underlying image processing pipelines.
+     *
+     * If using NvSci, this method must be called after @ref Init() and before @ref
+     * RegisterNvSciSyncObj().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] outType @ref nvsipl::INvSIPLClient::ConsumerDesc::OutputType.
+     * @param[out] attrList @ref NvSciSyncAttrList to be filled.
+     * @param[in] clientType Waiter, signaler, or both.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     */
+    virtual SIPLStatus FillNvSciSyncAttrList(std::uint32_t index,
+                                             INvSIPLClient::ConsumerDesc::OutputType outType,
+                                             NvSciSyncAttrList attrList,
+                                             NvMediaNvSciSyncClientType clientType) = 0;
+
+    /** @brief Register an @ref NvSciSyncObj.
+     *
+     * If using NvSci, this method must be called after @ref FillNvSciSyncAttrList() and before @ref
+     * SetNvSciSyncObjForEOF().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] outType @ref nvsipl::INvSIPLClient::ConsumerDesc::OutputType.
+     * @param[in] syncobjtype Presync, EOF sync, or presync and EOF.
+     * @param[in] syncobj @ref NvSciSyncObj to be registered.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     * @note Support for registering more than one NvSciSyncObj of type NVMEDIA_EOFSYNCOBJ is deprecated and will be removed in a future release.
+     */
+    virtual SIPLStatus RegisterNvSciSyncObj(std::uint32_t index,
+                                            INvSIPLClient::ConsumerDesc::OutputType outType,
+                                            NvMediaNvSciSyncObjType syncobjtype,
+                                            NvSciSyncObj syncobj) = 0;
+
+#if !NV_IS_SAFETY
+    /** @brief Set the EOF @ref NvSciSyncObj.
+     *
+     * Set the engine's current EOF NvSciSync object.
+     *
+     * If using NvSci, this method must be called after @ref RegisterNvSciSyncObj() and before @ref
+     * Start().
+     *
+     * @param[in] index The ID of the sensor.
+     * @param[in] outType @ref nvsipl::INvSIPLClient::ConsumerDesc::OutputType.
+     * @param[in] syncobj @ref NvSciSyncObj to be registered.
+     *
+     * @returns::SIPLStatus the completion status of the operation.
+     * @deprecated This method is deprecated and will be removed in a future release.
+     */
+    virtual SIPLStatus SetNvSciSyncObjForEOF(std::uint32_t index,
+                                             INvSIPLClient::ConsumerDesc::OutputType outType,
+                                             NvSciSyncObj syncobj) = 0;
+#endif // !NV_IS_SAFETY
+#endif // NVMEDIA_NVSCI_ENABLE
 
 }; // INvSIPLCamera
 
@@ -189,4 +372,4 @@ class INvSIPLCamera
 
 
 
-#endif //_NVSIPLCAMERA_HPP_
+#endif // NVSIPLCAMERA_HPP

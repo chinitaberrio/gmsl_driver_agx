@@ -23,8 +23,8 @@
  * components using the same naming convention for conditional compilation.
  */
 
-#ifndef __cpuopsys_h_
-#define __cpuopsys_h_
+#ifndef CPUOPSYS_H
+#define CPUOPSYS_H
 
 /*****************************************************************************/
 /* Define all OS/CPU-Chip related symbols */
@@ -231,7 +231,7 @@
  * New, safer family of #define's -- these ones use 0 vs. 1 rather than
  * defined/!defined.  This is advantageous because if you make a typo, say:
  *
- *   #if NVCPU_IS_BIG_ENDAIN    // Oops!  Endian is misspelled
+ *   #if NVCPU_IS_BIG_ENDAIN
  *
  * ...some compilers can give you a warning telling you that you screwed up.
  * The compiler can also give you a warning if you forget to #include
@@ -391,4 +391,4 @@
 #endif
 /*****************************************************************************/
 
-#endif /* __cpuopsys_h_ */
+#endif /* CPUOPSYS_H */

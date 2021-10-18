@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2014-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2019 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -28,14 +28,31 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "WindowGLFW.hpp"
-
-#include <iostream>
-#include <cstring>
-
+// The ifdef and glfw3.h include are the same
+// as in WindowGLFW.hpp. They are duplicated here
+// because WindowGLFW undefines "Status", which is
+// needed by the X11 includes below
+#include <dw/core/EGL.h>
+#include <dwvisualization/gl/GL.h>
 #ifdef DW_USE_EGL
-    #include <GLFW/glfw3native.h>
-    #include <EGL/eglext.h>
+#define GLFW_INCLUDE_ES3
+#ifndef VIBRANTE_V5Q
+#ifndef GLFW_USE_WAYLAND
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+#endif
+#define GLFW_EXPOSE_NATIVE_EGL
+#include <EGL/egl.h>
+#endif
+
+#include <GLFW/glfw3.h>
+
+// These includes require the "Status" macro
+// but there is no need to make them part of
+// the header
+#ifdef DW_USE_EGL
+#include <GLFW/glfw3native.h>
+#include <EGL/eglext.h>
 #endif
 
 #if defined(GLFW_EXPOSE_NATIVE_X11)
@@ -43,12 +60,50 @@
 #include <X11/Xutil.h>
 #include <X11/Xresource.h>
 #include <X11/Xatom.h>
-#include <limits.h>
 #endif
+
+// Include this last because it undefines Status
+#include "WindowGLFW.hpp"
+
+#include <iostream>
+#include <cstring>
+#include <string>
+#include <limits.h>
+
+// ----------------------------------------------------------------------------------------------------
+// check if the full screen override must be enabled
+static int checkFullScreenOverride()
+{
+    bool overrideFullScreen = false;
+
+    /*
+       * Wayland backend causes buffer teardown when the requested resolution does not match
+       * the primary monitor connected. Forcing full screen to match primary monitor resolution mode
+       * only when wayland is enabled
+       */
+    FILE* fp;
+    char buffer[8];
+    std::string cmd = "loginctl show-session $(loginctl | awk '/tty/ {print $1}') -p Type | awk -F= '{print $2}'";
+    std::string session;
+    std::string op = "wayland";
+    fp             = popen(cmd.c_str(), "r");
+    if (fp)
+    {
+        while (!feof(fp))
+            if (fgets(buffer, sizeof(buffer), fp) != NULL)
+                session.append(buffer);
+        pclose(fp);
+    }
+
+    /* force full screen if it is wayland session running */
+    overrideFullScreen = (strncmp(session.c_str(), op.c_str(), 7) == 0) ? 1 : 0;
+
+    return overrideFullScreen;
+}
 
 // -----------------------------------------------------------------------------
 WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen, int samples,
-                       bool initInvisible)
+                       bool initInvisible, bool fullScreen)
     : WindowBase(width, height)
     , m_offscreen(offscreen)
 #ifdef DW_USE_EGL
@@ -56,7 +111,8 @@ WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen,
     , m_context(EGL_NO_CONTEXT)
 #endif
 {
-    if (glfwInit() == 0) {
+    if (glfwInit() == 0)
+    {
         std::cout << "WindowGLFW: Failed initialize GLFW " << std::endl;
         throw std::exception();
     }
@@ -67,7 +123,8 @@ WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen,
     glfwWindowHint(GLFW_DEPTH_BITS, 24);   // Enable
 
     // GLFW_VISIBLE can be used to avoid showing blank window when app is doing initialization.
-    if (offscreen || initInvisible) {
+    if (offscreen || initInvisible)
+    {
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
     }
 
@@ -85,14 +142,42 @@ WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen,
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #endif
 
-    if (title == nullptr) {
+    if (title == nullptr)
+    {
         glfwWindowHint(GLFW_DECORATED, GL_FALSE);
         title = "";
     }
 
-    m_hWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+    if (!fullScreen)
+        fullScreen = checkFullScreenOverride();
 
-    if (!m_hWindow) {
+    if (fullScreen)
+    {
+        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        if (nullptr != mode)
+        {
+            m_width  = mode->width;
+            m_height = mode->height;
+
+            glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+            glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+            glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+            glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        }
+        else
+        {
+            m_width  = 1920;
+            m_height = 1200;
+        }
+        m_hWindow = glfwCreateWindow(m_width, m_height, title, glfwGetPrimaryMonitor(), NULL);
+    }
+    else
+    {
+        m_hWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+    }
+
+    if (!m_hWindow)
+    {
         glfwTerminate();
         std::cout << "WindowGLFW: Failed create window" << std::endl;
         throw std::exception();
@@ -104,8 +189,9 @@ WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen,
     // dwRenderer requires glewExperimental
     // because it calls glGenVertexArrays()
     glewExperimental = GL_TRUE;
-    GLenum err = glewInit();
-    if (err != GLEW_OK) {
+    GLenum err       = glewInit();
+    if (err != GLEW_OK)
+    {
         glfwDestroyWindow(m_hWindow);
         glfwTerminate();
         std::cout << "WindowGLFW: Failed to init GLEW: " << glewGetErrorString(err) << std::endl;
@@ -121,28 +207,28 @@ WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen,
 
     //Callbacks
     glfwSetWindowUserPointer(m_hWindow, this);
-    glfwSetKeyCallback(m_hWindow, [](GLFWwindow *win, int key, int scancode, int action, int mods) {
-        WindowGLFW *window = reinterpret_cast<WindowGLFW *>(glfwGetWindowUserPointer(win));
+    glfwSetKeyCallback(m_hWindow, [](GLFWwindow* win, int key, int scancode, int action, int mods) {
+        WindowGLFW* window = reinterpret_cast<WindowGLFW*>(glfwGetWindowUserPointer(win));
         window->onKeyCallback(key, scancode, action, mods);
     });
-    glfwSetMouseButtonCallback(m_hWindow, [](GLFWwindow *win, int button, int action, int mods) {
-        WindowGLFW *window = reinterpret_cast<WindowGLFW *>(glfwGetWindowUserPointer(win));
+    glfwSetMouseButtonCallback(m_hWindow, [](GLFWwindow* win, int button, int action, int mods) {
+        WindowGLFW* window = reinterpret_cast<WindowGLFW*>(glfwGetWindowUserPointer(win));
         window->onMouseButtonCallback(button, action, mods);
     });
-    glfwSetCharModsCallback(m_hWindow, [](GLFWwindow *win, uint32_t codepoint, int32_t mods) {
-        WindowGLFW *window = reinterpret_cast<WindowGLFW *>(glfwGetWindowUserPointer(win));
+    glfwSetCharModsCallback(m_hWindow, [](GLFWwindow* win, uint32_t codepoint, int32_t mods) {
+        WindowGLFW* window = reinterpret_cast<WindowGLFW*>(glfwGetWindowUserPointer(win));
         window->onCharModsCallback(codepoint, mods);
     });
-    glfwSetCursorPosCallback(m_hWindow, [](GLFWwindow *win, double x, double y) {
-        WindowGLFW *window = reinterpret_cast<WindowGLFW *>(glfwGetWindowUserPointer(win));
+    glfwSetCursorPosCallback(m_hWindow, [](GLFWwindow* win, double x, double y) {
+        WindowGLFW* window = reinterpret_cast<WindowGLFW*>(glfwGetWindowUserPointer(win));
         window->onMouseMoveCallback(x, y);
     });
-    glfwSetScrollCallback(m_hWindow, [](GLFWwindow *win, double dx, double dy) {
-        WindowGLFW *window = reinterpret_cast<WindowGLFW *>(glfwGetWindowUserPointer(win));
+    glfwSetScrollCallback(m_hWindow, [](GLFWwindow* win, double dx, double dy) {
+        WindowGLFW* window = reinterpret_cast<WindowGLFW*>(glfwGetWindowUserPointer(win));
         window->onMouseWheelCallback(dx, dy);
     });
-    glfwSetFramebufferSizeCallback(m_hWindow, [](GLFWwindow *win, int width, int height) {
-        WindowGLFW *window = reinterpret_cast<WindowGLFW *>(glfwGetWindowUserPointer(win));
+    glfwSetFramebufferSizeCallback(m_hWindow, [](GLFWwindow* win, int width, int height) {
+        WindowGLFW* window = reinterpret_cast<WindowGLFW*>(glfwGetWindowUserPointer(win));
         window->onResizeWindowCallback(width, height);
     });
 
@@ -154,7 +240,8 @@ WindowGLFW::WindowGLFW(const char* title, int width, int height, bool offscreen,
     EGLint num_config;
     eglGetConfigs(m_display, nullptr, 0, &num_config);
     m_config.reset(new EGLConfig[num_config]);
-    if(eglGetConfigs(m_display, m_config.get(), num_config, &num_config) == EGL_FALSE) {
+    if (eglGetConfigs(m_display, m_config.get(), num_config, &num_config) == EGL_FALSE)
+    {
         glfwTerminate();
         std::cout << "WindowGLFW: Failed to get configs" << std::endl;
         throw std::exception();
@@ -212,11 +299,14 @@ void WindowGLFW::onMouseButtonCallback(int button, int action, int mods)
 {
     double x, y;
     glfwGetCursorPos(m_hWindow, &x, &y);
-    if (action == GLFW_PRESS) {
+    if (action == GLFW_PRESS)
+    {
         if (!m_mouseDownCallback)
             return;
         m_mouseDownCallback(button, (float)x, (float)y, mods);
-    } else if (action == GLFW_RELEASE) {
+    }
+    else if (action == GLFW_RELEASE)
+    {
         if (!m_mouseUpCallback)
             return;
         m_mouseUpCallback(button, (float)x, (float)y, mods);
@@ -266,6 +356,13 @@ void WindowGLFW::onResizeWindowCallback(int width, int height)
 bool WindowGLFW::swapBuffers(void)
 {
     glfwPollEvents();
+    swapBuffersOnly();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+bool WindowGLFW::swapBuffersOnly(void)
+{
     glfwSwapBuffers(m_hWindow);
     return true;
 }
@@ -284,7 +381,8 @@ void WindowGLFW::resetContext()
 
 // -----------------------------------------------------------------------------
 #ifdef DW_USE_EGL
-EGLContext WindowGLFW::createSharedContext() const {
+EGLContext WindowGLFW::createSharedContext() const
+{
     // -----------------------
     std::cout << "WindowGLFW: create shared EGL context" << std::endl;
 
@@ -296,13 +394,15 @@ EGLContext WindowGLFW::createSharedContext() const {
 
     EGLContext shared = eglCreateContext(m_display, *m_config.get(), m_context, ctxAttribs);
 
-    if (shared == EGL_NO_CONTEXT) {
+    if (shared == EGL_NO_CONTEXT)
+    {
         std::cout << "WindowGLFW: Failed to create shared EGL context " << eglGetError() << std::endl;
         throw std::exception();
     }
 
     EGLBoolean status = eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, shared);
-    if (status != EGL_TRUE) {
+    if (status != EGL_TRUE)
+    {
         std::cout << "WindowGLFW: Failed to make shared EGL context current: " << eglGetError() << std::endl;
         throw std::exception();
     }
@@ -352,12 +452,15 @@ bool WindowGLFW::setWindowSize(int width, int height)
 bool WindowGLFW::getDesktopResolution(int& width, int& height)
 {
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    
-    if (nullptr != mode) {
+
+    if (nullptr != mode)
+    {
         width  = mode->width;
         height = mode->height;
         return true;
-    } else {
+    }
+    else
+    {
         width  = 1280;
         height = 800;
         return false;
@@ -372,7 +475,7 @@ bool WindowGLFW::setFullScreen()
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
 #if defined(GLFW_EXPOSE_NATIVE_X11)
-    Display *display;
+    Display* display;
     Atom actualType;
     int actualFormat;
     unsigned long itemCount, bytesAfter;
@@ -380,7 +483,8 @@ bool WindowGLFW::setFullScreen()
 
     /* First connect to the display server */
     display = XOpenDisplay(NULL);
-    if (!display) {
+    if (!display)
+    {
         setWindowSize(mode->width, mode->height);
         std::cout << "WindowGLFW: Failed to connect to the display server " << std::endl;
         return false;
@@ -400,9 +504,10 @@ bool WindowGLFW::setFullScreen()
                        &actualFormat,
                        &itemCount,
                        &bytesAfter,
-                       (unsigned char**) &windowFromRoot);
+                       (unsigned char**)&windowFromRoot);
 
-    if (actualType != XA_WINDOW){
+    if (actualType != XA_WINDOW)
+    {
         setWindowSize(mode->width, mode->height);
         std::cout << "WindowGLFW: The window manager is NOT running" << std::endl;
         if (windowFromRoot)
@@ -431,7 +536,8 @@ bool WindowGLFW::setWindowPosCentered()
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     glfwGetWindowSize(m_hWindow, &width, &height);
 
-    if (width > mode->width || height > mode->height) {
+    if (width > mode->width || height > mode->height)
+    {
         return true;
     }
 
@@ -442,11 +548,26 @@ bool WindowGLFW::setWindowPosCentered()
 // -----------------------------------------------------------------------------
 bool WindowGLFW::setWindowVisibility(bool visible)
 {
-    if (visible) {
+    if (visible)
+    {
         glfwShowWindow(m_hWindow);
-    } else {
+    }
+    else
+    {
         glfwHideWindow(m_hWindow);
     }
 
     return true;
+}
+
+// -----------------------------------------------------------------------------
+bool WindowGLFW::setWindowTitle(const char* title)
+{
+    if (title)
+    {
+        glfwSetWindowTitle(m_hWindow, title);
+        return true;
+    }
+
+    return false;
 }

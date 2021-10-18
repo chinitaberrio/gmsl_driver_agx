@@ -31,25 +31,11 @@
 #ifndef SAMPLES_COMMON_SAMPLEFRAMEWORK_HPP_
 #define SAMPLES_COMMON_SAMPLEFRAMEWORK_HPP_
 
-
-
-
-
 // ######################################################################################
 //
 //  NOTE: This framework is deprecated. Use DriveWorksSample.hpp instead
 //
 // ######################################################################################
-
-
-
-
-
-
-
-
-
-
 
 #include "Checks.hpp"
 #include "WindowGLFW.hpp"
@@ -60,7 +46,7 @@
 #include <cstring> // for memset
 #include <iostream>
 
-#include <dw/visualization/Renderer.h>
+#include <dwvisualization/core/Renderer.h>
 
 //------------------------------------------------------------------------------
 // Variables
@@ -68,7 +54,7 @@
 
 extern void (*gUserKeyPressCallback)(int);
 extern ProgramArguments gArguments;
-extern WindowBase *gWindow;
+extern WindowBase* gWindow;
 extern bool gRun;
 extern bool gPause;
 
@@ -87,7 +73,7 @@ void keyPressCallback(int key, int scancode, int action, int mods);
 // - Renderbuffer should be initialized with DW_RENDER_PRIM_LINELIST
 // - Expected position format: DW_RENDER_FORMAT_R32G32_FLOAT
 // - Expected position semantic: DW_RENDER_SEMANTIC_POS_XY
-void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *boxIds,
+void drawBoxes(const std::vector<dwBox2D>& boxes, const std::vector<uint32_t>* boxIds,
                float32_t normalizationWidth, float32_t normalizationHeight,
                dwRenderBufferHandle_t renderBuffer, dwRendererHandle_t renderer);
 
@@ -96,20 +82,18 @@ void drawBoxes(const std::vector<dwBox2D> &boxes, const std::vector<uint32_t> *b
 // - Renderbuffer should be initialized with DW_RENDER_PRIM_LINELIST
 // - Expected position format: DW_RENDER_FORMAT_R32G32_FLOAT
 // - Expected position semantic: DW_RENDER_SEMANTIC_POS_XY
-void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string> > &boxesWithLabels,
+void drawBoxesWithLabels(const std::vector<std::pair<dwBox2D, std::string>>& boxesWithLabels,
                          float32_t normalizationWidth, float32_t normalizationHeight,
                          dwRenderBufferHandle_t renderBuffer, dwRendererHandle_t renderer);
 
-
 // init sample application
-bool initSampleApp(int argc, const char **argv,
+bool initSampleApp(int argc, const char** argv,
                    const ProgramArguments* arguments,
                    void (*userKeyPressCallback)(int),
                    uint32_t width, uint32_t height,
                    bool offscreen = false,
-                   int samples = 0);
+                   int samples    = 0);
 
 void releaseSampleApp();
-
 
 #endif // SAMPLES_COMMON_SAMPLEFRAMEWORK_HPP_

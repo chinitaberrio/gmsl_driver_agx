@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_MONITORTYPESUPPORTS_X5WPSG_H_
-#define _TAO_IDL_MONITORTYPESUPPORTS_X5WPSG_H_
+#ifndef _TAO_IDL_MONITORTYPESUPPORTS_RCE9HZ_H_
+#define _TAO_IDL_MONITORTYPESUPPORTS_RCE9HZ_H_
 
 #include /**/ "ace/pre.h"
 

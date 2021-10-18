@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_DATAREADERREMOTES_EBOR3L_H_
-#define _TAO_IDL_DATAREADERREMOTES_EBOR3L_H_
+#ifndef _TAO_IDL_DATAREADERREMOTES_BV7VUO_H_
+#define _TAO_IDL_DATAREADERREMOTES_BV7VUO_H_
 
 #include /**/ "ace/pre.h"
 

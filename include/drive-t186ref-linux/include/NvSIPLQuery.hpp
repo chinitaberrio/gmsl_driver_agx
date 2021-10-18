@@ -7,8 +7,8 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
-#ifndef _NVSIPLQUERY_HPP_
-#define _NVSIPLQUERY_HPP_
+#ifndef NVSIPLQUERY_HPP
+#define NVSIPLQUERY_HPP
 
 #include "NvSIPLCommon.hpp"
 #include "NvSIPLPlatformCfg.hpp"
@@ -21,7 +21,7 @@
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Query Interface - @ref NvSIPLQuery_API </b>
+ * @brief <b> NVIDIA SIPL: Query Interface - @ref NvSIPLQuery_API </b>
  *
  */
 
@@ -29,10 +29,10 @@ namespace nvsipl
 {
 
 /**
- * @defgroup NvSIPLQuery_API NvSIPL Query (libnvsipl_query.so)
+ * @defgroup NvSIPLQuery_API NvSIPL Query
  *
- * Manages a database of information about external devices (deserializer, serializer,
- * sensor, and EEPROM) and the camera platform configurations supported by @ref NvSIPLDevBlk_API.
+ * @brief Manages a database of information about external devices (deserializer, serializer,
+ * sensor, and EEPROM) and the camera platform configurations supported by SIPL Device Block drivers.
  *
  * @ingroup NvSIPL
  */
@@ -51,11 +51,16 @@ class INvSIPLQuery
 {
 public:
 
-    static constexpr std::uint32_t MAJOR_VER  = 0u; /**< Indicates a major revision. */
+    static constexpr std::uint32_t MAJOR_VER  = 1u; /**< Indicates a major revision. */
     static constexpr std::uint32_t MINOR_VER  = 0u; /**< Indicates a minor revision. */
     static constexpr std::uint32_t PATCH_VER  = 0u; /**< Indicates a patch revision. */
 
-    /** @brief Defines the version information for libnvsipl_query.so library. */
+    /** @brief Defines the version information for NvSIPLQuery_API.
+     * @par
+     * Version history of @ref NvSIPLQuery_API
+     * @par
+     * Version <b> 1.0.0 </b> - 9th September 2019 - Alpha version.
+     */
     struct Version
     {
         std::uint32_t uMajor = MAJOR_VER; /**< Holds a major revision. */
@@ -101,7 +106,7 @@ public:
     virtual SIPLStatus ParseJsonFile(std::string fileName) = 0;
 
     /** @brief Returns a pointer to the list of all external image devices
-     * supported by @ref NvSIPLQuery_API and @ref NvSIPLDevBlk_API.
+     * supported by @ref NvSIPLQuery_API and SIPL Device Block drivers.
      * This function must be called only after ParseDatabase().
      *
      * @returns A @c const pointer to DeviceInfoList. */
@@ -160,4 +165,4 @@ public:
 
 
 
-#endif //_NVSIPLQUERY_HPP_
+#endif //NVSIPLQUERY_HPP

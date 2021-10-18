@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 
-// Copyright (c) 2014-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2020 NVIDIA Corporation. All rights reserved.
 
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -34,15 +34,31 @@
 #include <string>
 #include <string.h>
 #include <iostream>
+#include <algorithm>
 
-std::string ProgramArguments::m_empty("");
+ProgramArguments::ProgramArguments(bool addDefaults /* = true */)
+{
+    if (addDefaults)
+    {
+        arguments.insert({"profiling", Option_t("profiling", "1", "Enables/disables sample profiling")});
+        arguments.insert({"offscreen", Option_t("offscreen", "0", "Used for running windowed apps in headless mode. 0 = show window, 1 = offscreen window, 2 = no window created")});
+    }
+}
 
-ProgramArguments::ProgramArguments(int argc, const char **argv, const std::vector<Option_t>& options, const char* description)
+ProgramArguments::ProgramArguments(const std::vector<Option_t>& options, bool addDefaults /* = true */)
+    : ProgramArguments(addDefaults)
+{
+    for (auto& o : options)
+    {
+        addOption(o);
+    }
+}
+
+ProgramArguments::ProgramArguments(int argc, const char** argv, const std::vector<Option_t>& options, const char* description)
     : ProgramArguments(options)
 {
-    if (description) setDescription(description);
-
-    arguments.insert({"profiling", Option_t("profiling", "1", "Enables/disables sample profiling")});
+    if (description)
+        setDescription(description);
 
     if (!parse(argc, argv))
     {
@@ -50,28 +66,25 @@ ProgramArguments::ProgramArguments(int argc, const char **argv, const std::vecto
     }
 }
 
-ProgramArguments::ProgramArguments(const std::vector<Option_t>& options)
-{
-    for (auto &&o : options) {
-        arguments.insert({o.option,o});
-    }
-}
-
 ProgramArguments::~ProgramArguments()
 {
 }
 
-bool ProgramArguments::parse(const int argc, const char **argv)
+bool ProgramArguments::parse(const int argc, const char** argv)
 {
     bool show_help = false;
+    std::string unknown_options;
+    // vecArgNames will check for duplicate args in the command line
+    std::vector<std::string> vecArgNames;
 
-    //std::cmatch match_results;
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i)
+    {
         std::string arg   = argv[i];
         std::size_t mnPos = arg.find("--");
 
         // starts with --
-        if (mnPos == 0) {
+        if (mnPos == 0)
+        {
             arg = arg.substr(2);
 
             std::string name;
@@ -82,28 +95,43 @@ bool ProgramArguments::parse(const int argc, const char **argv)
             name  = arg.substr(0, eqPos);
             value = arg.substr(eqPos + 1);
 
-            if(name == "help"){
+            // support space-separated args
+            if (eqPos == std::string::npos && i + 1 < argc && argv[i + 1][0] != '-')
+            {
+                value = argv[++i];
+            }
+            if (std::find(vecArgNames.begin(), vecArgNames.end(), name) != vecArgNames.end())
+            {
+                // this option has already been parsed
+                throw std::runtime_error("Duplicate inputs found. Option --" + name + " specified more than once. ");
+            }
+            vecArgNames.push_back(name);
+
+            if (name == "help")
+            {
                 show_help = true;
-                break;
+                continue;
             }
 
             auto option_it = arguments.find(name);
             if (option_it == arguments.end())
             {
-                std::cout << "Unknown option " << name << "\n";
+                unknown_options += "--" + name + " ";
                 show_help = true;
-            } else {
+            }
+            else
+            {
                 option_it->second.parsed = true;
-                option_it->second.value = value;
+                option_it->second.value  = value;
             }
         }
     }
 
     // Check Required Arguments
     std::vector<std::string> missing_required;
-    for (auto &option : arguments)
+    for (auto& option : arguments)
     {
-        if(option.second.required && option.second.value.empty())
+        if (option.second.required && option.second.value.empty())
         {
             missing_required.push_back(option.second.option);
         }
@@ -112,7 +140,8 @@ bool ProgramArguments::parse(const int argc, const char **argv)
     {
         std::string missing_required_message;
         std::string example_usage;
-        for (std::string required_argument : missing_required) {
+        for (std::string required_argument : missing_required)
+        {
             missing_required_message.append("\"");
             missing_required_message.append(required_argument);
             missing_required_message.append("\", ");
@@ -135,57 +164,109 @@ bool ProgramArguments::parse(const int argc, const char **argv)
     if (show_help)
     {
         printHelp();
+        if (unknown_options.size() > 0)
+        {
+            throw std::runtime_error("Unknown option " + unknown_options + "\n");
+        }
         return false;
     }
 
     return true;
 }
 
-const std::string &ProgramArguments::get(const char *name) const
+const std::string& ProgramArguments::get(const char* name) const
 {
     auto it = arguments.find(name);
-    if (it == arguments.end()) {
+    if (it == arguments.end())
+    {
         printf("ProgramArguments: Missing argument '%s' requested\n", name);
-        return ProgramArguments::m_empty;
-    } else
+        return m_empty;
+    }
+    else
         return it->second.value;
 }
 
-bool ProgramArguments::has(const char *name) const
+bool ProgramArguments::has(const char* name) const
 {
     auto it = arguments.find(name);
-    if( it == arguments.end() )
+    if (it == arguments.end())
         return false;
 
     return !it->second.value.empty();
 }
 
-bool ProgramArguments::enabled(const char *name) const
+bool ProgramArguments::wasSpecified(const char* name) const
 {
-    if (!has(name)) return false;
-    return (get(name) == "1" || get(name) == "true");
+    auto it = arguments.find(name);
+    if (it == arguments.end())
+        return false;
+
+    return it->second.parsed;
 }
 
-void ProgramArguments::addOption(const Option_t &newOption)
+bool ProgramArguments::enabled(const char* name) const
+{
+    if (!has(name))
+        return false;
+
+    auto value = get(name);
+    if (value == "true")
+        return true;
+    if (value == "false")
+        return false;
+
+    // Convert to int
+    int valueInt = std::stoi(value, nullptr);
+    return valueInt != 0;
+}
+
+void ProgramArguments::addOption(const Option_t& newOption)
 {
     auto it = arguments.insert({newOption.option, newOption});
-    if(!it.second)
+    if (!it.second)
         throw std::runtime_error(std::string("ProgramArguments already contains the new option: ") + newOption.option);
 }
 
-void ProgramArguments::set(const char *option, const char *value)
+void ProgramArguments::addOptions(const std::vector<Option_t>& newOptions)
+{
+    for (auto const& o : newOptions)
+    {
+        addOption(o);
+    }
+}
+
+void ProgramArguments::clearOption(const char* name)
+{
+    auto it = arguments.find(name);
+    if (it != arguments.end())
+        arguments.erase(name);
+}
+
+void ProgramArguments::clearOptions()
+{
+    arguments.clear();
+}
+
+void ProgramArguments::set(const char* option, const char* value)
 {
     auto it = arguments.find(option);
-    if(it==arguments.end())
+    if (it == arguments.end())
         throw std::runtime_error(std::string("ProgramArguments: tried to set an option that doesn't exist. ") + option);
     it->second.value = value;
 }
 
-void ProgramArguments::setDescription(const char *description)
+void ProgramArguments::setDefault(const char* option, const char* value)
+{
+    auto it = arguments.find(option);
+    if (it == arguments.end())
+        throw std::runtime_error(std::string("ProgramArguments: tried to set an option that doesn't exist. ") + option);
+    it->second.default_value = value;
+}
+
+void ProgramArguments::setDescription(const char* description)
 {
     m_description = description;
 }
-
 
 void ProgramArguments::printHelp() const
 {
@@ -200,14 +281,14 @@ void ProgramArguments::printHelp() const
 
     std::stringstream ss;
 
-    for (auto &arg : arguments)
+    for (auto& arg : arguments)
     {
-        auto &option = arg.second;
+        auto& option = arg.second;
         ss << "--" << option.option << ": ";
-        if(option.required)
+        if (option.required)
             ss << "required, ";
         ss << "default=" << option.default_value;
-        if(!option.help.empty())
+        if (!option.help.empty())
             ss << "\n    " << option.help;
         ss << "\n";
     }
@@ -219,9 +300,9 @@ std::string ProgramArguments::printList() const
 {
     std::stringstream ss;
 
-    for (auto &arg : arguments)
+    for (auto& arg : arguments)
     {
-        auto &option = arg.second;
+        auto& option = arg.second;
         ss << "--" << option.option << "=" << option.value << "\n";
     }
 
@@ -233,7 +314,8 @@ std::string ProgramArguments::parameterString() const
     std::stringstream list;
 
     bool first = true;
-    for (auto arg : arguments) {
+    for (auto arg : arguments)
+    {
         if (!first)
             list << ",";
         list << arg.first << "=" << arg.second.value;

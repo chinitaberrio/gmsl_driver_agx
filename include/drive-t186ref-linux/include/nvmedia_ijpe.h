@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#include "nvmedia_common.h"
+#include "nvmedia_common_encode.h"
 #include "nvmedia_core.h"
 #include "nvmedia_image.h"
 #include "nvmedia_surface.h"
@@ -37,7 +37,7 @@ extern "C" {
 /** \brief Major Version number */
 #define NVMEDIA_IJPE_VERSION_MAJOR   1
 /** \brief Minor Version number */
-#define NVMEDIA_IJPE_VERSION_MINOR   6
+#define NVMEDIA_IJPE_VERSION_MINOR   7
 
 /**
  * \hideinitializer
@@ -402,12 +402,6 @@ NvMediaIJPEGetBitsEx(
  *        \n \c NVMEDIA_STATUS_OK
  *        \n \c NVMEDIA_STATUS_NONE_PENDING
  *        \n \ref NVMEDIA_STATUS_TIMED_OUT
- * \li \ref NVMEDIA_ENCODE_BLOCKING_TYPE_ALWAYS
- *        With this \a blockingType value, the function blocks until the conditions
- *        represented by those return values are satisfied.
- *        Only the following return values are possible:
- *        \n \c NVMEDIA_STATUS_OK
- *        \n \c NVMEDIA_STATUS_TIMED_OUT
  * \param[in] millisecondTimeout
  *       Timeout in milliseconds or \ref NVMEDIA_VIDEO_ENCODER_TIMEOUT_INFINITE
  *       if a timeout is not desired.
@@ -457,6 +451,9 @@ NvMediaIJPEBitsAvailable(
  *
  * <b> Version 1.6 </b> February 28, 2019
  * - Add dependent header includes nvmedia_core.h, nvmedia_image.h and nvmedia_surface.h
+ *
+ * <b> Version 1.7 </b> July 10, 2019
+ * - Header include nvmedia_common.h is replaced with nvmedia_common_encode.h
  */
 
 /** @} */

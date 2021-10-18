@@ -7,13 +7,13 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
-#ifndef INVSIPLQUERYTRACE_H
-#define INVSIPLQUERYTRACE_H
+#ifndef NVSIPLQUERYTRACE_H
+#define NVSIPLQUERYTRACE_H
 
 /**
  * @file
  *
- * <b> NVIDIA Sensor Input Processing Library: Query Trace Interface - @ref NvSIPLQuery_API </b>
+ * @brief <b> NVIDIA SIPL: Query Trace Interface - @ref NvSIPLQuery_API </b>
  *
  */
 
@@ -92,4 +92,4 @@ class INvSIPLQueryTrace
 
 } // namespace nvsipl
 
-#endif // INVSIPLQUERYTRACE_H
+#endif // NVSIPLQUERYTRACE_H

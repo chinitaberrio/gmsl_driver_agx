@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2014-2016 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -48,9 +48,10 @@
 //
 class ProgramArguments
 {
-  public:
-    struct Option_t {
-        Option_t(const char *option_, const char *default_value_, const char *help_)
+public:
+    struct Option_t
+    {
+        Option_t(const char* option_, const char* default_value_, const char* help_)
         {
             option        = option_;
             default_value = default_value_;
@@ -59,7 +60,7 @@ class ProgramArguments
             parsed        = false;
             value         = default_value;
         }
-        Option_t(const char *option_, std::nullptr_t, const char *help_)
+        Option_t(const char* option_, std::nullptr_t, const char* help_)
         {
             option        = option_;
             default_value = "";
@@ -69,7 +70,7 @@ class ProgramArguments
             value         = "";
         }
 
-        Option_t(const char *option_, const char *default_value_)
+        Option_t(const char* option_, const char* default_value_)
         {
             option        = option_;
             default_value = default_value_;
@@ -78,11 +79,19 @@ class ProgramArguments
             value         = default_value;
         }
 
-        Option_t(const char *option_)
+        Option_t(const char* option_)
         {
             option        = option_;
             default_value = "";
             required      = true;
+            parsed        = false;
+        }
+
+        Option_t(const char* option_, const bool required_)
+        {
+            option        = option_;
+            default_value = "";
+            required      = required_;
             parsed        = false;
         }
 
@@ -95,26 +104,31 @@ class ProgramArguments
         std::string value;
     };
 
-  public:
-    ProgramArguments() {}
-    ProgramArguments(int argc, const char **argv, const std::vector<Option_t>& options, const char* description = nullptr);
-    ProgramArguments(const std::vector<Option_t>& options);
-    ~ProgramArguments();
+public:
+    ProgramArguments(bool addDefaults = true);
+    ProgramArguments(int32_t argc, const char** argv, const std::vector<Option_t>& options, const char* description = nullptr);
+    ProgramArguments(const std::vector<Option_t>& options, bool addDefaults = true);
+    virtual ~ProgramArguments();
 
-    bool parse(const int argc, const char **argv);
+    bool parse(const int argc, const char** argv);
 
-    bool has(const char *name) const;
-    bool enabled(const char *name) const;
-    void addOption(const Option_t &newOption);
+    virtual bool has(const char* name) const;
+    bool wasSpecified(const char* name) const;
+    virtual bool enabled(const char* name) const;
+    void addOption(const Option_t& newOption);
+    void addOptions(const std::vector<Option_t>& newOptions);
+    void clearOption(const char* name);
+    void clearOptions();
 
-    const std::string &get(const char *name) const;
+    virtual const std::string& get(const char* name) const;
     void set(const char* option, const char* value);
+    void setDefault(const char* option, const char* value);
 
     // Will be shown before the help text
     void setDescription(const char* description);
 
     /// Displays a message with info about the possible parameters
-    void printHelp() const;
+    virtual void printHelp() const;
 
     /// Returns a string with info about the parameter values
     std::string printList() const;
@@ -122,11 +136,10 @@ class ProgramArguments
     /// Returns all the parsed parameters as a single string
     std::string parameterString() const;
 
-  private:
-    static std::string m_empty;
-
-    std::string m_description = {};
+protected:
+    std::string m_empty = {};
     std::map<std::string, Option_t> arguments;
+    std::string m_description = {};
 };
 
 #endif // SAMPLES_COMMON_PROGRAMARGUMENTS_HPP_

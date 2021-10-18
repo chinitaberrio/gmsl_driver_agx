@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, NVIDIA CORPORATION.  All rights reserved. All
+ * Copyright (c) 2017-2020, NVIDIA CORPORATION.  All rights reserved. All
  * information contained herein is proprietary and confidential to NVIDIA
  * Corporation.  Any use, reproduction, or disclosure without the written
  * permission of NVIDIA Corporation is prohibited.
@@ -39,7 +39,7 @@ extern "C" {
 /** \brief Major version number. */
 #define NVMEDIA_LDC_VERSION_MAJOR   2
 /** \brief Minor version number. */
-#define NVMEDIA_LDC_VERSION_MINOR   0
+#define NVMEDIA_LDC_VERSION_MINOR   1
 
 /**
  * \brief Defines the NvMedia LDC handle as an opaque struct.
@@ -630,6 +630,7 @@ NvMediaLDCGetVersion(
  * \param[in]  dstRect    A pointer to coordinates of the rectangle in the
  *                         destination image. Set to NULL to specify a rectangle
  *                         of full destination image size.
+                           DestRect's top and left corner is limited to (0,0).
  * \param[in]  initParams A pointer to initialization parameters for creating
  *                         an instance of LDC. See \ref NvMediaLDCInitParams.
  * \retval  NVMEDIA_STATUS_OK indicates that the operation was successful.
@@ -639,7 +640,7 @@ NvMediaLDCGetVersion(
  * \retval  NVMEDIA_STATUS_BAD_PARAMETER indicates that one or more parameters
  *  were invalid.
  * \retval  NVMEDIA_STATUS_NOT_SUPPORTED indicates that the operation is not
- *  supported in the current configuration. TD Will the reader understand this? It seems very vague. What kind of configuration does it refer to?
+ *  supported in the current configuration.
  * \retval  NVMEDIA_STATUS_OUT_OF_MEMORY indicates that there was insufficient
  *  memory to perform the operation.
  */
@@ -866,6 +867,9 @@ NvMediaLDCProcess(
  *
  * <b> version 2.0 </b> March 29, 2019
  * - Deprecated NvMediaLDCCreate API.
+ *
+ * <b> version 2.1 </b> January 23, 2020
+ * - Limited destination surface rectangle's top, left corner to (0, 0).
  */
 
 #ifdef __cplusplus

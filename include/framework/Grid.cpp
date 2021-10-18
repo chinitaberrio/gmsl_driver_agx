@@ -31,54 +31,56 @@
 #include "Grid.hpp"
 
 //------------------------------------------------------------------------------
-void configureGrid(GridData_t *grid,
+void configureGrid(GridData_t* grid,
                    uint32_t windowWidth,
                    uint32_t windowHeight,
                    uint32_t imageWidth,
                    uint32_t imageHeight,
                    uint32_t cellCount)
 {
-    uint32_t rows = 1;
-    uint32_t cols = 1;
+    uint32_t rows     = 1;
+    uint32_t cols     = 1;
     bool increaseRows = false;
-    while( rows * cols < cellCount ) {
-      if(increaseRows)
-          rows++;
-      else
-          cols++;
-      increaseRows = !increaseRows;
+    while (rows * cols < cellCount)
+    {
+        if (increaseRows)
+            rows++;
+        else
+            cols++;
+        increaseRows = !increaseRows;
     }
 
     float camera_aspect_ratio = static_cast<float>(imageWidth) /
-     static_cast<float>(imageHeight);
+                                static_cast<float>(imageHeight);
 
-    uint32_t render_width = windowWidth / cols;
+    uint32_t render_width  = windowWidth / cols;
     uint32_t render_height = static_cast<uint32_t>(render_width / camera_aspect_ratio);
 
-    if( render_height * rows > windowHeight ) {
+    if (render_height * rows > windowHeight)
+    {
         render_height = windowHeight / rows;
-        render_width = static_cast<uint32_t>(render_height * camera_aspect_ratio);
+        render_width  = static_cast<uint32_t>(render_height * camera_aspect_ratio);
     }
 
-    grid->rows = rows;
-    grid->cols = cols;
-    grid->offsetX = 0;
-    grid->offsetY = windowHeight - render_height;
-    grid->cellWidth = render_width;
+    grid->rows       = rows;
+    grid->cols       = cols;
+    grid->offsetX    = 0;
+    grid->offsetY    = windowHeight - render_height;
+    grid->cellWidth  = render_width;
     grid->cellHeight = render_height;
 }
 
 //------------------------------------------------------------------------------
-void gridCellRect(dwRect *rect,
-              const GridData_t &grid,
-              uint32_t cellIdx)
+void gridCellRect(dwRect* rect,
+                  const GridData_t& grid,
+                  uint32_t cellIdx)
 {
     //Set area
     int row = cellIdx / grid.cols;
     int col = cellIdx % grid.cols;
 
-    rect->width   = grid.cellWidth;
-    rect->height  = grid.cellHeight;
-    rect->x = grid.offsetX + grid.cellWidth*col;
-    rect->y = grid.offsetY - grid.cellHeight*row;
+    rect->width  = grid.cellWidth;
+    rect->height = grid.cellHeight;
+    rect->x      = grid.offsetX + grid.cellWidth * col;
+    rect->y      = grid.offsetY - grid.cellHeight * row;
 }

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:599
 
-#ifndef _TAO_IDL_PORTABLESERVER_POLICYS_T_RSNTAV_H_
-#define _TAO_IDL_PORTABLESERVER_POLICYS_T_RSNTAV_H_
+#ifndef _TAO_IDL_PORTABLESERVER_POLICYS_T_EVKHEK_H_
+#define _TAO_IDL_PORTABLESERVER_POLICYS_T_EVKHEK_H_
 
 #include /**/ "ace/pre.h"
 

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:794
 
-#ifndef _TAO_IDL_IDASSIGNMENTPOLICYA_PVYHEU_H_
-#define _TAO_IDL_IDASSIGNMENTPOLICYA_PVYHEU_H_
+#ifndef _TAO_IDL_IDASSIGNMENTPOLICYA_YZVMBD_H_
+#define _TAO_IDL_IDASSIGNMENTPOLICYA_YZVMBD_H_
 
 #include /**/ "ace/pre.h"
 

@@ -28,8 +28,8 @@
 // TAO_IDL - Generated from
 // be/be_codegen.cpp:461
 
-#ifndef _TAO_IDL_MESSAGING_SYNCSCOPES_CGX1DU_H_
-#define _TAO_IDL_MESSAGING_SYNCSCOPES_CGX1DU_H_
+#ifndef _TAO_IDL_MESSAGING_SYNCSCOPES_91ZKYN_H_
+#define _TAO_IDL_MESSAGING_SYNCSCOPES_91ZKYN_H_
 
 #include /**/ "ace/pre.h"
 

@@ -18,7 +18,7 @@
 // components in life support devices or systems without express written approval of
 // NVIDIA Corporation.
 //
-// Copyright (c) 2015-2017 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2015-2020 NVIDIA Corporation. All rights reserved.
 //
 // NVIDIA Corporation and its licensors retain all intellectual property and proprietary
 // rights in and to this software and related documentation and any modifications thereto.
@@ -35,6 +35,7 @@
 #include <memory>
 #include <chrono>
 #include <vector>
+#include <unordered_map>
 #include <type_traits>
 
 // Common
@@ -44,7 +45,7 @@
 #include "ProfilerCUDA.hpp"
 #include "Checks.hpp"
 #include "Log.hpp"
-#include <framework/DataPath.hpp>
+#include "DataPath.hpp"
 #include "ScreenshotHelper.hpp"
 #include "RenderUtils.hpp"
 
@@ -65,7 +66,7 @@ public:
     //! initialize application (default is console mode, no GL context)
     DriveWorksSample(const ProgramArguments& args);
 
-    virtual ~DriveWorksSample() {}
+    virtual ~DriveWorksSample();
 
     /**
      * Initialize window application. This will also create a valid GL context.
@@ -76,6 +77,11 @@ public:
      * @param samples   Specifies the desired number of samples to use for subsampling
      **/
     void initializeWindow(const char* windowTitle, int width, int height, bool offscreen = false, int samples = 0);
+
+    /**
+     * Stops the window initialization thread
+     **/
+    void stopWindowInitThread();
 
     /**
      * @brief Run background thread to capture key input.
@@ -123,6 +129,11 @@ public:
      * @brief stop Call to stop the app programatically.
      */
     void stop();
+
+    /**
+     * @brief Remove (null out) window call back functions.
+     */
+    void stopWindowCallbacks();
 
     /**
      * @brief setProcessRate This controls how fast the process callback is called.
@@ -254,34 +265,50 @@ public:
 
     WindowBase* getWindow() const;
 
-    int getWindowWidth() const;
+    virtual int getWindowWidth() const;
 
-    int getWindowHeight() const;
+    virtual int getWindowHeight() const;
 
     void setWindowSize(int width, int height);
 
     bool isOffscreen() const;
 
-    const std::string& getArgument(const char* name) const;
+    virtual const std::string& getArgument(const char* name) const;
 
 protected:
     typedef std::chrono::high_resolution_clock myclock_t;
     typedef std::chrono::time_point<myclock_t> timepoint_t;
 
-    dw::common::ProfilerCUDA* getProfilerCUDA();
+    ProfilerCUDA* getProfilerCUDA();
 
     MouseView3D& getMouseView();
 
-    ProgramArguments& getArgs();
+    virtual ProgramArguments& getArgs();
+
+    // Map the current argument value to a fixed number of value variants, enabling code like
+    //  getArgumentEnum("fast-acceptance", {"default", "enabled", "disabled"},
+    //                  {DW_CALIBRATION_FAST_ACCEPTANCE_DEFAULT,
+    //                   DW_CALIBRATION_FAST_ACCEPTANCE_ENABLED,
+    //                   DW_CALIBRATION_FAST_ACCEPTANCE_DISABLED})
+    template <class T>
+    T getArgumentEnum(const std::string& name,
+                      const std::unordered_map<std::string, T>& options) const;
+
+    // Note: separated into two initializer lists so T can be inferred
+    template <class T>
+    T getArgumentEnum(const std::string& name,
+                      const std::initializer_list<std::string>& optionNames,
+                      const std::initializer_list<T>& optionValues) const;
 
     uint32_t getFrameIndex() const;
 
-    myclock_t::duration convertFrecuencyToPeriod(int loopsPerSecond);
+    myclock_t::duration convertFrequencyToPeriod(int loopsPerSecond);
+
+    dwPrecision getLowestSupportedFloatPrecision(dwContextHandle_t ctx);
 
     static DriveWorksSample* instance();
 
 private:
-
     static void globalSigHandler(int sig);
 
     virtual void resize(int width, int height);
@@ -325,7 +352,7 @@ private:
     void readCLIKeyPressLoop();
 
 private:
-    dw::common::ProfilerCUDA m_profiler;
+    ProfilerCUDA m_profiler;
     ProgramArguments m_args;
 
     volatile bool m_run;
@@ -355,6 +382,10 @@ private:
     uint32_t m_frameIdx;
     uint32_t m_stopFrameIdx;
 
+    // The last time calculateFPS() was called if not paused
+    timepoint_t m_lastFPSRunTime;
+    void calculateFPS();
+
     /// slow down execution of the code to limit to the given process rate
     void tryToSleep(timepoint_t lastRunTime);
 
@@ -370,12 +401,75 @@ private:
     std::thread m_commandLineInputThread;
     bool m_commandLineInputActive;
 
+    std::thread m_windowInitThread;
+    bool m_windowInitThreadActive = false;
+
+    bool m_initialized = false;
+
     // ------------------------------------------------
     // singleton
     // ------------------------------------------------
     static DriveWorksSample* g_instance;
 };
+
+} // namespace common
+} // namespace dw_samples
+
+/////////////////////////////////////////////////
+// Implementation
+namespace dw_samples
+{
+namespace common
+{
+
+template <class T>
+T DriveWorksSample::getArgumentEnum(const std::string& name,
+                                    const std::unordered_map<std::string, T>& options) const
+{
+    auto s  = getArgument(name.c_str());
+    auto it = options.find(s);
+    if (it != options.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << "DriveWorksSample::getArgumentEnum: Invalid argument for " << name << ". Options: ";
+        for (auto& v : options)
+        {
+            if (&v != &*options.begin())
+            {
+                ss << ", ";
+            }
+            ss << v.first;
+        }
+        ss << ". Received: " + s;
+        throw std::runtime_error(ss.str());
+    }
 }
+
+template <class T>
+T DriveWorksSample::getArgumentEnum(const std::string& name,
+                                    const std::initializer_list<std::string>& optionNames,
+                                    const std::initializer_list<T>& optionValues) const
+{
+    if (optionNames.size() != optionValues.size())
+    {
+        throw std::runtime_error("DriveWorksSample::getArgumentEnum: Size of initializer lists don't match for option " + name);
+    }
+    std::unordered_map<std::string, T> options;
+    auto itName  = optionNames.begin();
+    auto itValue = optionValues.begin();
+    for (; itName != optionNames.end(); ++itName, ++itValue)
+    {
+        options.insert({*itName, *itValue});
+    }
+
+    return getArgumentEnum(name, options);
 }
+
+} // namespace common
+} // namespace dw_samples
 
 #endif // DRIVEWORKSAPP_HPP_
