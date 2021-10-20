@@ -18,8 +18,9 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   std::string type_c_value;
   std::string type_d_value;
   std::string selector_mask_value;
-  std::string cross_csi_sync_value;
+  std::string camera_name_value;
   std::string fifo_size_value;
+  std::string link_value;
   std::string slave_value;
   std::string port;
 
@@ -34,9 +35,9 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   nh_in.param<std::string>("type_c", type_c_value, "ar0231-rccb-bae-sf3324");
   nh_in.param<std::string>("type_d", type_d_value, "ar0231-rccb-bae-sf3324");
   nh_in.param<std::string>("selector_mask", selector_mask_value, "1110111011001100");
-  nh_in.param<std::string>("cross_csi_sync", cross_csi_sync_value, "1");
+  nh_in.param<std::string>("camera_name", camera_name_value, "SF3324");
   nh_in.param<std::string>("fifo_size", fifo_size_value, "3");
-  nh_in.param<std::string>("slave", slave_value, "0");
+  nh_in.param<std::string>("link", link_value, "0");
   nh_in.param<std::string>("port", port, "a");
 
   DriveWorks::ImageConfigPub imageConfig = {
@@ -54,8 +55,8 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
       std::make_pair("type-c", "ar0231-rccb"),
       std::make_pair("type-d", "ar0231-rccb"),
       std::make_pair("selector_mask", "1110111011001100"),
-      std::make_pair("cross_csi_sync", "1"),
-      std::make_pair("fifo_size", "3"),
+      std::make_pair("camera-name", "SF3324"),
+      std::make_pair("link", "0"),
       std::make_pair("slave", "0"),
       std::make_pair("port", "a")
   };
@@ -66,8 +67,8 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   camera_arguments.set("type-c", type_c_value);
   camera_arguments.set("type-d", type_d_value);
   camera_arguments.set("selector_mask", selector_mask_value);
-  camera_arguments.set("cross_csi_sync", cross_csi_sync_value);
-  camera_arguments.set("fifo_size", fifo_size_value);
+  camera_arguments.set("camera-name", camera_name_value);
+  camera_arguments.set("link", link_value);
   camera_arguments.set("slave", slave_value);
   camera_arguments.set("port", port);
 

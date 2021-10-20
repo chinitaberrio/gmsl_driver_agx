@@ -33,6 +33,7 @@
 
 #include <utility>
 #include <StopWatch.h>
+#include <string.h>
 
 namespace DriveWorks {
 DriveWorksApi::DriveWorksApi(DeviceArguments arguments,
@@ -92,6 +93,7 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
       cnt[idx / 4]++;
     }
   }
+  print_event_handler_->Print(name_pretty_, "Number of cameras in port A " + std::to_string(cnt[0]));
 
   count_cameras = 0;
 
@@ -106,18 +108,18 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
     pp = 3;
 
   std::string params;
-  params += "camera-group=" + port;
-  params += ",camera-type=" + device_arguments.get("type-" + port);
-  params += ",camera-count=4"; // when using the mask, just ask for all cameras, mask will select properly
+  params += "interface=csi-" + port;
+  params += ",camera-name=" + device_arguments.get("camera-name");
+ // params += ",camera-count=4"; // when using the mask, just ask for all cameras, mask will select properly
 
-  if (selector.size() >= pp * 4) {
-    params += ",camera-mask=" +
-        selector.substr(pp * 4, std::min(selector.size() - pp * 4, size_t{4}));
-  }
+//  if (selector.size() >= pp * 4) {
+//   params += ",camera-mask=" +
+//       selector.substr(pp * 4, std::min(selector.size() - pp * 4, size_t{4}));
+//  }
 
-  params += ",slave=" + device_arguments.get("slave");
-  params += ",cross-csi-sync=" + device_arguments.get("cross_csi_sync");
-  params += ",fifo-size=" + device_arguments.get("fifo_size");
+  params += ",link=" + device_arguments.get("link");
+// params += ",cross-csi-sync=" + device_arguments.get("cross_csi_sync");
+//  params += ",fifo-size=" + device_arguments.get("fifo_size");
 
   std::cout << "DEBUG ARGS PORT:  " << pp << std::endl;
   std::cout << "Params: " << params << std::endl;

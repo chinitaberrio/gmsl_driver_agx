@@ -15,10 +15,7 @@ set(drive_t186ref_linux_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/drive-t1
 
 link_directories(${glfw_LIBRARY})
 
-
-#find_package(CUDA REQUIRED)
 find_package(Threads REQUIRED)
-#find_package(GLEW REQUIRED)
 find_package(Driveworks REQUIRED)
 find_package(OpenCV REQUIRED)
 #find_package(gflags REQUIRED)
@@ -55,7 +52,6 @@ include_directories(
         ${Driveworks_INCLUDE_DIR}
         ${CUDA_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        #${GLEW_INCLUDE_DIR}
         ${glfw_INCLUDE_DIR}
         ${drive_t186ref_linux_INCLUDE_DIR}
         include
@@ -78,7 +74,6 @@ add_executable(${NODE_NAME}
 target_link_libraries(${NODE_NAME}
         ${catkin_LIBRARIES}
         nvmedia
-        #${GLEW_LIBRARY}
         driveworks
         GLESv2
         EGL
