@@ -1,15 +1,15 @@
 image_width: 1920
 image_height: 1208
-camera_name: port_3/camera_0
+camera_name: port_a/camera_0
 camera_matrix:
   rows: 3
   cols: 3
-  data: [9.5155437366984336e+02, 0., 9.8367721075285863e+02, 0., 9.5335627408485550e+02, 6.3382514355171941e+02, 0., 0., 1.]
+  data: [1836.911164, 0.000000, 978.081547, 0.000000, 1832.757712, 597.163950, 0.000000, 0.000000, 1.000000]
 distortion_model: plumb_bob
 distortion_coefficients:
   rows: 1
   cols: 5
-  data: [-3.1114332154933771e-01, 9.4239154002978054e-02, -2.1354023683955024e-04, -4.7726759967565779e-04, -1.2357100429090082e-02]
+  data: [-0.283976, 0.078718, 0.001326, -0.000294, 0.000000]
 rectification_matrix:
   rows: 3
   cols: 3

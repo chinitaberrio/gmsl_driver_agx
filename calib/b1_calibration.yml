@@ -1,6 +1,6 @@
 image_width: 1920
 image_height: 1208
-camera_name: port_1/camera_1
+camera_name: port_b/camera_1
 camera_matrix:
   rows: 3
   cols: 3

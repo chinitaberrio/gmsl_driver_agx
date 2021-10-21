@@ -9,15 +9,20 @@ namespace DriveWorks {
 CameraPort::CameraPort(
     dwSensorHandle_t sensor_handle,
     bool debug_mode,
-    int port,
+    std::string port,
+    std::string ind_camera,
+    int &num_cameras,
+    int cam_idx,
     const std::string &caminfo_folder,
     PrintEventHandler::Ptr printer)
     : debug_mode(debug_mode),
       sensor_handle_(sensor_handle),
       port(port),
+      ind_camera(ind_camera),
+      cam_idx(cam_idx),
       printer_(printer) {
   std::cout << "------------------ CameraPort::CameraPort() --------------------" << std::endl;
-  name_pretty_ = "Port #" + std::to_string(port);
+  name_pretty_ = "Port #" + port;
 
   auto report_status = [&](const std::string &subject, const dwStatus &status) {
     if (status != DW_SUCCESS) {
@@ -36,23 +41,26 @@ CameraPort::CameraPort(
   status = dwSensorCamera_getSensorProperties(&camera_properties_, sensor_handle);
   report_status("dwSensorCamera_getSensorProperties", status);
 
-  std::cout << "GetSiblingCount(): " << GetSiblingCount() << std::endl;
-  Cameras.resize(GetSiblingCount());
-
-  for (uint32_t ind_camera = 0; ind_camera < GetSiblingCount(); ind_camera++) {
-    const std::string topic = "port_" + std::to_string(port) + "/camera_" + std::to_string(ind_camera);
-    const std::string camera_frame_id = "port_" + std::to_string(port) + "/camera_" + std::to_string(ind_camera);
-    const std::string cam_info_file = "file://" + caminfo_folder + std::to_string(port) + std::to_string(ind_camera) + "_calibration.yml";
-    Camera &camera = Cameras[ind_camera];
-    camera.Index = ind_camera;
-    camera.NamePretty = name_pretty_ + " " + "Cam #" + std::to_string(camera.Index);
+  //std::cout << "GetSiblingCount(): " << GetSiblingCount() << std::endl;
+  Cameras.resize(num_cameras);
+  //for (uint32_t ind_camera = 0; ind_camera < GetSiblingCount(); ind_camera++) {
+    const std::string topic = "port_" + port + "/camera_" + ind_camera;
+    const std::string camera_frame_id = "port_" + port + "/camera_" + ind_camera;
+    const std::string cam_info_file = "file://" + caminfo_folder + port + ind_camera + "_calibration.yml";
+    Camera &camera = Cameras[cam_idx];
+    camera.Index = cam_idx;
+    camera.NamePretty = name_pretty_ + " " + "Cam #" + std::to_string(cam_idx);
     camera.OpenCvConnector = std::make_shared<OpenCVConnector>(topic, camera_frame_id, cam_info_file, 1024);
-  }
+ // }
+
+
 }
 
-dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
-  for (size_t ind_camera = 0; ind_camera < GetSiblingCount(); ++ind_camera) {
+dwStatus CameraPort::Start(const dwContextHandle_t &context_handle, int ind_camera) {
+ // for (size_t ind_camera = 0; ind_camera < GetSiblingCount(); ++ind_camera) {
     Camera &camera = Cameras[ind_camera];
+    std::cout << "starting camera "  << ind_camera  << std::endl; 
+    
     const uint32_t max_jpeg_bytes = 3 * 1290 * 1208;
     camera.JpegImage = (uint8_t *) malloc(max_jpeg_bytes);
 
@@ -75,13 +83,10 @@ dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
       printer_->Print(camera.NamePretty, "NvMediaIJPECreate failed.");
       exit(EXIT_FAILURE);
     }
+    std::cout << "starting camera "  << ind_camera  << " created"<< std::endl; 
 
-  }
+ // }
   return dwSensor_start(GetSensorHandle());
-}
-
-int CameraPort::GetSiblingCount() {
-  return camera_properties_.siblings;
 }
 
 dwSensorHandle_t CameraPort::GetSensorHandle() const {
@@ -89,17 +94,17 @@ dwSensorHandle_t CameraPort::GetSensorHandle() const {
 }
 
 void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwContextHandle_t &context_handle) {
-  for (int ind_camera = 0; ind_camera < Cameras.size(); ind_camera++) {
-    Camera &camera = Cameras[ind_camera];
-
+  for (int in_camera = 0; in_camera < Cameras.size(); in_camera++) {
+    Camera &camera = Cameras[in_camera];
     dwStatus status;
+    std::cout << "camera "  << std::to_string(in_camera) <<" hola " << std::endl;
 
     dwCameraFrameHandle_t camera_frame_handle;
 
     dwImageHandle_t image_handle;
     dwImageHandle_t image_handle_original;
 
-    status = dwSensorCamera_readFrame(&camera_frame_handle, ind_camera, 0, sensor_handle_);
+    status = dwSensorCamera_readFrame(&camera_frame_handle, in_camera, 0, sensor_handle_);
     if (status != DW_SUCCESS) {
       continue;
     }
@@ -146,6 +151,7 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
       is_running = false;
     }
 
+    //here is where it fails
     NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
     if (nvStatus != NVMEDIA_STATUS_OK) {
       std::cout << "NvMediaIJPEFeedFrame() failed: " << std::to_string(nvStatus) << std::endl;

@@ -31,13 +31,11 @@ namespace DriveWorks {
     std::vector<Camera> Cameras;
 
 
-    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, int port, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
+    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, int &num_cameras, int cam_idx, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
 
-    dwStatus Start(const dwContextHandle_t &context_handle);
+    dwStatus Start(const dwContextHandle_t &context_handle, int ind_camera);
 
     void ProcessCameraStreams(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
-
-    int GetSiblingCount();
 
     dwSensorHandle_t GetSensorHandle() const;
 
@@ -49,7 +47,9 @@ namespace DriveWorks {
     dwSensorHandle_t sensor_handle_;
     dwImageProperties image_properties_;
     dwCameraProperties camera_properties_;
-    int port;
+    std::string port;
+    std::string ind_camera;
+    int cam_idx;
     PrintEventHandler::Ptr printer_;
     std::string name_pretty_;
   };
