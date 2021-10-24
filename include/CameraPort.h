@@ -25,15 +25,14 @@ namespace DriveWorks {
       uint32_t CountByteJpeg;
       uint8_t *JpegImage;
       std::shared_future<void> future;
-      int Index;
       std::string NamePretty;
     };
     std::vector<Camera> Cameras;
 
 
-    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, int &num_cameras, int cam_idx, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
+    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
 
-    dwStatus Start(const dwContextHandle_t &context_handle, int ind_camera);
+    dwStatus Start(const dwContextHandle_t &context_handle);
 
     void ProcessCameraStreams(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
 
@@ -49,7 +48,6 @@ namespace DriveWorks {
     dwCameraProperties camera_properties_;
     std::string port;
     std::string ind_camera;
-    int cam_idx;
     PrintEventHandler::Ptr printer_;
     std::string name_pretty_;
   };

@@ -3,8 +3,6 @@ project(sekonix_camera)
 
 set(CMAKE_CXX_STANDARD 14)
 
-# FindDriveworks.cmake, ArchConfiguration.cmake, and LibFindMacros.cmake were needed for my setup they are taken from driveworks/samples/cmake/
-# ArchConfiguration.cmake was the only file that needed small changes, remove the fatal error on line 17 and add the following lines in its place
 set(VIBRANTE TRUE)
 add_definitions(-DVIBRANTE)
 # this is the path I placed the driveworks cmake files in
@@ -18,17 +16,10 @@ link_directories(${glfw_LIBRARY})
 find_package(Threads REQUIRED)
 find_package(Driveworks REQUIRED)
 find_package(OpenCV REQUIRED)
-#find_package(gflags REQUIRED)
 
 # SET THESE VARIABLES TO YOUR DRIVEWORKS LOCATIONS
 set(Driveworks_INCLUDE_DIR /usr/local/driveworks/include/)
 set(Driveworks_LIBRARY /usr/local/driveworks/lib/)
-
-#set(Driveworks_INCLUDE_DIR /usr/local/driveworks/targets/aarch64-Linux/include/)
-#set(Driveworks_LIBRARY /usr/local/driveworks/targets/aarch64-Linux/lib/)
-
-#set(Driveworks_INCLUDE_DIR /usr/local/driveworks/targets/x86_64-Linux/include/)
-#set(Driveworks_LIBRARY /usr/local/driveworks/targets/x86_64-Linux/lib/)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp

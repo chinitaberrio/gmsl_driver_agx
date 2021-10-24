@@ -9,9 +9,9 @@
   <remap from="/sekonix_camera_port_a/port_0/camera_1/image_raw" to="/cam_on_sag/image_raw"/>
   <remap from="/sekonix_camera_port_a/port_0/camera_1/image_raw/compressed" to="/cam_on_sag/image_raw/compressed"/>
 
-  <remap from="/sekonix_camera_port_a/port_0/camera_2/camera_info" to="/cam_on_sol/camera_info"/>
+  <!--<remap from="/sekonix_camera_port_a/port_0/camera_2/camera_info" to="/cam_on_sol/camera_info"/>
   <remap from="/sekonix_camera_port_a/port_0/camera_2/image_raw" to="/cam_on_sol/image_raw"/>
-  <remap from="/sekonix_camera_port_a/port_0/camera_2/image_raw/compressed" to="/cam_on_sol/image_raw/compressed"/>
+  <remap from="/sekonix_camera_port_a/port_0/camera_2/image_raw/compressed" to="/cam_on_sol/image_raw/compressed"/> -->
 
 
 <group ns="sekonix_camera_port_a">
@@ -22,7 +22,7 @@
     <param name="image_buffer" value="10" />
     <param name="image_compressed" value="true" type="bool" />  <!-- publish compressed original size -->
     <param name="calib_folder" value="$(arg cam_calib_folder)" />
-    <param name="selector_mask" value="1000000000000000" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
+    <param name="selector_mask" value="1100000000000000" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
     <param name="cross_csi_sync" value="1" type="str" />
     <param name="camera_name" value="SF3324" type="str" />
     <param name="link" value="0" type="str" />

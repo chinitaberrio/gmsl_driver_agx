@@ -18,9 +18,6 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   std::string type_c_value;
   std::string type_d_value;
   std::string selector_mask_value;
-  std::string camera_name_value;
-  std::string link_value;
-  std::string port;
 
   nh_in.param<int>("image_width", image_width_, 1920);
   nh_in.param<int>("image_height", image_height_, 1208);
@@ -33,9 +30,6 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   nh_in.param<std::string>("type_c", type_c_value, "SF3324");
   nh_in.param<std::string>("type_d", type_d_value, "SF3324");
   nh_in.param<std::string>("selector_mask", selector_mask_value, "1110111011001100");
-  nh_in.param<std::string>("camera_name", camera_name_value, "SF3324");
-  nh_in.param<std::string>("link", link_value, "0");
-  nh_in.param<std::string>("port", port, "a");
 
   DriveWorks::ImageConfigPub imageConfig = {
       (uint32_t) image_width_,
@@ -52,9 +46,7 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
       std::make_pair("type-c", "SF3324"),
       std::make_pair("type-d", "SF3324"),
       std::make_pair("selector_mask", "1110111011001100"),
-      std::make_pair("camera-name", "SF3324"),
-      std::make_pair("link", "0"),
-      std::make_pair("port", "a")
+
   };
 
   DriveWorks::DeviceArguments camera_arguments(options);
@@ -63,9 +55,6 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   camera_arguments.set("type-c", type_c_value);
   camera_arguments.set("type-d", type_d_value);
   camera_arguments.set("selector_mask", selector_mask_value);
-  camera_arguments.set("camera-name", camera_name_value);
-  camera_arguments.set("link", link_value);
-  camera_arguments.set("port", port);
 
   driveworks_api_ = std::make_unique<DriveWorks::DriveWorksApi>(camera_arguments,
                                                                 imageConfig,

@@ -87,8 +87,6 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
   std::string links;
 
   std::string selector = device_arguments.get("selector_mask");
-  const std::string port = device_arguments.get("port"); // delete this and take it from the mask 
-  int link = std::stoi(device_arguments.get("link"));
 
     // reading the mask selector to determine port and camera position
     for (size_t i = 0; i < selector.length() && i < 16; i++, idx++) {
@@ -105,7 +103,6 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
   print_event_handler_->Print(name_pretty_, "Number of cameras in port D " + std::to_string(cnt[3]));
   print_event_handler_->Print(name_pretty_, "Total cameras " + std::to_string(count_cameras) + " Cameras position " + links);
   
-  idx = 0;
    // initialize all the cameras 
   for (size_t i = 0; i < 4; i++){ //check each port
     for (size_t j = 0; j < cnt[i]; j++){     //check each camera  
@@ -141,75 +138,19 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
                                    debug_mode_,
                                    std::string(1, ports[i]),
                                    std::string(1, links[0]),
-                                   count_cameras,
-                                   idx,
                                    pub_image_config_.camerainfo_folder,
                                    print_event_handler_);
       camera_ports.push_back(camera_port);
 
-     /* dwStatus status = camera_port->Start(context_handle_, idx);
+      dwStatus status = camera_port->Start(context_handle_);
       if (status != DW_SUCCESS) {
         std::cerr << "camera_port.Start failed " << std::endl;
         exit(EXIT_FAILURE);
-      }*/
-
+      }
       links.erase(0,1);
-      idx++;
-
     }
   }
   
-  /*std::string params;
-  params += "interface=csi-" + port;
-  params += ",camera-name=" + device_arguments.get("camera-name");
-
-  params += ",link=" + device_arguments.get("link");
-
-  std::cout << "DEBUG ARGS PORT:  " << port << std::endl;
-  std::cout << "Params: " << params << std::endl;
-
-  dwSensorHandle_t sensor_handle = DW_NULL_HANDLE;
-  dwSensorParams sensor_params;
-  sensor_params.parameters = params.c_str();
-  sensor_params.protocol = "camera.gmsl";
-
-  result = dwSAL_createSensor(&sensor_handle, sensor_params, sal);
-  if (result != DW_SUCCESS) {
-    std::cerr << "Cannot create driver: " << sensor_params.protocol
-              << " with params: " << sensor_params.parameters << std::endl
-              << "Error: " << dwGetStatusName(result) << std::endl;
-
-    if (result == DW_INVALID_ARGUMENT) {
-      std::cerr << "It is possible the given camera is not supported. "
-                << "Please refer to the documentation for this sample."
-                << std::endl;
-    }
-    exit(-1);
-  }
-
-  CameraPort::Ptr camera_port =
-      std::make_shared<CameraPort>(sensor_handle,
-                                   debug_mode_,
-                                   port,
-                                   pub_image_config_.camerainfo_folder,
-                                   print_event_handler_);
-  camera_ports.push_back(camera_port);*/
- // count_cameras += camera_port->GetSiblingCount();
- // std::cout << "Camera count: " << count_cameras << std::endl;
-
-  if (camera_ports.empty()) {
-    std::cout << "camera_ports.empty()" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  int k = 0;
-  for (auto &camera_port : camera_ports) {
-    dwStatus status = camera_port->Start(context_handle_, k);
-    k++;
-    if (status != DW_SUCCESS) {
-      std::cerr << "camera_port.Start failed " << std::endl;
-      exit(EXIT_FAILURE);
-    }
-  }
   std::cout << "camera_ports Start succeded" << std::endl;
 }
 
