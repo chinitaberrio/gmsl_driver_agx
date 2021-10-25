@@ -74,7 +74,6 @@ dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
     printer_->Print(camera.NamePretty, "NvMediaIJPECreate failed.");
     exit(EXIT_FAILURE);
   }
-  std::cout << camera.NamePretty << " created"<< std::endl; 
 
   return dwSensor_start(GetSensorHandle());
 }
@@ -87,7 +86,6 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
 
   Camera &camera = Cameras[0];
   dwStatus status;
-  std::cout << "Processing Camera "  << camera.NamePretty  << std::endl;
 
   dwCameraFrameHandle_t camera_frame_handle;
 
@@ -96,7 +94,7 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
 
   status = dwSensorCamera_readFrameNew(&camera_frame_handle, 1000000, sensor_handle_);
   if (status != DW_SUCCESS) {
-    std::cout << " dwSensorCamera_readFrameNew() Failed " << std::to_string(status) << std::endl;
+    std::cout << " dwSensorCamera_readFrameNew() Failed " << dwGetStatusName(status) << std::endl;
     return;
   }
 

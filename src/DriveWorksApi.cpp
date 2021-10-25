@@ -110,7 +110,8 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
       params += "interface=csi-" + std::string(1, ports[i]);
       params += ",camera-name=" + device_arguments.get("type-"+std::string(1, ports[i]));
       params += ",link=" + std::string(1, links[0]);
-      
+      params += ", output-format=processed";
+      //camera-name=SF3324,interface=csi-a,link=0,output-format=processed
       std::cout << "DEBUG ARGS PORT:  " << std::string(1, ports[i]) << std::endl;
       std::cout << "Params: " << params << std::endl;
 
@@ -140,14 +141,22 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
                                    std::string(1, links[0]),
                                    pub_image_config_.camerainfo_folder,
                                    print_event_handler_);
+      
       camera_ports.push_back(camera_port);
+      links.erase(0,1);
+    }
 
+    if (camera_ports.empty()){
+      std::cout << "camera_ports.empty()" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    for (auto &camera_port :camera_ports){
       dwStatus status = camera_port->Start(context_handle_);
       if (status != DW_SUCCESS) {
         std::cerr << "camera_port.Start failed " << std::endl;
         exit(EXIT_FAILURE);
       }
-      links.erase(0,1);
     }
   }
   
