@@ -165,9 +165,7 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
     std::cout << "dwImage_destroy() Failed" << std::endl;
     is_running = false;
   }
-
 }
-
 
 void CameraPort::CleanUp() {
   std::cout << "------------------ CameraPort::CleanUp() --------------------" << std::endl;

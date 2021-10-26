@@ -1,12 +1,8 @@
 # sekonix_camera
 
-Sekonix GMSL Camera Drive for NVIDIA Drive AGX Xavier Developer Kit for DRIVE Software 10.0
+Sekonix GMSL Camera Drive for NVIDIA Drive AGX Xavier Developer Kit for DRIVE OS Linux 5.2.0 and DriveWorks 3.5
 
-This is a heavily modified version of https://gitlab.com/autowarefoundation/autoware.ai/drivers/-/tree/master/autoware_driveworks_gmsl_interface
-
-If I removed some disclaimers from the top of some source files, I'm sorry, it's not to steal credit, it's to make files look cleaner.
-
-Whoever wrote what is not hidden from anyone with the internet history.
+This is a modified version of https://gitlab.com/leo-drive/Drivers/sekonix_camera
 
 ## Dependencies
 
@@ -14,11 +10,7 @@ Whoever wrote what is not hidden from anyone with the internet history.
  
 ## Function
 
-This driver creates a worker thread for each port(4 cameras), utilizes a producer consumer queue for each,
+This driver creates a worker thread for each cameras, utilizes a producer consumer queue for each,
 compresses them to jpeg with hardware acceleration and publishes the images with hardware timestamps of AGX.
 
-We tried with 8 cameras (3+3+2+2 for ports) and it does its best.
-
-I think this driver squeezes out of AGX the most to get compressed jpeg images from it currently.
-
-The only better way to get more from the cameras in AGX would be some sort of h264/h265 compression but that would be video then.
+In DriveWorks for some reason port a = a, port b = c, port c = e and port d = g. That's the convention used in this driver. 
