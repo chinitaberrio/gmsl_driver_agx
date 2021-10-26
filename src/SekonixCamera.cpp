@@ -14,9 +14,9 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   int jpeg_quality_;
   std::string calib_folder;
   std::string type_a_value;
-  std::string type_b_value;
   std::string type_c_value;
-  std::string type_d_value;
+  std::string type_e_value;
+  std::string type_g_value;
   std::string selector_mask_value;
 
   nh_in.param<int>("image_width", image_width_, 1920);
@@ -26,9 +26,9 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
   nh_in.param<int>("image_compressed_quality", jpeg_quality_, 70);
   nh_in.param<std::string>("calib_folder", calib_folder, "/home/nvidia/projects/adas_ws/src/sekonix_camera/calib/");
   nh_in.param<std::string>("type_a", type_a_value, "SF3324");
-  nh_in.param<std::string>("type_b", type_b_value, "SF3324");
   nh_in.param<std::string>("type_c", type_c_value, "SF3324");
-  nh_in.param<std::string>("type_d", type_d_value, "SF3324");
+  nh_in.param<std::string>("type_e", type_e_value, "SF3324");
+  nh_in.param<std::string>("type_g", type_g_value, "SF3324");
   nh_in.param<std::string>("selector_mask", selector_mask_value, "1110111011001100");
 
   DriveWorks::ImageConfigPub imageConfig = {
@@ -42,18 +42,18 @@ SekonixCamera::SekonixCamera(ros::NodeHandle &nh_in,
 
   DriveWorks::DeviceArguments::VecPairStrStr options = {
     std::make_pair("type-a", "SF3324"),
-      std::make_pair("type-b", "SF3324"),
       std::make_pair("type-c", "SF3324"),
-      std::make_pair("type-d", "SF3324"),
+      std::make_pair("type-e", "SF3324"),
+      std::make_pair("type-g", "SF3324"),
       std::make_pair("selector_mask", "1110111011001100"),
 
   };
 
   DriveWorks::DeviceArguments camera_arguments(options);
   camera_arguments.set("type-a", type_a_value);
-  camera_arguments.set("type-b", type_b_value);
   camera_arguments.set("type-c", type_c_value);
-  camera_arguments.set("type-d", type_d_value);
+  camera_arguments.set("type-e", type_e_value);
+  camera_arguments.set("type-g", type_g_value);
   camera_arguments.set("selector_mask", selector_mask_value);
 
   driveworks_api_ = std::make_unique<DriveWorks::DriveWorksApi>(camera_arguments,

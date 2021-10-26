@@ -83,7 +83,7 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
 
   int idx = 0;
   int cnt[4] = {0, 0, 0, 0};
-  std::string ports = "abcd";
+  std::string ports = "aceg";
   std::string links;
 
   std::string selector = device_arguments.get("selector_mask");
@@ -145,18 +145,17 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
       camera_ports.push_back(camera_port);
       links.erase(0,1);
     }
+  }
+  if (camera_ports.empty()){
+    std::cout << "camera_ports.empty()" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-    if (camera_ports.empty()){
-      std::cout << "camera_ports.empty()" << std::endl;
+  for (auto &camera_port :camera_ports){
+    dwStatus status = camera_port->Start(context_handle_);
+    if (status != DW_SUCCESS) {
+      std::cerr << "camera_port.Start failed " << std::endl;
       exit(EXIT_FAILURE);
-    }
-
-    for (auto &camera_port :camera_ports){
-      dwStatus status = camera_port->Start(context_handle_);
-      if (status != DW_SUCCESS) {
-        std::cerr << "camera_port.Start failed " << std::endl;
-        exit(EXIT_FAILURE);
-      }
     }
   }
   
