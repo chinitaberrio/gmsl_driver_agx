@@ -4,6 +4,7 @@
 #include <dw/sensors/Sensors.h>
 #include <dw/image/Image.h>
 #include <dw/sensors/camera/Camera.h>
+#include <dw/sensors/SensorSerializer.h>
 #include <drive-t186ref-linux/include/nvmedia_ijpe.h>
 #include "cv_connection.hpp"
 #include "PrintEventHandler.h"
@@ -29,14 +30,15 @@ namespace DriveWorks {
     };
     std::vector<Camera> Cameras;
 
-
-    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
+    explicit CameraPort(dwSensorHandle_t sensor_handle, dwSensorSerializerHandle_t camera_serializer, bool debug_mode, std::string port, std::string ind_camera, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
 
     dwStatus Start(const dwContextHandle_t &context_handle);
 
     void ProcessCameraStreams(std::atomic_bool &is_running, const dwContextHandle_t &context_handle);
 
     dwSensorHandle_t GetSensorHandle() const;
+
+    dwSensorSerializerHandle_t GetSerializer() const;
 
     void CleanUp();
 
@@ -46,6 +48,7 @@ namespace DriveWorks {
     dwSensorHandle_t sensor_handle_;
     dwImageProperties image_properties_;
     dwCameraProperties camera_properties_;
+    dwSensorSerializerHandle_t camera_serializer_; // serializer for video output
     std::string port;
     std::string ind_camera;
     PrintEventHandler::Ptr printer_;
