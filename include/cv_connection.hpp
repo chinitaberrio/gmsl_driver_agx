@@ -48,6 +48,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <camera_info_manager/camera_info_manager.h>
+#include <gmsl_frame_msg/FrameInfo.h>
 
 
 class OpenCVConnector {
@@ -60,6 +61,8 @@ public:
 
   void WriteToJpeg(uint8_t *data, uint32_t compressed_size, const ros::Time &time_stamp);
 
+  void check_for_subscribers();
+
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::Publisher pub;
@@ -67,9 +70,12 @@ public:
   std::string topic_name;
   std::string camera_id;
   unsigned int counter;
+  uint32_t frame_counter;
+  bool record_camera_flag;
   sensor_msgs::CameraInfo camera_info;
   camera_info_manager::CameraInfoManager camera_info_manager;
   ros::Publisher pub_caminfo;
+  ros::Publisher pub_frameinfo;
   std::string calib_folder;
 };
 

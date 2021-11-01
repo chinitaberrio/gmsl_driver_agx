@@ -53,9 +53,12 @@ OpenCVConnector::OpenCVConnector(std::string topic_name,
       camera_info_manager(ros::NodeHandle(topic_name), camera_frame_id) {
   std::string topic_raw = topic_name + std::string("/image_raw");
   std::string topic_jpg = topic_name + std::string("/image_raw/compressed");
+  record_camera_flag = false;
+  frame_counter = 0;
   pub = it_.advertise(topic_raw, buffer);
   pub_jpg = nh_.advertise<sensor_msgs::CompressedImage>(topic_jpg, buffer);
   pub_caminfo = nh_.advertise<sensor_msgs::CameraInfo>(camera_frame_id + std::string("/camera_info"), 1);
+  pub_frameinfo = nh_.advertise<gmsl_frame_msg::FrameInfo>(camera_frame_id + std::string("/frame_info"), 1);
 
   if (camera_info_manager.validateURL(cam_info_file)) {
     camera_info_manager.loadCameraInfo(cam_info_file);
@@ -90,6 +93,7 @@ void OpenCVConnector::WriteToOpenCV(unsigned char *buffer, int width_in, int hei
   //publish camera info
   camera_info.header = header;
   pub_caminfo.publish(camera_info);
+
 }
 
 void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size, const ros::Time &time_stamp) {
@@ -107,6 +111,31 @@ void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size, const
   //publish camera info
   camera_info.header = header;
   pub_caminfo.publish(camera_info);
+
+  //publish frame info
+  if (record_camera_flag){
+    gmsl_frame_msg::FrameInfo frame_info_msg;
+    frame_info_msg.header = header;
+    frame_info_msg.frame_counter = frame_counter;
+    frame_info_msg.camera_timestamp = time_stamp.sec + time_stamp.nsec*1e-9;
+    frame_info_msg.global_counter = counter;
+    frame_info_msg.name = camera_id;
+    frame_info_msg.ros_timestamp = time_stamp;
+    pub_frameinfo.publish(frame_info_msg);
+    frame_counter++;
+  }
+
+}
+
+void OpenCVConnector::check_for_subscribers(){
+  if (!record_camera_flag && pub_caminfo.getNumSubscribers() > 0){
+    record_camera_flag = true;
+    frame_counter = 0;
+  }
+  else if (record_camera_flag && pub_caminfo.getNumSubscribers() < 1){
+    record_camera_flag = false;
+  }
+
 }
 
 /* TODO: Publish camera info */

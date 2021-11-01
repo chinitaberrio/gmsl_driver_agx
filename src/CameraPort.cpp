@@ -111,13 +111,16 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
     std::cout << " dwSensorCamera_readFrameNew() Failed " << dwGetStatusName(status) << std::endl;
     return;
   }
-
-  status = dwSensorSerializer_serializeCameraFrameAsync(camera_frame_handle, camera_serializer_);
-  if (status != DW_SUCCESS) {
-    std::cout << " dwSensorSerializer_serializeCameraFrameAsync) Failed " << dwGetStatusName(status) << std::endl;
-    return;
+  
+  camera.OpenCvConnector->check_for_subscribers();
+  if (camera.OpenCvConnector->record_camera_flag){
+    status = dwSensorSerializer_serializeCameraFrameAsync(camera_frame_handle, camera_serializer_);
+      if (status != DW_SUCCESS) {
+        std::cout << " dwSensorSerializer_serializeCameraFrameAsync) Failed " << dwGetStatusName(status) << std::endl;
+        return;
+      }
   }
-
+  
   status = dwSensorCamera_getImage(&image_handle_original, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
   if (status != DW_SUCCESS) {
     std::cout << "dwSensorCamera_getImage() Failed" << std::endl;
