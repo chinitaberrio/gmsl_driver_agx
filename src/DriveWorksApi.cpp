@@ -135,26 +135,9 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
       }
 
       std::string video_file = "port-"+std::string(1, ports[i]) + "_camera-"+std::string(1, links[0])+".h264"; 
-      //H264 video serializer
-      dwSensorSerializerHandle_t m_serializer = DW_NULL_HANDLE;
-      dwSerializerParams serializerParams;
-      serializerParams.parameters = "";
-      std::string newParams       = "";
-      newParams += std::string("format=h264");
-      newParams += std::string(",type=disk,file=") + video_file;
-
-      serializerParams.parameters = newParams.c_str();
-      serializerParams.onData     = nullptr;
-
-      result = dwSensorSerializer_initialize(&m_serializer, &serializerParams, sensor_handle);
-      if (result != DW_SUCCESS) {
-        std::cout << " dwSensorSerializer_initialize Failed " << dwGetStatusName(result) << std::endl;
-        exit(EXIT_FAILURE);
-      }
 
       CameraPort::Ptr camera_port =
       std::make_shared<CameraPort>(sensor_handle,
-                                   m_serializer,
                                    debug_mode_,
                                    std::string(1, ports[i]),
                                    std::string(1, links[0]),

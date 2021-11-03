@@ -55,6 +55,7 @@ OpenCVConnector::OpenCVConnector(std::string topic_name,
   std::string topic_jpg = topic_name + std::string("/image_raw/compressed");
   record_camera_flag = false;
   frame_counter = 0;
+  g_counter = 0; 
   pub = it_.advertise(topic_raw, buffer);
   pub_jpg = nh_.advertise<sensor_msgs::CompressedImage>(topic_jpg, buffer);
   pub_caminfo = nh_.advertise<sensor_msgs::CameraInfo>(camera_frame_id + std::string("/camera_info"), 1);
@@ -118,21 +119,21 @@ void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size, const
     frame_info_msg.header = header;
     frame_info_msg.frame_counter = frame_counter;
     frame_info_msg.camera_timestamp = time_stamp.sec + time_stamp.nsec*1e-9;
-    frame_info_msg.global_counter = counter;
+    frame_info_msg.global_counter = g_counter;
     frame_info_msg.name = camera_id;
     frame_info_msg.ros_timestamp = time_stamp;
     pub_frameinfo.publish(frame_info_msg);
     frame_counter++;
   }
-
+  g_counter++;
 }
 
 void OpenCVConnector::check_for_subscribers(){
-  if (!record_camera_flag && pub_caminfo.getNumSubscribers() > 0){
+  if (!record_camera_flag && pub_frameinfo.getNumSubscribers() > 0){
     record_camera_flag = true;
     frame_counter = 0;
   }
-  else if (record_camera_flag && pub_caminfo.getNumSubscribers() < 1){
+  else if (record_camera_flag && pub_frameinfo.getNumSubscribers() < 1){
     record_camera_flag = false;
   }
 

@@ -15,6 +15,7 @@ namespace DriveWorks {
   public:
     using Ptr = std::shared_ptr<CameraPort>;
     bool debug_mode{false};
+    bool init_serialiser{false};
     struct Camera {
       struct ImageWithStamp {
         dwImageHandle_t image_handle;
@@ -30,7 +31,7 @@ namespace DriveWorks {
     };
     std::vector<Camera> Cameras;
 
-    explicit CameraPort(dwSensorHandle_t sensor_handle, dwSensorSerializerHandle_t camera_serializer, bool debug_mode, std::string port, std::string ind_camera, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
+    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
 
     dwStatus Start(const dwContextHandle_t &context_handle);
 
@@ -39,6 +40,10 @@ namespace DriveWorks {
     dwSensorHandle_t GetSensorHandle() const;
 
     dwSensorSerializerHandle_t GetSerializer() const;
+
+    void InitialiseSerialiser();
+
+    void StopSerialiser();
 
     void CleanUp();
 

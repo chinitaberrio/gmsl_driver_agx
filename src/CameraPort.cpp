@@ -8,7 +8,6 @@
 namespace DriveWorks {
 CameraPort::CameraPort(
     dwSensorHandle_t sensor_handle,
-    dwSensorSerializerHandle_t camera_serializer,
     bool debug_mode,
     std::string port,
     std::string ind_camera,
@@ -16,7 +15,6 @@ CameraPort::CameraPort(
     PrintEventHandler::Ptr printer)
     : debug_mode(debug_mode),
       sensor_handle_(sensor_handle),
-      camera_serializer_(camera_serializer),
       port(port),
       ind_camera(ind_camera),
       printer_(printer) {
@@ -49,6 +47,41 @@ CameraPort::CameraPort(
   camera.OpenCvConnector = std::make_shared<OpenCVConnector>(topic, camera_frame_id, cam_info_file, 1024);
 }
 
+void CameraPort::InitialiseSerialiser(){
+  Camera &camera = Cameras[0];
+  camera_serializer_ = DW_NULL_HANDLE;
+  std::string video_file ="/media/nvidia/Samsung_T5/ensayo2/port-"+ port + "_camera-"+ ind_camera+ ".h264"; // 
+  dwSerializerParams serializerParams;
+  serializerParams.parameters = "";
+  std::string newParams       = "";
+  newParams += std::string("format=h264");
+  newParams += std::string(",type=disk,file=") + video_file;
+
+  serializerParams.parameters = newParams.c_str();
+  serializerParams.onData     = nullptr;
+   // TODO: check for a bunch of stuff
+
+ // std::string log_folder, log_file_name;
+ // camera.OpenCvConnector->nh_.param<std::string>("/log_folder", log_folder, "");
+ // camera.OpenCvConnector->nh_.param<std::string>("/log_file_name", log_file_name, "default-file-name");
+
+
+
+  dwStatus result;
+  result = dwSensorSerializer_initialize(&camera_serializer_, &serializerParams, sensor_handle_);
+  if (result != DW_SUCCESS) {
+    std::cout << " dwSensorSerializer_initialize Failed " << dwGetStatusName(result) << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  result = dwSensorSerializer_start(GetSerializer());
+  if (result != DW_SUCCESS) {
+    std::cout << " dwSensorSerializer_start Failed " << dwGetStatusName(result) << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+}
+
 dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
 
   Camera &camera = Cameras[0];
@@ -75,15 +108,6 @@ dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {
     printer_->Print(camera.NamePretty, "NvMediaIJPECreate failed.");
     exit(EXIT_FAILURE);
   }
-
-  //H264 video serializer
-  dwStatus status;
-  status = dwSensorSerializer_start(GetSerializer());
-  if (status != DW_SUCCESS) {
-    std::cout << " dwSensorSerializer_start Failed " << dwGetStatusName(status) << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  // end serializer
 
   return dwSensor_start(GetSensorHandle());
 }
@@ -113,6 +137,19 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
   }
   
   camera.OpenCvConnector->check_for_subscribers();
+
+  //start of serialiser
+  if(!init_serialiser && camera.OpenCvConnector->record_camera_flag){
+    InitialiseSerialiser();
+    init_serialiser = true;
+    std::cout << "Opened H264 stream for port " << port <<" camera " <<  ind_camera << std::endl;
+  } 
+  else if(init_serialiser && !camera.OpenCvConnector->record_camera_flag) {
+    StopSerialiser();
+    init_serialiser = false;
+    std::cout << "Closed H264 stream for port " << port <<" camera " <<  ind_camera << std::endl;
+  }
+
   if (camera.OpenCvConnector->record_camera_flag){
     status = dwSensorSerializer_serializeCameraFrameAsync(camera_frame_handle, camera_serializer_);
       if (status != DW_SUCCESS) {
@@ -120,7 +157,8 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
         return;
       }
   }
-  
+  // end of serialiser
+
   status = dwSensorCamera_getImage(&image_handle_original, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
   if (status != DW_SUCCESS) {
     std::cout << "dwSensorCamera_getImage() Failed" << std::endl;
@@ -205,7 +243,18 @@ void CameraPort::CleanUp() {
     printer_->Print(name_pretty_, "dwSAL_releaseSensor: " + std::string(dwGetStatusName(status)));
   }
   printer_->Print(name_pretty_, "dwSAL_releaseSensor");
-  //h264
+
+  for (auto &camera : Cameras) {
+    NvMediaIJPEDestroy(camera.NvMediaIjpe);
+    printer_->Print(camera.NamePretty, "NvMediaIJPEDestroy");
+    NvMediaDeviceDestroy(camera.NvmediaDevice);
+    printer_->Print(camera.NamePretty, "NvMediaDeviceDestroy");
+  }
+
+}
+
+void CameraPort::StopSerialiser(){
+  dwStatus status;
   status = dwSensorSerializer_stop(GetSerializer());
   if (status != DW_SUCCESS) {
     printer_->Print(name_pretty_, "dwSensorSerializer_stop: " + std::string(dwGetStatusName(status)));
@@ -215,14 +264,6 @@ void CameraPort::CleanUp() {
     printer_->Print(name_pretty_, "dwSensorSerializer_release: " + std::string(dwGetStatusName(status)));
   }
   printer_->Print(name_pretty_, "dwSensorSerializer");
-  //h264
-  for (auto &camera : Cameras) {
-    NvMediaIJPEDestroy(camera.NvMediaIjpe);
-    printer_->Print(camera.NamePretty, "NvMediaIJPEDestroy");
-    NvMediaDeviceDestroy(camera.NvmediaDevice);
-    printer_->Print(camera.NamePretty, "NvMediaDeviceDestroy");
-  }
-
 }
 
 CameraPort::~CameraPort() {

@@ -71,6 +71,7 @@ public:
   std::string camera_id;
   unsigned int counter;
   uint32_t frame_counter;
+  uint32_t g_counter;
   bool record_camera_flag;
   sensor_msgs::CameraInfo camera_info;
   camera_info_manager::CameraInfoManager camera_info_manager;
