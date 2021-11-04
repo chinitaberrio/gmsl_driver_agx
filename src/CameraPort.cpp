@@ -47,39 +47,88 @@ CameraPort::CameraPort(
   camera.OpenCvConnector = std::make_shared<OpenCVConnector>(topic, camera_frame_id, cam_info_file, 1024);
 }
 
+int CameraPort::file_existance_test (const char *filename)
+{
+  struct stat buffer;
+  return (stat (filename, &buffer) == 0);
+}
+
 void CameraPort::InitialiseSerialiser(){
   Camera &camera = Cameras[0];
   camera_serializer_ = DW_NULL_HANDLE;
-  std::string video_file ="/media/nvidia/Samsung_T5/ensayo2/port-"+ port + "_camera-"+ ind_camera+ ".h264"; // 
-  dwSerializerParams serializerParams;
-  serializerParams.parameters = "";
-  std::string newParams       = "";
-  newParams += std::string("format=h264");
-  newParams += std::string(",type=disk,file=") + video_file;
+  std::string name ="port-"+ port + "_cam-"+ ind_camera; // 
+  
+     // TODO: check for a bunch of stuff
+  std::string log_folder_base_name = "/media/nvidia/Samsung_T5";
+  std::string latest_stream_file_name;
+  
+  //camera.OpenCvConnector->nh_.param<std::string>("write_file", log_folder_base_name, "");
 
-  serializerParams.parameters = newParams.c_str();
-  serializerParams.onData     = nullptr;
-   // TODO: check for a bunch of stuff
+  std::string log_folder, log_file_name;
+  camera.OpenCvConnector->nh_.param<std::string>("/log_folder", log_folder, "");
+  camera.OpenCvConnector->nh_.param<std::string>("/log_file_name", log_file_name, "default-file-name");
 
- // std::string log_folder, log_file_name;
- // camera.OpenCvConnector->nh_.param<std::string>("/log_folder", log_folder, "");
- // camera.OpenCvConnector->nh_.param<std::string>("/log_file_name", log_file_name, "default-file-name");
+  std::ostringstream location_name_stream;
+  location_name_stream << log_folder_base_name << "/" << log_folder;
 
+  std::string location_name;
+  location_name = location_name_stream.str();
 
-
-  dwStatus result;
-  result = dwSensorSerializer_initialize(&camera_serializer_, &serializerParams, sensor_handle_);
-  if (result != DW_SUCCESS) {
-    std::cout << " dwSensorSerializer_initialize Failed " << dwGetStatusName(result) << std::endl;
-    exit(EXIT_FAILURE);
+  DIR* dir = opendir(location_name.c_str());
+  if (!dir)
+  {
+    std::cout << "COULD NOT OPEN folder " << location_name << std::endl;
   }
+  else {
+    closedir(dir);
 
-  result = dwSensorSerializer_start(GetSerializer());
-  if (result != DW_SUCCESS) {
-    std::cout << " dwSensorSerializer_start Failed " << dwGetStatusName(result) << std::endl;
-    exit(EXIT_FAILURE);
+    std::ostringstream full_file_name_candidate;
+    full_file_name_candidate << location_name << "/" << log_file_name << "-" << name << ".h264.active";
+    std::cout << "Test for existing file " << full_file_name_candidate.str() << std::endl;
+    if (file_existance_test(full_file_name_candidate.str().c_str())) {
+      // There is an existing file - construct a new filename with .partN. included in the file name
+      std::cout << "H264 FILE exists " << full_file_name_candidate.str() << std::endl;
+      int file_check = 1;
+
+      for (;;) {
+        std::ostringstream full_file_name_alternative;
+        full_file_name_alternative << location_name << "/" << log_file_name << "-" << name << ".part" << file_check << ".h264.active";
+        if (file_existance_test(full_file_name_alternative.str().c_str())) {
+          std::cout << "H264 FILE exists " << full_file_name_alternative.str() << std::endl;
+        }
+        else {
+          latest_stream_file_name = full_file_name_alternative.str();
+          break;
+        }
+        file_check++;
+      }
+    }
+    else {
+      latest_stream_file_name = full_file_name_candidate.str();
+    }
+
+    dwSerializerParams serializerParams;
+    serializerParams.parameters = "";
+    std::string newParams       = "";
+    newParams += std::string("format=h264");
+    newParams += std::string(",type=disk,file=") + latest_stream_file_name;
+
+    serializerParams.parameters = newParams.c_str();
+    serializerParams.onData     = nullptr;
+
+    dwStatus result;
+    result = dwSensorSerializer_initialize(&camera_serializer_, &serializerParams, sensor_handle_);
+    if (result != DW_SUCCESS) {
+      std::cout << " dwSensorSerializer_initialize Failed " << dwGetStatusName(result) << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    result = dwSensorSerializer_start(GetSerializer());
+    if (result != DW_SUCCESS) {
+      std::cout << " dwSensorSerializer_start Failed " << dwGetStatusName(result) << std::endl;
+      exit(EXIT_FAILURE);
+    }
   }
-
 }
 
 dwStatus CameraPort::Start(const dwContextHandle_t &context_handle) {

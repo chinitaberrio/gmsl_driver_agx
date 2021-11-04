@@ -9,6 +9,8 @@
 #include "cv_connection.hpp"
 #include "PrintEventHandler.h"
 
+#include <dirent.h>
+#include <sys/stat.h>
 
 namespace DriveWorks {
   class CameraPort {
@@ -40,6 +42,8 @@ namespace DriveWorks {
     dwSensorHandle_t GetSensorHandle() const;
 
     dwSensorSerializerHandle_t GetSerializer() const;
+
+    int file_existance_test (const char *filename);
 
     void InitialiseSerialiser();
 
