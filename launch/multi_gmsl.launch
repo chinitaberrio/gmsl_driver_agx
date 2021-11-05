@@ -24,10 +24,12 @@
     <param name="calib_folder" value="$(arg cam_calib_folder)" />
     <param name="type_a" value="SF3324" type="str" />
     <param name="type_c" value="SF3324" type="str" />
-    <param name="type_e" value="SF3324" type="str" />
-    <param name="selector_mask" value="10001000100000000" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
+    <param name="type_e" value="SF3325" type="str" />
+    <param name="selector_mask" value="100111111001000" type="str" /> <!-- |A3210|B3210|C3210| e.g 011101110011 -->
     <param name="cross_csi_sync" value="1" type="str" />
+    <param name="fifo" value="3" type="str" />
     <param name="slave" value="0" type="str" />
+    <param name="log_folder_base_name" value="/media/nvidia/Samsung_T5" type="str" />
   </node>
 </group>
 </launch>

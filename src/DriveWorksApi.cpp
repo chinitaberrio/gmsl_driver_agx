@@ -103,6 +103,8 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
   print_event_handler_->Print(name_pretty_, "Number of cameras in port D " + std::to_string(cnt[3]));
   print_event_handler_->Print(name_pretty_, "Total cameras " + std::to_string(count_cameras) + " Cameras position " + links);
   
+  std::string log_folder_base_name = device_arguments.get("log_folder_base_name");
+
    // initialize all the cameras 
   for (size_t i = 0; i < 4; i++){ //check each port
     for (size_t j = 0; j < cnt[i]; j++){     //check each camera  
@@ -110,8 +112,10 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
       params += "interface=csi-" + std::string(1, ports[i]);
       params += ",camera-name=" + device_arguments.get("type-"+std::string(1, ports[i]));
       params += ",link=" + std::string(1, links[0]);
-      params += ", output-format=processed";
-      //camera-name=SF3324,interface=csi-a,link=0,output-format=processed
+      params += ",output-format=processed";
+      params += ",cross_csi_sync=" + device_arguments.get("cross_csi_sync");
+      params += ",fifo_size="+ device_arguments.get("fifo");
+      params += ",slave=" + device_arguments.get("slave");
       std::cout << "DEBUG ARGS PORT:  " << std::string(1, ports[i]) << std::endl;
       std::cout << "Params: " << params << std::endl;
 
@@ -134,13 +138,12 @@ DriveWorksApi::InitializeCameraPorts(std::vector<CameraPort::Ptr> &camera_ports,
         exit(-1);
       }
 
-      std::string video_file = "port-"+std::string(1, ports[i]) + "_camera-"+std::string(1, links[0])+".h264"; 
-
       CameraPort::Ptr camera_port =
       std::make_shared<CameraPort>(sensor_handle,
                                    debug_mode_,
                                    std::string(1, ports[i]),
                                    std::string(1, links[0]),
+                                   log_folder_base_name,
                                    pub_image_config_.camerainfo_folder,
                                    print_event_handler_);
       

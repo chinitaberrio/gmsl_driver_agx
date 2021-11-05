@@ -11,12 +11,14 @@ CameraPort::CameraPort(
     bool debug_mode,
     std::string port,
     std::string ind_camera,
+    std::string log_folder_base_name,
     const std::string &caminfo_folder,
     PrintEventHandler::Ptr printer)
     : debug_mode(debug_mode),
       sensor_handle_(sensor_handle),
       port(port),
       ind_camera(ind_camera),
+      log_folder_base_name_(log_folder_base_name),
       printer_(printer) {
   std::cout << "------------------ CameraPort::CameraPort() --------------------" << std::endl;
   name_pretty_ = "Port #" + port;
@@ -57,19 +59,14 @@ void CameraPort::InitialiseSerialiser(){
   Camera &camera = Cameras[0];
   camera_serializer_ = DW_NULL_HANDLE;
   std::string name ="port-"+ port + "_cam-"+ ind_camera; // 
-  
-     // TODO: check for a bunch of stuff
-  std::string log_folder_base_name = "/media/nvidia/Samsung_T5";
-  std::string latest_stream_file_name;
-  
-  //camera.OpenCvConnector->nh_.param<std::string>("write_file", log_folder_base_name, "");
 
+  std::string latest_stream_file_name;
   std::string log_folder, log_file_name;
   camera.OpenCvConnector->nh_.param<std::string>("/log_folder", log_folder, "");
   camera.OpenCvConnector->nh_.param<std::string>("/log_file_name", log_file_name, "default-file-name");
 
   std::ostringstream location_name_stream;
-  location_name_stream << log_folder_base_name << "/" << log_folder;
+  location_name_stream << log_folder_base_name_ << "/" << log_folder;
 
   std::string location_name;
   location_name = location_name_stream.str();
@@ -111,8 +108,10 @@ void CameraPort::InitialiseSerialiser(){
     serializerParams.parameters = "";
     std::string newParams       = "";
     newParams += std::string("format=h264");
+    newParams += std::string(",serialize_bitrate=8000000");
+    newParams += std::string(",framerate=30");
     newParams += std::string(",type=disk,file=") + latest_stream_file_name;
-
+    
     serializerParams.parameters = newParams.c_str();
     serializerParams.onData     = nullptr;
 
@@ -269,6 +268,11 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
   camera.OpenCvConnector->WriteToJpeg(camera.JpegImage,
                                       camera.CountByteJpeg,
                                       image_with_stamp.time_stamp);
+
+  if (camera.OpenCvConnector->record_camera_flag){
+    camera.OpenCvConnector->PubFrameInfo(image_with_stamp.time_stamp,
+                                        (uint32_t) timestamp);
+  }
 
   status = dwImage_destroy(image_with_stamp.image_handle);
   if (status != DW_SUCCESS) {

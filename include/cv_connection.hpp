@@ -61,6 +61,8 @@ public:
 
   void WriteToJpeg(uint8_t *data, uint32_t compressed_size, const ros::Time &time_stamp);
 
+  void PubFrameInfo(const ros::Time &time_stamp, uint32_t camera_timestamp);
+
   void check_for_subscribers();
 
   ros::NodeHandle nh_;

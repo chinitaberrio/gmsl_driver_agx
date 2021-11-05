@@ -113,20 +113,26 @@ void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size, const
   camera_info.header = header;
   pub_caminfo.publish(camera_info);
 
-  //publish frame info
-  if (record_camera_flag){
-    gmsl_frame_msg::FrameInfo frame_info_msg;
-    frame_info_msg.header = header;
-    frame_info_msg.frame_counter = frame_counter;
-    frame_info_msg.camera_timestamp = time_stamp.sec + time_stamp.nsec*1e-9;
-    frame_info_msg.global_counter = g_counter;
-    frame_info_msg.name = camera_id;
-    frame_info_msg.ros_timestamp = time_stamp;
-    pub_frameinfo.publish(frame_info_msg);
-    frame_counter++;
-  }
   g_counter++;
+
 }
+
+void OpenCVConnector::PubFrameInfo(const ros::Time &time_stamp, uint32_t camera_timestamp){
+  std_msgs::Header header;                                            // empty header
+  header.seq = counter;                                              // user defined counter
+  header.stamp = time_stamp;                                    // time
+  header.frame_id = camera_id;                                        // camera id
+  gmsl_frame_msg::FrameInfo frame_info_msg;
+  frame_info_msg.header = header;
+  frame_info_msg.frame_counter = frame_counter;
+  frame_info_msg.camera_timestamp = camera_timestamp;
+  frame_info_msg.global_counter = g_counter;
+  frame_info_msg.name = camera_id;
+  frame_info_msg.ros_timestamp = time_stamp;
+  pub_frameinfo.publish(frame_info_msg);
+  frame_counter++;
+}
+
 
 void OpenCVConnector::check_for_subscribers(){
   if (!record_camera_flag && pub_frameinfo.getNumSubscribers() > 0){
@@ -139,4 +145,4 @@ void OpenCVConnector::check_for_subscribers(){
 
 }
 
-/* TODO: Publish camera info */
+

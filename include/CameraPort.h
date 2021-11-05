@@ -33,7 +33,7 @@ namespace DriveWorks {
     };
     std::vector<Camera> Cameras;
 
-    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
+    explicit CameraPort(dwSensorHandle_t sensor_handle, bool debug_mode, std::string port, std::string ind_camera, std::string log_folder_base_name, const std::string &caminfo_folder, PrintEventHandler::Ptr printer);
 
     dwStatus Start(const dwContextHandle_t &context_handle);
 
@@ -43,7 +43,7 @@ namespace DriveWorks {
 
     dwSensorSerializerHandle_t GetSerializer() const;
 
-    int file_existance_test (const char *filename);
+    int file_existance_test(const char *filename);
 
     void InitialiseSerialiser();
 
@@ -60,6 +60,7 @@ namespace DriveWorks {
     dwSensorSerializerHandle_t camera_serializer_; // serializer for video output
     std::string port;
     std::string ind_camera;
+    std::string log_folder_base_name_;
     PrintEventHandler::Ptr printer_;
     std::string name_pretty_;
   };
