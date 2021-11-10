@@ -14,7 +14,7 @@
   <remap from="/sekonix_camera_port_a/port_0/camera_2/image_raw/compressed" to="/cam_on_sol/image_raw/compressed"/> -->
 
 
-<group ns="sekonix_camera">
+<group ns="sekonix_camera_a">
   <arg name="cam_calib_folder" default="$(find sekonix_camera)/calib/" />
   <node pkg="sekonix_camera" type="sekonix_camera_node" name="sekonix_camera_node" output="screen">
     <param name="image_width" value="1920" />     <!-- image raw resize only -->
@@ -25,7 +25,7 @@
     <param name="type_a" value="SF3324" type="str" />
     <param name="type_c" value="SF3324" type="str" />
     <param name="type_e" value="SF3325" type="str" />
-    <param name="selector_mask" value="100111111001000" type="str" /> <!-- 100111111001000 -->
+    <param name="selector_mask" value="10010000000000" type="str" /> <!-- 100111111001000 -->
     <param name="cross_csi_sync" value="1" type="str" />
     <param name="fifo" value="3" type="str" />
     <param name="slave" value="0" type="str" />
@@ -33,4 +33,3 @@
   </node>
 </group>
 </launch>
-

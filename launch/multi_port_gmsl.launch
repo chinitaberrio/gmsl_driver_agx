@@ -1,0 +1,10 @@
+<launch>
+
+  <include file="$(find sekonix_camera)/launch/port_a_gmsl.launch"/>
+
+  <include file="$(find sekonix_camera)/launch/port_b_gmsl.launch"/>
+
+  <include file="$(find sekonix_camera)/launch/port_c_gmsl.launch"/>
+
+</launch>
+

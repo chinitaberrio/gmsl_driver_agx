@@ -303,7 +303,7 @@ void CameraPort::CleanUp() {
     NvMediaDeviceDestroy(camera.NvmediaDevice);
     printer_->Print(camera.NamePretty, "NvMediaDeviceDestroy");
   }
-
+  
 }
 
 void CameraPort::StopSerialiser(){
@@ -316,7 +316,6 @@ void CameraPort::StopSerialiser(){
   if (status != DW_SUCCESS) {
     printer_->Print(name_pretty_, "dwSensorSerializer_release: " + std::string(dwGetStatusName(status)));
   }
-  printer_->Print(name_pretty_, "dwSensorSerializer");
 }
 
 CameraPort::~CameraPort() {
