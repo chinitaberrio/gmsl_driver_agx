@@ -118,7 +118,7 @@ void OpenCVConnector::WriteToJpeg(uint8_t *data, uint32_t compressed_size, const
 
 }
 
-void OpenCVConnector::PubFrameInfo(const ros::Time &time_stamp, uint32_t camera_timestamp){
+void OpenCVConnector::PubFrameInfo(const ros::Time &time_stamp, uint64_t camera_timestamp){
   std_msgs::Header header;                                            // empty header
   header.seq = counter;                                              // user defined counter
   header.stamp = time_stamp;                                    // time
@@ -147,7 +147,7 @@ void OpenCVConnector::check_for_subscribers(){
   if (pub_jpg.getNumSubscribers() > 0){
     pub_jpg_flag = true;
   } else {
-    pub_jpg_flag = true;
+    pub_jpg_flag = false;
   }
 
 }

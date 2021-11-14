@@ -219,12 +219,6 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
     is_running = false;
   }
 
-  status = dwImage_copyConvert(image_handle, image_handle_original, context_handle);
-  if (status != DW_SUCCESS) {
-    std::cout << "dwImage_copyConvert() Failed" << std::endl;
-    is_running = false;
-  }
-
   status = dwSensorCamera_returnFrame(&camera_frame_handle);
   if (status != DW_SUCCESS) {
     std::cout << "dwSensorCamera_returnFrame() Failed" << std::endl;
@@ -244,6 +238,13 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
   image_with_stamp.time_stamp = ros::Time((double) timestamp * 10e-7);
 
   if(camera.OpenCvConnector->pub_jpg_flag){
+
+
+    status = dwImage_copyConvert(image_handle, image_handle_original, context_handle);
+    if (status != DW_SUCCESS) {
+      std::cout << "dwImage_copyConvert() Failed" << std::endl;
+      is_running = false;
+    }
 
     dwImageNvMedia *image_nvmedia;
     status = dwImage_getNvMedia(&image_nvmedia, image_with_stamp.image_handle);
@@ -276,7 +277,7 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
 
   if (camera.OpenCvConnector->record_camera_flag){
     camera.OpenCvConnector->PubFrameInfo(image_with_stamp.time_stamp,
-                                        (uint32_t) d_timestamp);
+                                        (uint64_t) d_timestamp);
   }
 
   status = dwImage_destroy(image_with_stamp.image_handle);
