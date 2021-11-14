@@ -75,6 +75,7 @@ public:
   uint32_t frame_counter;
   uint32_t g_counter;
   bool record_camera_flag;
+  bool pub_jpg_flag;
   sensor_msgs::CameraInfo camera_info;
   camera_info_manager::CameraInfoManager camera_info_manager;
   ros::Publisher pub_caminfo;

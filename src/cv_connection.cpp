@@ -54,6 +54,7 @@ OpenCVConnector::OpenCVConnector(std::string topic_name,
   std::string topic_raw = topic_name + std::string("/image_raw");
   std::string topic_jpg = topic_name + std::string("/image_raw/compressed");
   record_camera_flag = false;
+  pub_jpg_flag = false;
   frame_counter = 0;
   g_counter = 0; 
   pub = it_.advertise(topic_raw, buffer);
@@ -141,6 +142,12 @@ void OpenCVConnector::check_for_subscribers(){
   }
   else if (record_camera_flag && pub_frameinfo.getNumSubscribers() < 1){
     record_camera_flag = false;
+  }
+
+  if (pub_jpg.getNumSubscribers() > 0){
+    pub_jpg_flag = true;
+  } else {
+    pub_jpg_flag = true;
   }
 
 }

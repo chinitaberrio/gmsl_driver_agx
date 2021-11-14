@@ -206,7 +206,7 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
       }
   }
   // end of serialiser
-
+  
   status = dwSensorCamera_getImage(&image_handle_original, DW_CAMERA_OUTPUT_NATIVE_PROCESSED, camera_frame_handle);
   if (status != DW_SUCCESS) {
     std::cout << "dwSensorCamera_getImage() Failed" << std::endl;
@@ -240,45 +240,52 @@ void CameraPort::ProcessCameraStreams(std::atomic_bool &is_running, const dwCont
 
   Camera::ImageWithStamp image_with_stamp;
   image_with_stamp.image_handle = image_handle;
+  double d_timestamp = (double) timestamp;
   image_with_stamp.time_stamp = ros::Time((double) timestamp * 10e-7);
 
-  dwImageNvMedia *image_nvmedia;
-  status = dwImage_getNvMedia(&image_nvmedia, image_with_stamp.image_handle);
-  if (status != DW_SUCCESS) {
-    std::cout << "dwImage_getNvMedia() Failed" << std::endl;
-    is_running = false;
+  if(camera.OpenCvConnector->pub_jpg_flag){
+
+    dwImageNvMedia *image_nvmedia;
+    status = dwImage_getNvMedia(&image_nvmedia, image_with_stamp.image_handle);
+    if (status != DW_SUCCESS) {
+      std::cout << "dwImage_getNvMedia() Failed" << std::endl;
+      is_running = false;
+    }
+
+    NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
+    if (nvStatus != NVMEDIA_STATUS_OK) {
+      std::cout << "NvMediaIJPEFeedFrame() failed: " << std::to_string(nvStatus) << std::endl;
+      is_running = false;
+    }
+
+    do {
+      nvStatus = NvMediaIJPEBitsAvailable(camera.NvMediaIjpe, &camera.CountByteJpeg, NVMEDIA_ENCODE_BLOCKING_TYPE_NEVER, 0);
+    } while (nvStatus != NVMEDIA_STATUS_OK);
+
+    nvStatus = NvMediaIJPEGetBits(camera.NvMediaIjpe, &camera.CountByteJpeg, camera.JpegImage, 0);
+    if (nvStatus != NVMEDIA_STATUS_OK) {
+      std::cout << "NvMediaIJPEGetBits() failed: " << std::to_string(nvStatus) << std::endl;
+      is_running = false;
+    }
+
+    camera.OpenCvConnector->WriteToJpeg(camera.JpegImage,
+                                        camera.CountByteJpeg,
+                                        image_with_stamp.time_stamp);
+
   }
-
-  NvMediaStatus nvStatus = NvMediaIJPEFeedFrame(camera.NvMediaIjpe, image_nvmedia->img, 70);
-  if (nvStatus != NVMEDIA_STATUS_OK) {
-    std::cout << "NvMediaIJPEFeedFrame() failed: " << std::to_string(nvStatus) << std::endl;
-    is_running = false;
-  }
-
-  do {
-    nvStatus = NvMediaIJPEBitsAvailable(camera.NvMediaIjpe, &camera.CountByteJpeg, NVMEDIA_ENCODE_BLOCKING_TYPE_NEVER, 0);
-  } while (nvStatus != NVMEDIA_STATUS_OK);
-
-  nvStatus = NvMediaIJPEGetBits(camera.NvMediaIjpe, &camera.CountByteJpeg, camera.JpegImage, 0);
-  if (nvStatus != NVMEDIA_STATUS_OK) {
-    std::cout << "NvMediaIJPEGetBits() failed: " << std::to_string(nvStatus) << std::endl;
-    is_running = false;
-  }
-
-  camera.OpenCvConnector->WriteToJpeg(camera.JpegImage,
-                                      camera.CountByteJpeg,
-                                      image_with_stamp.time_stamp);
 
   if (camera.OpenCvConnector->record_camera_flag){
     camera.OpenCvConnector->PubFrameInfo(image_with_stamp.time_stamp,
-                                        (uint32_t) timestamp);
+                                        (uint32_t) d_timestamp);
   }
 
   status = dwImage_destroy(image_with_stamp.image_handle);
   if (status != DW_SUCCESS) {
     std::cout << "dwImage_destroy() Failed" << std::endl;
     is_running = false;
-  }
+  }  
+
+  camera.OpenCvConnector->g_counter++;
 }
 
 void CameraPort::CleanUp() {

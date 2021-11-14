@@ -25,7 +25,7 @@
     <param name="type_a" value="SF3324" type="str" />
     <param name="type_c" value="SF3324" type="str" />
     <param name="type_e" value="SF3325" type="str" />
-    <param name="selector_mask" value="10010000000000" type="str" /> <!-- 100111111001000 -->
+    <param name="selector_mask" value="11010000000000" type="str" /> <!-- 100111111001000 -->
     <param name="cross_csi_sync" value="1" type="str" />
     <param name="fifo" value="3" type="str" />
     <param name="slave" value="0" type="str" />
